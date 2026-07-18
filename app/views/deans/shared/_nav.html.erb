@@ -1,0 +1,14 @@
+<nav class="mx-auto mb-8 w-full max-w-4xl rounded-xl bg-white p-4 shadow-md ring-1 ring-slate-200">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-2">
+      <%= link_to "SCATS", dean_root_path, class: "text-lg font-bold text-slate-900" %>
+      <span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-purple-700">Dean</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <%= link_to "Decision queue", dean_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      <%= link_to "Change password", edit_account_password_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      <%= button_to "Sign out", destroy_user_session_path, method: :delete,
+            class: "cursor-pointer rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700" %>
+    </div>
+  </div>
+</nav>

@@ -37,7 +37,7 @@
   <% histories.each do |history| %>
     <li class="rounded-lg border border-slate-200 p-3 text-sm">
       <div class="flex items-center justify-between">
-        <span class="font-medium text-slate-900"><%= history.action.humanize %></span>
+        <span class="font-medium text-slate-900"><%= history_label(history.action) %></span>
         <span class="text-xs text-slate-500"><%= history.created_at.strftime("%d %b %Y, %H:%M") %></span>
       </div>
       <p class="mt-1 text-xs text-slate-500">

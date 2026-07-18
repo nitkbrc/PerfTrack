@@ -23,6 +23,10 @@
           <%= link_to "Supervisor panel", supervisor_root_path,
                 class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
         <% end %>
+        <% if current_user.faculty? && current_user.deaned_divisions.exists? %>
+          <%= link_to "Dean panel", dean_root_path,
+                class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
+        <% end %>
         <%= link_to "Change password", edit_account_password_path,
               class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
         <%= button_to "Sign out", destroy_user_session_path, method: :delete,

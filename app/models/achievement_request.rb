@@ -26,6 +26,11 @@ class AchievementRequest < ApplicationRecord
     end
   end
 
+  # Path A vs Path B origin — the first history row is the source of truth.
+  def student_initiated?
+    req_histories.order(:created_at).first&.action == "submit"
+  end
+
   # Path B: the supervisor creating the request is itself the review step, so it
   # skips submitted; the first history row records the supervisor as originator.
   def self.supervisor_initiate!(student:, actor:, attrs:)
@@ -50,12 +55,15 @@ class AchievementRequest < ApplicationRecord
   end
 
   # Dean approval snapshots the signed point value in the same transaction as
-  # the status change (TRD section 6), so later category.points edits never
-  # retroactively change an already-verified record.
-  def dean_approve!
+  # the status change and its history row (TRD section 6), so later
+  # category.points edits never retroactively change an already-verified record.
+  def dean_approve!(actor:)
     transaction do
       sign = category.sub_division.division.positive? ? 1 : -1
+      from = status
       update!(status: :dean_approved, points_awarded: category.points * sign)
+      req_histories.create!(actor: actor, action: "dean_approve",
+                            from_status: from, to_status: "dean_approved")
     end
   end
 end

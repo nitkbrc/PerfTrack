@@ -6,7 +6,7 @@ RSpec.describe Student, type: :model do
     sub_division = create(:sub_division, division: division)
     category = create(:category, sub_division: sub_division, points: points)
     create(:achievement_request, student: student, category: category,
-           status: :supervisor_approved).tap(&:dean_approve!)
+           status: :supervisor_approved).tap { |r| r.dean_approve!(actor: division.dean) }
   end
 
   describe "#positive_total and #negative_total" do

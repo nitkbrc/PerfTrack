@@ -14,9 +14,9 @@ class AchievementRequestPolicy < ApplicationPolicy
     student_with_profile?
   end
 
-  # The owning student, or the supervisor whose queue the request sits in.
+  # The owning student, or the supervisor/dean whose queue the request sits in.
   def show?
-    owning_student? || review?
+    owning_student? || review? || dean_decide?
   end
 
   # Student edit + resubmit of a reverted request (PRD section 6 lifecycle).
@@ -27,6 +27,11 @@ class AchievementRequestPolicy < ApplicationPolicy
   # Path B: any faculty member who supervises at least one sub-division.
   def initiate?
     user.faculty? && user.supervised_sub_divisions.exists?
+  end
+
+  # Class-level check for the dean queue page.
+  def dean_queue?
+    user.faculty? && user.deaned_divisions.exists?
   end
 
   # Capacity checks (TRD section 5): always the FK relationship, never a role
@@ -46,6 +51,9 @@ class AchievementRequestPolicy < ApplicationPolicy
       elsif user.faculty? && user.supervised_sub_divisions.exists?
         scope.joins(category: :sub_division)
              .where(sub_divisions: { supervisor_user_id: user.id })
+      elsif user.faculty? && user.deaned_divisions.exists?
+        scope.joins(category: { sub_division: :division })
+             .where(divisions: { dean_user_id: user.id })
       else
         scope.none
       end

@@ -27,7 +27,18 @@ Rails.application.routes.draw do
   # Same module-vs-model collision avoidance as the student namespace.
   namespace :supervisor, module: "supervisors" do
     root "queue#index"
-    resources :achievement_requests, only: [ :show, :new, :create ] do
+    resources :achievement_requests, only: [ :show, :new, :create, :edit, :update ] do
+      member do
+        patch :approve
+        patch :revert
+        patch :reject
+      end
+    end
+  end
+
+  namespace :dean, module: "deans" do
+    root "queue#index"
+    resources :achievement_requests, only: [ :show ] do
       member do
         patch :approve
         patch :revert

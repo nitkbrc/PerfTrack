@@ -48,10 +48,12 @@ RSpec.describe AchievementRequest, type: :model do
       create(:achievement_request, category: category, status: :supervisor_approved)
     end
 
+    let(:dean_user) { create(:user, :faculty) }
+
     it "snapshots positive points in a positive division" do
       request = request_in_division("positive", points: 20)
 
-      request.dean_approve!
+      request.dean_approve!(actor: dean_user)
 
       expect(request.reload).to be_dean_approved
       expect(request.points_awarded).to eq(20)
@@ -60,7 +62,7 @@ RSpec.describe AchievementRequest, type: :model do
     it "snapshots negative points in a negative division" do
       request = request_in_division("negative", points: 15)
 
-      request.dean_approve!
+      request.dean_approve!(actor: dean_user)
 
       expect(request.reload).to be_dean_approved
       expect(request.points_awarded).to eq(-15)
@@ -68,11 +70,23 @@ RSpec.describe AchievementRequest, type: :model do
 
     it "does not change points_awarded when category points are edited after approval" do
       request = request_in_division("positive", points: 20)
-      request.dean_approve!
+      request.dean_approve!(actor: dean_user)
 
       request.category.update!(points: 100)
 
       expect(request.reload.points_awarded).to eq(20)
+    end
+
+    it "writes a dean_approve history row with the actor" do
+      request = request_in_division("positive", points: 20)
+
+      request.dean_approve!(actor: dean_user)
+
+      history = request.req_histories.sole
+      expect(history.action).to eq("dean_approve")
+      expect(history.actor).to eq(dean_user)
+      expect(history.from_status).to eq("supervisor_approved")
+      expect(history.to_status).to eq("dean_approved")
     end
   end
 end

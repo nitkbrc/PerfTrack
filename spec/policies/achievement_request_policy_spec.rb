@@ -166,6 +166,14 @@ RSpec.describe AchievementRequestPolicy do
       expect(resolved).to contain_exactly(in_queue)
     end
 
+    it "resolves to the dean's division requests only" do
+      in_division = create(:achievement_request, category: category)
+      create(:achievement_request) # different division
+
+      resolved = described_class::Scope.new(dean, AchievementRequest).resolve
+      expect(resolved).to contain_exactly(in_division)
+    end
+
     it "resolves to none for non-supervising faculty, admin, and profile-less students" do
       create(:achievement_request, category: category)
 
