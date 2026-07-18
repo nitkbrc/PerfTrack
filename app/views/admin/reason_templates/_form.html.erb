@@ -1,0 +1,16 @@
+<div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+  <%= form_with model: [ :admin, reason_template ], class: "space-y-5" do |f| %>
+    <%= render "admin/shared/error_messages", record: reason_template %>
+
+    <div>
+      <%= f.label :message_text, "Message", class: admin_label_classes %>
+      <%= f.text_area :message_text, rows: 4, autofocus: true, class: admin_input_classes %>
+      <p class="mt-1 text-xs text-slate-500">Shown as a pre-fill option when reverting or rejecting a request; still editable before sending.</p>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <%= f.submit class: admin_primary_button_classes %>
+      <%= link_to "Cancel", admin_reason_templates_path, class: admin_link_classes %>
+    </div>
+  <% end %>
+</div>

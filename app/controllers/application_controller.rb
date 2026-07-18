@@ -12,17 +12,17 @@ class ApplicationController < ActionController::Base
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
-  before_action :configure_permitted_parameters, if: :devise_controller?
-
-  protected
-
-  # TODO: remove :role from sign_up once admin-only user creation is in place (Milestone 6).
-  def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: [ :name, :role ])
-    devise_parameter_sanitizer.permit(:account_update, keys: [ :name ])
-  end
+  # Admin-created accounts must replace their temporary password before doing
+  # anything else. Devise controllers stay reachable so the user can sign out.
+  before_action :enforce_password_change, unless: :devise_controller?
 
   private
+
+  def enforce_password_change
+    return unless user_signed_in? && current_user.password_change_required?
+
+    redirect_to edit_account_password_path, alert: "Please set a new password to continue."
+  end
 
   def user_not_authorized
     redirect_to root_path, alert: "You are not authorized to do that."

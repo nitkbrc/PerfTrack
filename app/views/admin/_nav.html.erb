@@ -1,0 +1,24 @@
+<nav class="mb-8 rounded-xl bg-white p-4 shadow-md ring-1 ring-slate-200">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-2">
+      <%= link_to "SCATS", root_path, class: "text-lg font-bold text-slate-900" %>
+      <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-indigo-700">Admin</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-1 text-sm font-medium">
+      <% {
+        "Departments" => admin_departments_path,
+        "Divisions" => admin_divisions_path,
+        "Sub-divisions" => admin_sub_divisions_path,
+        "Categories" => admin_categories_path,
+        "Reason templates" => admin_reason_templates_path,
+        "Users" => admin_users_path,
+        "Settings" => edit_admin_settings_path
+      }.each do |label, path| %>
+        <%= link_to label, path,
+              class: "rounded-lg px-3 py-1.5 transition #{current_page?(path) ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}" %>
+      <% end %>
+    </div>
+    <%= button_to "Sign out", destroy_user_session_path, method: :delete,
+          class: "cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100" %>
+  </div>
+</nav>

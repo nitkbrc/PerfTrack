@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_115055) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_131153) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -100,6 +100,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_115055) do
     t.index ["reason_template_id"], name: "index_req_histories_on_reason_template_id"
   end
 
+  create_table "settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "score_scale_k", default: 50, null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "students", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "department_id", null: false
@@ -127,6 +133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_115055) do
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "name"
+    t.boolean "password_change_required", default: false, null: false
     t.datetime "remember_created_at"
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token"

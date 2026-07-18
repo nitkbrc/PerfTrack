@@ -16,7 +16,9 @@ class Student < ApplicationRecord
   end
 
   # Sigmoid mapping of net points to 0..10; net = 0 scores exactly 5.0 (PRD section 5).
-  def overall_score(k: 50)
+  # k defaults to the admin-configurable setting; an explicit argument still wins.
+  def overall_score(k: nil)
+    k ||= Setting.instance.score_scale_k
     net = positive_total - negative_total.abs
     (10 / (1 + Math.exp(-net.to_f / k))).round(1)
   end

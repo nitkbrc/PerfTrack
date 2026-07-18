@@ -1,0 +1,15 @@
+<div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+  <%= form_with model: [ :admin, department ], class: "space-y-5" do |f| %>
+    <%= render "admin/shared/error_messages", record: department %>
+
+    <div>
+      <%= f.label :name, class: admin_label_classes %>
+      <%= f.text_field :name, autofocus: true, class: admin_input_classes %>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <%= f.submit class: admin_primary_button_classes %>
+      <%= link_to "Cancel", admin_departments_path, class: admin_link_classes %>
+    </div>
+  <% end %>
+</div>

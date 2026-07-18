@@ -1,0 +1,43 @@
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-bold text-slate-900">Categories</h1>
+  <%= link_to "New category", new_admin_category_path, class: admin_primary_button_classes %>
+</div>
+
+<% if @categories.any? %>
+  <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-3">Name</th>
+          <th class="px-4 py-3">Sub-division</th>
+          <th class="px-4 py-3">Division</th>
+          <th class="px-4 py-3">Points</th>
+          <th class="px-4 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <% @categories.each do |category| %>
+          <tr>
+            <td class="px-4 py-3 font-medium text-slate-900"><%= category.name %></td>
+            <td class="px-4 py-3 text-slate-600"><%= category.sub_division.name %></td>
+            <td class="px-4 py-3 text-slate-600"><%= category.sub_division.division.name %></td>
+            <td class="px-4 py-3 font-semibold <%= category.sub_division.division.positive? ? 'text-green-700' : 'text-red-700' %>">
+              <%= category.sub_division.division.positive? ? "+#{category.points}" : "-#{category.points}" %>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <div class="inline-flex items-center gap-4">
+                <%= link_to "Edit", edit_admin_category_path(category), class: admin_link_classes %>
+                <%= button_to "Delete", admin_category_path(category), method: :delete,
+                      data: { turbo_confirm: "Delete #{category.name}?" }, class: admin_delete_classes %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
+    No categories yet. Create a sub-division first, then add point-bearing categories under it.
+  </p>
+<% end %>

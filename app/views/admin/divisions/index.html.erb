@@ -1,0 +1,43 @@
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-bold text-slate-900">Divisions</h1>
+  <%= link_to "New division", new_admin_division_path, class: admin_primary_button_classes %>
+</div>
+
+<% if @divisions.any? %>
+  <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-3">Name</th>
+          <th class="px-4 py-3">Type</th>
+          <th class="px-4 py-3">Dean</th>
+          <th class="px-4 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <% @divisions.each do |division| %>
+          <tr>
+            <td class="px-4 py-3 font-medium text-slate-900"><%= division.name %></td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= division.positive? ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' %>">
+                <%= division.div_type %>
+              </span>
+            </td>
+            <td class="px-4 py-3 text-slate-600"><%= division.dean.name.presence || division.dean.email %></td>
+            <td class="px-4 py-3 text-right">
+              <div class="inline-flex items-center gap-4">
+                <%= link_to "Edit", edit_admin_division_path(division), class: admin_link_classes %>
+                <%= button_to "Delete", admin_division_path(division), method: :delete,
+                      data: { turbo_confirm: "Delete #{division.name}?" }, class: admin_delete_classes %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
+    No divisions yet. Create the first one.
+  </p>
+<% end %>

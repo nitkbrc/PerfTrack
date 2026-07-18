@@ -12,4 +12,14 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "home#index"
+
+  namespace :account do
+    resource :password, only: [ :edit, :update ]
+  end
+
+  namespace :admin do
+    root "divisions#index"
+    resources :departments, :divisions, :sub_divisions, :categories, :reason_templates, :users
+    resource :settings, only: [ :edit, :update ]
+  end
 end

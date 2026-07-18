@@ -1,0 +1,21 @@
+<h1 class="mb-6 text-2xl font-bold text-slate-900">Settings</h1>
+
+<div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+  <%= form_with model: @setting, url: admin_settings_path, method: :put, class: "space-y-5" do |f| %>
+    <%= render "admin/shared/error_messages", record: @setting %>
+
+    <div>
+      <%= f.label :score_scale_k, "Score scale constant (k)", class: admin_label_classes %>
+      <%= f.number_field :score_scale_k, min: 1, class: admin_input_classes %>
+      <p class="mt-1 text-xs text-slate-500">
+        Controls how steeply net points map to the 0–10 overall score. Smaller values
+        make scores react faster to points. Changing it immediately rescales every
+        student's displayed score — stored point history is never affected.
+      </p>
+    </div>
+
+    <div>
+      <%= f.submit "Save settings", class: admin_primary_button_classes %>
+    </div>
+  <% end %>
+</div>
