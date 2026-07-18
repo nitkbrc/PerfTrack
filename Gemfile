@@ -25,6 +25,9 @@ gem "devise"
 # Declarative validations for ActiveStorage attachments (content type, size)
 gem "active_storage_validations"
 
+# Policy-object authorization [https://github.com/varvet/pundit]
+gem "pundit"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
