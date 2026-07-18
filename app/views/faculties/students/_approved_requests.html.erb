@@ -1,0 +1,26 @@
+<% if requests.any? %>
+  <ul class="space-y-3">
+    <% requests.each do |request| %>
+      <li class="rounded-xl bg-white p-4 shadow-md ring-1 ring-slate-200">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-medium text-slate-900"><%= request.title %></p>
+            <p class="mt-0.5 text-xs text-slate-500">
+              <%= request.category.sub_division.division.name %> /
+              <%= request.category.sub_division.name %> /
+              <%= request.category.name %>
+            </p>
+          </div>
+          <span class="whitespace-nowrap text-sm font-bold <%= request.points_awarded.positive? ? "text-green-600" : "text-red-600" %>">
+            <%= request.points_awarded.positive? ? "+#{request.points_awarded}" : request.points_awarded %> pts
+          </span>
+        </div>
+        <p class="mt-2 text-xs text-slate-400">Approved <%= request.updated_at.strftime("%d %b %Y") %></p>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="rounded-xl bg-white p-6 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
+    <%= empty_message %>
+  </p>
+<% end %>

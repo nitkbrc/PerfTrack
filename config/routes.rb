@@ -41,6 +41,12 @@ Rails.application.routes.draw do
     end
   end
 
+  # Directory of students with scores, visible to every faculty member.
+  namespace :faculty, module: "faculties" do
+    root "students#index"
+    resources :students, only: [ :index, :show ]
+  end
+
   namespace :dean, module: "deans" do
     root "queue#index"
     resources :achievement_requests, only: [ :show ] do

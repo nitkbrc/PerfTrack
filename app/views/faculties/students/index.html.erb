@@ -1,0 +1,41 @@
+<%= render "faculties/shared/nav" %>
+
+<div class="mx-auto w-full max-w-4xl">
+  <h1 class="mb-1 text-2xl font-bold text-slate-900">Students</h1>
+  <p class="mb-6 text-sm text-slate-500">All students with their current overall score. Select a student for the full breakdown.</p>
+
+  <% if @students.any? %>
+    <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Name</th>
+            <th class="px-4 py-3">USN</th>
+            <th class="px-4 py-3">Department</th>
+            <th class="px-4 py-3 text-right">Overall score</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% @students.each do |student| %>
+            <tr class="transition hover:bg-slate-50">
+              <td class="px-4 py-3 font-medium">
+                <%= link_to student.user.name.presence || student.user.email, faculty_student_path(student),
+                      class: "text-indigo-600 hover:text-indigo-500" %>
+              </td>
+              <td class="px-4 py-3 text-slate-600"><%= student.usn %></td>
+              <td class="px-4 py-3 text-slate-600"><%= student.department.name %></td>
+              <td class="px-4 py-3 text-right">
+                <span class="font-semibold text-slate-900"><%= @scores[student.id] %></span>
+                <span class="text-xs text-slate-400">/ 10</span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
+      No students yet.
+    </p>
+  <% end %>
+</div>

@@ -10,13 +10,17 @@
         </p>
         <span class="inline-block rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700"><%= current_user.role %></span>
       </div>
-      <div class="mt-6 flex items-center justify-center gap-4">
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-4">
         <% if current_user.admin? %>
           <%= link_to "Admin panel", admin_root_path,
                 class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
         <% end %>
         <% if current_user.student? && current_user.student_profile %>
           <%= link_to "My dashboard", student_root_path,
+                class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
+        <% end %>
+        <% if current_user.faculty? %>
+          <%= link_to "Students", faculty_students_path,
                 class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
         <% end %>
         <% if current_user.faculty? && current_user.supervised_sub_divisions.exists? %>

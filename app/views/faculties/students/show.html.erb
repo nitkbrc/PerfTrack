@@ -1,0 +1,43 @@
+<%= render "faculties/shared/nav" %>
+
+<div class="mx-auto w-full max-w-4xl">
+  <div class="mb-6">
+    <%= link_to "← Back to students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+  </div>
+
+  <div class="mb-8 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900"><%= @student.user.name.presence || @student.user.email %></h1>
+      <p class="text-sm text-slate-500"><%= @student.usn %> · <%= @student.department.name %><%= " · Section #{@student.section}" if @student.section.present? %></p>
+    </div>
+  </div>
+
+  <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="rounded-xl bg-indigo-600 p-6 text-center shadow-md">
+      <p class="text-sm font-medium text-indigo-100">Overall score</p>
+      <p class="mt-1 text-4xl font-bold text-white"><%= @student.overall_score %><span class="text-lg font-medium text-indigo-200"> / 10</span></p>
+    </div>
+    <div class="rounded-xl bg-white p-6 text-center shadow-md ring-1 ring-slate-200">
+      <p class="text-sm font-medium text-slate-500">Positive points</p>
+      <p class="mt-1 text-4xl font-bold text-green-600"><%= @positive_total %></p>
+    </div>
+    <div class="rounded-xl bg-white p-6 text-center shadow-md ring-1 ring-slate-200">
+      <p class="text-sm font-medium text-slate-500">Negative points</p>
+      <p class="mt-1 text-4xl font-bold text-red-600"><%= @negative_total %></p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div>
+      <h2 class="mb-3 text-lg font-semibold text-green-700">Positive achievements</h2>
+      <%= render "faculties/students/approved_requests", requests: @positive_requests,
+            empty_message: "No approved positive achievements yet." %>
+    </div>
+
+    <div>
+      <h2 class="mb-3 text-lg font-semibold text-red-700">Negative records</h2>
+      <%= render "faculties/students/approved_requests", requests: @negative_requests,
+            empty_message: "No approved negative records." %>
+    </div>
+  </div>
+</div>
