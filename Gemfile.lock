@@ -81,6 +81,8 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    addressable (2.9.0)
+      public_suffix (>= 2.0.2, < 8.0)
     ast (2.4.3)
     base64 (0.3.0)
     bcrypt (3.1.22)
@@ -95,6 +97,15 @@ GEM
     bundler-audit (0.9.3)
       bundler (>= 1.2.0)
       thor (~> 1.0)
+    capybara (3.40.0)
+      addressable
+      matrix
+      mini_mime (>= 0.1.3)
+      nokogiri (~> 1.11)
+      rack (>= 1.6.0)
+      rack-test (>= 0.6.3)
+      regexp_parser (>= 1.5, < 3.0)
+      xpath (~> 3.2)
     concurrent-ruby (1.3.7)
     connection_pool (3.0.2)
     crass (1.0.7)
@@ -177,6 +188,7 @@ GEM
       net-pop
       net-smtp
     marcel (1.2.1)
+    matrix (0.4.3)
     mini_magick (5.3.2)
       logger
     mini_mime (1.1.5)
@@ -230,6 +242,7 @@ GEM
       actionpack (>= 7.0.0)
       activesupport (>= 7.0.0)
       rack
+    public_suffix (7.0.5)
     puma (8.0.2)
       nio4r (~> 2.0)
     pundit (2.5.2)
@@ -291,6 +304,7 @@ GEM
     responders (3.2.0)
       actionpack (>= 7.0)
       railties (>= 7.0)
+    rexml (3.4.4)
     rspec-core (3.13.6)
       rspec-support (~> 3.13.0)
     rspec-expectations (3.13.5)
@@ -340,7 +354,14 @@ GEM
     ruby-vips (2.3.0)
       ffi (~> 1.12)
       logger
+    rubyzip (3.4.1)
     securerandom (0.4.1)
+    selenium-webdriver (4.46.0)
+      base64 (~> 0.2)
+      logger (~> 1.4)
+      rexml (~> 3.2, >= 3.2.5)
+      rubyzip (>= 1.2.2, < 4.0)
+      websocket (~> 1.0)
     solid_cable (4.0.1)
       actioncable (>= 7.2)
       activejob (>= 7.2)
@@ -396,10 +417,13 @@ GEM
       actionview (>= 8.0.0)
       bindex (>= 0.4.0)
       railties (>= 8.0.0)
+    websocket (1.2.11)
     websocket-driver (0.8.2)
       base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
+    xpath (3.2.0)
+      nokogiri (~> 1.8)
     zeitwerk (2.8.2)
 
 PLATFORMS
@@ -417,6 +441,7 @@ DEPENDENCIES
   bootsnap
   brakeman
   bundler-audit
+  capybara
   debug
   devise
   factory_bot_rails
@@ -432,6 +457,7 @@ DEPENDENCIES
   rails (~> 8.1.3)
   rspec-rails
   rubocop-rails-omakase
+  selenium-webdriver
   solid_cable
   solid_cache
   solid_queue
