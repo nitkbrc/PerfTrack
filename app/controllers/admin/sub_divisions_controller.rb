@@ -2,7 +2,10 @@ module Admin
   class SubDivisionsController < BaseController
     def index
       authorize SubDivision
-      @sub_divisions = SubDivision.includes(:division, :supervisor).order(:name)
+      @show_archived = params[:archived].present?
+      scope = @show_archived ? SubDivision.archived : SubDivision.active
+      @sub_divisions = scope.includes(:division, :supervisor).order(:name)
+      @archived_count = SubDivision.archived.count
     end
 
     def new
@@ -35,6 +38,24 @@ module Admin
       sub_division = authorize SubDivision.find(params[:id])
       sub_division.destroy!
       redirect_to admin_sub_divisions_path, notice: "Sub-division deleted."
+    end
+
+    def archive
+      sub_division = authorize SubDivision.find(params[:id])
+      sub_division.archive!
+      redirect_to admin_sub_divisions_path,
+                  notice: "#{sub_division.name} archived, along with its categories."
+    end
+
+    def restore
+      sub_division = authorize SubDivision.find(params[:id])
+      if sub_division.division.archived?
+        redirect_to admin_sub_divisions_path(archived: 1),
+                    alert: "Restore the #{sub_division.division.name} division first."
+      else
+        sub_division.restore!
+        redirect_to admin_sub_divisions_path(archived: 1), notice: "#{sub_division.name} restored."
+      end
     end
 
     private

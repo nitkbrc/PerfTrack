@@ -2,7 +2,10 @@ module Admin
   class CategoriesController < BaseController
     def index
       authorize Category
-      @categories = Category.includes(sub_division: :division).order(:name)
+      @show_archived = params[:archived].present?
+      scope = @show_archived ? Category.archived : Category.active
+      @categories = scope.includes(sub_division: :division).order(:name)
+      @archived_count = Category.archived.count
     end
 
     def new
@@ -35,6 +38,23 @@ module Admin
       category = authorize Category.find(params[:id])
       category.destroy!
       redirect_to admin_categories_path, notice: "Category deleted."
+    end
+
+    def archive
+      category = authorize Category.find(params[:id])
+      category.archive!
+      redirect_to admin_categories_path, notice: "#{category.name} archived."
+    end
+
+    def restore
+      category = authorize Category.find(params[:id])
+      if category.sub_division.archived?
+        redirect_to admin_categories_path(archived: 1),
+                    alert: "Restore the #{category.sub_division.name} sub-division first."
+      else
+        category.restore!
+        redirect_to admin_categories_path(archived: 1), notice: "#{category.name} restored."
+      end
     end
 
     private

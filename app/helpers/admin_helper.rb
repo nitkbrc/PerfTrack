@@ -20,4 +20,13 @@ module AdminHelper
   def admin_delete_classes
     "cursor-pointer text-sm font-medium text-red-600 hover:text-red-500"
   end
+
+  def admin_archive_classes
+    "cursor-pointer text-sm font-medium text-amber-600 hover:text-amber-500"
+  end
+
+  def archived_badge(record)
+    tag.span "Archived #{record.archived_at.strftime('%d %b %Y')}",
+             class: "ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500"
+  end
 end

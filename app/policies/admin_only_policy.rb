@@ -22,6 +22,14 @@ class AdminOnlyPolicy < ApplicationPolicy
     user.admin?
   end
 
+  def archive?
+    user.admin?
+  end
+
+  def restore?
+    user.admin?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       user.admin? ? scope.all : scope.none

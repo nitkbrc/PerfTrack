@@ -37,6 +37,28 @@ RSpec.describe "Admin divisions", type: :request do
     expect(response.body).to include(%(value="#{free_faculty.id}"))
   end
 
+  it "deletes an empty division" do
+    division = create(:division)
+
+    expect {
+      delete "/admin/divisions/#{division.id}"
+    }.to change(Division, :count).by(-1)
+
+    expect(response).to redirect_to("/admin/divisions")
+  end
+
+  it "refuses to delete a division that still has sub-divisions, naming the blocker" do
+    division = create(:division)
+    create(:sub_division, division: division)
+
+    expect {
+      delete "/admin/divisions/#{division.id}", headers: { "HTTP_REFERER" => "/admin/divisions" }
+    }.not_to change(Division, :count)
+
+    expect(response).to redirect_to("/admin/divisions")
+    expect(flash[:alert]).to eq("Cannot delete — sub divisions still belong to it. Remove or reassign them first.")
+  end
+
   it "re-renders the form with the exclusivity error when the dean is already a supervisor" do
     supervisor = create(:user, :faculty)
     create(:sub_division, supervisor: supervisor)

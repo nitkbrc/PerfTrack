@@ -1,6 +1,11 @@
 <div class="mb-6 flex items-center justify-between">
-  <h1 class="text-2xl font-bold text-slate-900">Sub-divisions</h1>
-  <%= link_to "New sub-division", new_admin_sub_division_path, class: admin_primary_button_classes %>
+  <h1 class="text-2xl font-bold text-slate-900"><%= @show_archived ? "Archived sub-divisions" : "Sub-divisions" %></h1>
+  <div class="flex items-center gap-4">
+    <%= render "admin/shared/archived_toggle", show_archived: @show_archived,
+          archived_count: @archived_count, active_path: admin_sub_divisions_path,
+          archived_path: admin_sub_divisions_path(archived: 1) %>
+    <%= link_to "New sub-division", new_admin_sub_division_path, class: admin_primary_button_classes %>
+  </div>
 </div>
 
 <% if @sub_divisions.any? %>
@@ -19,12 +24,24 @@
           <tr>
             <td class="px-4 py-3 font-medium text-slate-900"><%= sub_division.name %></td>
             <td class="px-4 py-3 text-slate-600"><%= sub_division.division.name %></td>
-            <td class="px-4 py-3 text-slate-600"><%= sub_division.supervisor.name.presence || sub_division.supervisor.email %></td>
+            <td class="px-4 py-3 text-slate-600">
+              <%= sub_division.supervisor.name.presence || sub_division.supervisor.email %>
+              <%= archived_badge(sub_division) if sub_division.archived? %>
+            </td>
             <td class="px-4 py-3 text-right">
               <div class="inline-flex items-center gap-4">
-                <%= link_to "Edit", edit_admin_sub_division_path(sub_division), class: admin_link_classes %>
-                <%= button_to "Delete", admin_sub_division_path(sub_division), method: :delete,
-                      data: { turbo_confirm: "Delete #{sub_division.name}?" }, class: admin_delete_classes %>
+                <% if sub_division.archived? %>
+                  <%= button_to "Restore", restore_admin_sub_division_path(sub_division), method: :patch,
+                        class: admin_link_classes %>
+                  <%= button_to "Delete permanently", admin_sub_division_path(sub_division), method: :delete,
+                        data: { turbo_confirm: "Permanently delete #{sub_division.name}? This cannot be undone." },
+                        class: admin_delete_classes %>
+                <% else %>
+                  <%= link_to "Edit", edit_admin_sub_division_path(sub_division), class: admin_link_classes %>
+                  <%= button_to "Archive", archive_admin_sub_division_path(sub_division), method: :patch,
+                        data: { turbo_confirm: "Archive #{sub_division.name}? Its categories will be archived too. You can restore it later." },
+                        class: admin_archive_classes %>
+                <% end %>
               </div>
             </td>
           </tr>
@@ -34,6 +51,6 @@
   </div>
 <% else %>
   <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
-    No sub-divisions yet. Create a division first, then add sub-divisions under it.
+    <%= @show_archived ? "No archived sub-divisions." : "No sub-divisions yet. Create a division first, then add sub-divisions under it." %>
   </p>
 <% end %>

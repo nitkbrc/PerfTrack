@@ -4,7 +4,7 @@
 
     <div>
       <%= f.label :division_id, "Division", class: admin_label_classes %>
-      <%= f.collection_select :division_id, Division.order(:name), :id, :name,
+      <%= f.collection_select :division_id, Division.active.order(:name), :id, :name,
             { prompt: "Select a division" }, class: admin_input_classes %>
     </div>
 

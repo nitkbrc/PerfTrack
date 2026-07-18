@@ -53,18 +53,19 @@ module Students
     end
 
     # Serialized once into the form so the cascading selects work without
-    # network round-trips.
+    # network round-trips. Archived branches are filtered out — new requests
+    # can only target the active tree.
     def load_division_tree
-      @division_tree = Division.includes(sub_divisions: :categories).order(:name).map do |division|
+      @division_tree = Division.active.includes(sub_divisions: :categories).order(:name).map do |division|
         {
           id: division.id,
           name: division.name,
           divType: division.div_type,
-          subDivisions: division.sub_divisions.sort_by { |sd| sd.name.to_s }.map do |sub_division|
+          subDivisions: division.sub_divisions.reject(&:archived?).sort_by { |sd| sd.name.to_s }.map do |sub_division|
             {
               id: sub_division.id,
               name: sub_division.name,
-              categories: sub_division.categories.sort_by { |c| c.name.to_s }.map do |category|
+              categories: sub_division.categories.reject(&:archived?).sort_by { |c| c.name.to_s }.map do |category|
                 { id: category.id, name: category.name, points: category.points }
               end
             }

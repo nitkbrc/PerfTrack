@@ -9,6 +9,10 @@ class AchievementRequest < ApplicationRecord
 
   validates :title, presence: true
 
+  # Backend guard behind the picker filtering: archived (soft-deleted)
+  # categories keep their existing requests but never accept new ones.
+  validate :category_is_not_archived, on: :create
+
   validates :proofs, attached: true,
                      content_type: [ "image/png" ],
                      size: { less_than: 5.megabytes }
@@ -69,5 +73,13 @@ class AchievementRequest < ApplicationRecord
     # Enqueued after the transaction commits so the job never sees a rolled-back
     # approval (PRD section 8 — notify on verification).
     DeanApprovalNotificationJob.perform_later(id)
+  end
+
+  private
+
+  def category_is_not_archived
+    if category&.archived?
+      errors.add(:category, "has been archived and no longer accepts new requests")
+    end
   end
 end

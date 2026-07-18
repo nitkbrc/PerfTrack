@@ -21,7 +21,7 @@
       <div>
         <%= f.label :category_id, "Category", class: "block text-sm font-medium text-slate-700" %>
         <%= f.grouped_collection_select :category_id,
-              supervised_sub_divisions.includes(:categories, :division).order(:name), :categories, :name,
+              supervised_sub_divisions.active.includes(:active_categories, :division).order(:name), :active_categories, :name,
               :id, ->(c) { "#{c.name} (#{c.points} pts)" },
               { prompt: "Select a category", selected: params.dig(:achievement_request, :category_id) },
               class: admin_input_classes %>

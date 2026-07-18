@@ -2,7 +2,10 @@ module Admin
   class DivisionsController < BaseController
     def index
       authorize Division
-      @divisions = Division.includes(:dean).order(:name)
+      @show_archived = params[:archived].present?
+      scope = @show_archived ? Division.archived : Division.active
+      @divisions = scope.includes(:dean).order(:name)
+      @archived_count = Division.archived.count
     end
 
     def new
@@ -35,6 +38,19 @@ module Admin
       division = authorize Division.find(params[:id])
       division.destroy!
       redirect_to admin_divisions_path, notice: "Division deleted."
+    end
+
+    def archive
+      division = authorize Division.find(params[:id])
+      division.archive!
+      redirect_to admin_divisions_path,
+                  notice: "#{division.name} archived, along with its sub-divisions and categories."
+    end
+
+    def restore
+      division = authorize Division.find(params[:id])
+      division.restore!
+      redirect_to admin_divisions_path(archived: 1), notice: "#{division.name} restored."
     end
 
     private

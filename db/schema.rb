@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -56,11 +56,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_180000) do
   end
 
   create_table "categories", force: :cascade do |t|
+    t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.string "name"
     t.integer "points"
     t.bigint "sub_division_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["archived_at"], name: "index_categories_on_archived_at"
     t.index ["sub_division_id"], name: "index_categories_on_sub_division_id"
   end
 
@@ -71,11 +73,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_180000) do
   end
 
   create_table "divisions", force: :cascade do |t|
+    t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.bigint "dean_user_id", null: false
     t.string "div_type", null: false
     t.string "name"
     t.datetime "updated_at", null: false
+    t.index ["archived_at"], name: "index_divisions_on_archived_at"
     t.index ["dean_user_id"], name: "index_divisions_on_dean_user_id", unique: true
   end
 
@@ -131,11 +135,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_180000) do
   end
 
   create_table "sub_divisions", force: :cascade do |t|
+    t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.bigint "division_id", null: false
     t.string "name"
     t.bigint "supervisor_user_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["archived_at"], name: "index_sub_divisions_on_archived_at"
     t.index ["division_id"], name: "index_sub_divisions_on_division_id"
     t.index ["supervisor_user_id"], name: "index_sub_divisions_on_supervisor_user_id"
   end

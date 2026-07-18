@@ -4,7 +4,7 @@
 
     <div>
       <%= f.label :sub_division_id, "Sub-division", class: admin_label_classes %>
-      <%= f.collection_select :sub_division_id, SubDivision.includes(:division).order(:name), :id,
+      <%= f.collection_select :sub_division_id, SubDivision.active.includes(:division).order(:name), :id,
             ->(s) { "#{s.division.name} / #{s.name}" }, { prompt: "Select a sub-division" }, class: admin_input_classes %>
     </div>
 

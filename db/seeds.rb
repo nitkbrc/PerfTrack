@@ -1,9 +1,204 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Example:
-#
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+# Idempotent demo data: rerunning `bin/rails db:seed` never duplicates or
+# crashes — structure uses find_or_create_by and requests are only created
+# for seeded students who don't have any yet.
+
+# 1x1 PNG so seeded requests pass the "at least one PNG proof" validation.
+PROOF_PNG = Base64.decode64(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
+
+def proof
+  { io: StringIO.new(PROOF_PNG), filename: "proof.png", content_type: "image/png" }
+end
+
+def seed_user(name:, email:, role:)
+  User.find_or_create_by!(email: email) do |user|
+    user.name = name
+    user.role = role
+    user.password = "password123"
+    user.password_change_required = false
+  end
+end
+
+puts "Seeding departments..."
+departments = [ "CSE", "ECE", "Mechanical" ].index_with do |name|
+  Department.find_or_create_by!(name: name)
+end
+
+puts "Seeding faculty..."
+dean_tech       = seed_user(name: "Dr. Meera Nair",    email: "meera.nair@scats.edu",    role: "faculty")
+dean_culture    = seed_user(name: "Dr. Suresh Iyer",   email: "suresh.iyer@scats.edu",   role: "faculty")
+dean_discipline = seed_user(name: "Dr. Arjun Rao",     email: "arjun.rao@scats.edu",     role: "faculty")
+sup_technical   = seed_user(name: "Prof. Kavya Shetty", email: "kavya.shetty@scats.edu", role: "faculty")
+sup_culture     = seed_user(name: "Prof. Anil Joshi",  email: "anil.joshi@scats.edu",    role: "faculty")
+sup_conduct     = seed_user(name: "Prof. Ravi Kumar",  email: "ravi.kumar@scats.edu",    role: "faculty")
+
+puts "Seeding admin..."
+User.find_or_create_by!(email: "admin@scats.edu") do |user|
+  user.name = "SCATS Admin"
+  user.role = "admin"
+  user.password = "admin123"
+  user.password_change_required = false
+end
+
+puts "Seeding divisions, sub-divisions and categories..."
+structure = {
+  [ "Technical", "positive", dean_tech ] => {
+    [ "Coding & Hackathons", sup_technical ] => { "National hackathon win" => 40, "Inter-college hackathon win" => 25, "Open-source contribution" => 15 },
+    [ "Paper Presentations", sup_technical ] => { "Journal paper published" => 50, "Tech fest presentation" => 10 }
+  },
+  [ "Cultural & Sports", "positive", dean_culture ] => {
+    [ "Sports", sup_culture ] => { "University-level medal" => 30, "Inter-college tournament" => 15 },
+    [ "Cultural Events", sup_culture ] => { "Stage performance" => 10, "Event organisation" => 12 }
+  },
+  [ "Discipline", "negative", dean_discipline ] => {
+    [ "Conduct", sup_conduct ] => { "Ragging incident" => 50, "Exam malpractice" => 40, "Property damage" => 20, "Repeated late attendance" => 10 }
+  }
+}
+
+categories = {}
+structure.each do |(div_name, div_type, dean), sub_divisions|
+  division = Division.find_or_create_by!(name: div_name) do |d|
+    d.div_type = div_type
+    d.dean = dean
+  end
+  sub_divisions.each do |(sub_name, supervisor), cats|
+    sub_division = SubDivision.find_or_create_by!(name: sub_name, division: division) do |sd|
+      sd.supervisor = supervisor
+    end
+    cats.each do |cat_name, points|
+      categories[cat_name] = Category.find_or_create_by!(name: cat_name, sub_division: sub_division) do |c|
+        c.points = points
+      end
+    end
+  end
+end
+
+puts "Seeding reason templates..."
+[
+  "Please attach clearer proof — the current image is not readable.",
+  "The certificate does not mention your name; please upload the correct one.",
+  "This achievement belongs under a different category. Please resubmit accordingly.",
+  "Insufficient evidence to verify this claim.",
+  "Please add the event date and organiser details to the description."
+].each { |text| ReasonTemplate.find_or_create_by!(message_text: text) }
+
+puts "Seeding students..."
+student_rows = [
+  [ "Asha Kumar",    "asha.kumar@scats.edu",    "1SC22CS001", "CSE", 5 ],
+  [ "Vikram Singh",  "vikram.singh@scats.edu",  "1SC22CS002", "CSE", 5 ],
+  [ "Priya Patel",   "priya.patel@scats.edu",   "1SC23CS003", "CSE", 3 ],
+  [ "Rahul Desai",   "rahul.desai@scats.edu",   "1SC22EC001", "ECE", 5 ],
+  [ "Sneha Reddy",   "sneha.reddy@scats.edu",   "1SC23EC002", "ECE", 3 ],
+  [ "Arjun Menon",   "arjun.menon@scats.edu",   "1SC24ME001", "Mechanical", 1 ],
+  [ "Divya Sharma",  "divya.sharma@scats.edu",  "1SC22ME002", "Mechanical", 5 ],
+  [ "Karthik Gowda", "karthik.gowda@scats.edu", "1SC23CS004", "CSE", 3 ]
+]
+
+students = student_rows.map do |name, email, usn, dept, sem|
+  user = seed_user(name: name, email: email, role: "student")
+  Student.find_or_create_by!(usn: usn) do |s|
+    s.user = user
+    s.department = departments.fetch(dept)
+    s.sem = sem
+  end
+end
+
+puts "Seeding achievement requests..."
+def request_for(student, category, title, description)
+  AchievementRequest.submit!(
+    student: student, actor: student.user,
+    attrs: { category: category, title: title, description: description, proofs: [ proof ] }
+  )
+end
+
+def supervisor_of(request) = request.category.sub_division.supervisor
+def dean_of(request) = request.category.sub_division.division.dean
+def any_template = ReasonTemplate.order("RANDOM()").first
+
+asha, vikram, priya, rahul, sneha, arjun, divya, karthik = students
+
+# Each block is skipped when the student already has requests, keeping the
+# seed rerunnable.
+if asha.achievement_requests.none?
+  r = request_for(asha, categories["National hackathon win"], "Won Smart India Hackathon", "First place in the national finals.")
+  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
+  r.dean_approve!(actor: dean_of(r))
+
+  r = request_for(asha, categories["Open-source contribution"], "Merged PR into Rails", "Contributed a documentation fix.")
+  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
+
+  request_for(asha, categories["Tech fest presentation"], "Presented at Techkriti", "Talk on service workers.")
+end
+
+if vikram.achievement_requests.none?
+  r = request_for(vikram, categories["University-level medal"], "Gold in 400m sprint", "University athletics meet.")
+  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
+  r.dean_approve!(actor: dean_of(r))
+
+  r = AchievementRequest.supervisor_initiate!(
+    student: vikram, actor: sup_conduct,
+    attrs: { category: categories["Repeated late attendance"], title: "Late to first hour 12 times",
+             description: "Attendance register, March–April.", proofs: [ proof ] }
+  )
+  r.dean_approve!(actor: dean_of(r))
+end
+
+if priya.achievement_requests.none?
+  r = request_for(priya, categories["Stage performance"], "Classical dance at Utsav", "Solo Bharatanatyam performance.")
+  r.transition!(to: :supervisor_reverted, actor: supervisor_of(r), action: "supervisor_revert",
+                comment: "Please attach clearer proof — the current image is not readable.",
+                reason_template: any_template)
+end
+
+if rahul.achievement_requests.none?
+  r = request_for(rahul, categories["Inter-college tournament"], "Cricket tournament winner", "College team captain.")
+  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
+  r.transition!(to: :dean_reverted, actor: dean_of(r), action: "dean_revert",
+                comment: "The certificate does not mention the student's name; please clarify.",
+                reason_template: any_template)
+end
+
+if sneha.achievement_requests.none?
+  r = request_for(sneha, categories["Journal paper published"], "Paper in IEEE Access", "Co-authored with faculty.")
+  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
+end
+
+if arjun.achievement_requests.none?
+  r = request_for(arjun, categories["Event organisation"], "Organised freshers' day", "Led a team of ten volunteers.")
+  r.transition!(to: :rejected, actor: supervisor_of(r), action: "supervisor_reject",
+                comment: "Insufficient evidence to verify this claim.", reason_template: any_template)
+end
+
+if divya.achievement_requests.none?
+  r = AchievementRequest.supervisor_initiate!(
+    student: divya, actor: sup_conduct,
+    attrs: { category: categories["Property damage"], title: "Broken lab equipment",
+             description: "Damaged an oscilloscope in the electronics lab.", proofs: [ proof ] }
+  )
+  r.dean_approve!(actor: dean_of(r))
+
+  r = request_for(divya, categories["Inter-college hackathon win"], "Won CodeStorm 2026", "Team of three, first place.")
+  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
+  r.dean_approve!(actor: dean_of(r))
+end
+
+if karthik.achievement_requests.none?
+  request_for(karthik, categories["Inter-college hackathon win"], "Runner-up at HackBlitz", "48-hour hackathon, second place.")
+end
+
+# dean_approve! already enqueues DeanApprovalNotificationJob asynchronously;
+# run it inline too so notifications exist even if the queue worker isn't
+# around. The job is idempotent, so overlapping runs are harmless.
+puts "Ensuring notifications for approved requests..."
+AchievementRequest.dean_approved.pluck(:id).each { |id| DeanApprovalNotificationJob.perform_now(id) }
+
+puts <<~DONE
+
+  Seeded! Demo logins (all passwords: password123, admin: admin123):
+    Admin:              admin@scats.edu
+    Dean (Technical):   meera.nair@scats.edu
+    Dean (Discipline):  arjun.rao@scats.edu
+    Supervisor:         kavya.shetty@scats.edu
+    Student:            asha.kumar@scats.edu
+DONE

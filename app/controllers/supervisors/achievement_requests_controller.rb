@@ -130,7 +130,7 @@ module Supervisors
     end
 
     def supervised_categories
-      Category.joins(:sub_division).where(sub_divisions: { supervisor_user_id: current_user.id })
+      Category.active.joins(:sub_division).where(sub_divisions: { supervisor_user_id: current_user.id })
     end
 
     def request_params

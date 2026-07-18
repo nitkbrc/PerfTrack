@@ -60,7 +60,16 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root "divisions#index"
-    resources :departments, :divisions, :sub_divisions, :categories, :reason_templates, :users
+
+    concern :archivable do
+      member do
+        patch :archive
+        patch :restore
+      end
+    end
+
+    resources :departments, :reason_templates, :users
+    resources :divisions, :sub_divisions, :categories, concerns: :archivable
     resources :user_imports, only: [ :new, :create ] do
       get :template, on: :collection
     end

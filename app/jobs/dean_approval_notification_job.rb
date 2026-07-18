@@ -13,8 +13,11 @@ class DeanApprovalNotificationJob < ApplicationJob
               "#{direction}: #{points.abs} point#{"s" unless points.abs == 1} " \
               "#{points.positive? ? "added to" : "deducted from"} your record."
 
-    Notification.create!(recipient: request.student.user,
-                         achievement_request: request,
-                         message: message)
+    # A request is dean-approved exactly once, so one notification per request;
+    # find_or_create_by! keeps retries and duplicate enqueues harmless.
+    Notification.find_or_create_by!(recipient: request.student.user,
+                                    achievement_request: request) do |notification|
+      notification.message = message
+    end
   end
 end

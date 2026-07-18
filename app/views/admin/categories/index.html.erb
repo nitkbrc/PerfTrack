@@ -1,6 +1,11 @@
 <div class="mb-6 flex items-center justify-between">
-  <h1 class="text-2xl font-bold text-slate-900">Categories</h1>
-  <%= link_to "New category", new_admin_category_path, class: admin_primary_button_classes %>
+  <h1 class="text-2xl font-bold text-slate-900"><%= @show_archived ? "Archived categories" : "Categories" %></h1>
+  <div class="flex items-center gap-4">
+    <%= render "admin/shared/archived_toggle", show_archived: @show_archived,
+          archived_count: @archived_count, active_path: admin_categories_path,
+          archived_path: admin_categories_path(archived: 1) %>
+    <%= link_to "New category", new_admin_category_path, class: admin_primary_button_classes %>
+  </div>
 </div>
 
 <% if @categories.any? %>
@@ -23,12 +28,22 @@
             <td class="px-4 py-3 text-slate-600"><%= category.sub_division.division.name %></td>
             <td class="px-4 py-3 font-semibold <%= category.sub_division.division.positive? ? 'text-green-700' : 'text-red-700' %>">
               <%= category.sub_division.division.positive? ? "+#{category.points}" : "-#{category.points}" %>
+              <%= archived_badge(category) if category.archived? %>
             </td>
             <td class="px-4 py-3 text-right">
               <div class="inline-flex items-center gap-4">
-                <%= link_to "Edit", edit_admin_category_path(category), class: admin_link_classes %>
-                <%= button_to "Delete", admin_category_path(category), method: :delete,
-                      data: { turbo_confirm: "Delete #{category.name}?" }, class: admin_delete_classes %>
+                <% if category.archived? %>
+                  <%= button_to "Restore", restore_admin_category_path(category), method: :patch,
+                        class: admin_link_classes %>
+                  <%= button_to "Delete permanently", admin_category_path(category), method: :delete,
+                        data: { turbo_confirm: "Permanently delete #{category.name}? This cannot be undone." },
+                        class: admin_delete_classes %>
+                <% else %>
+                  <%= link_to "Edit", edit_admin_category_path(category), class: admin_link_classes %>
+                  <%= button_to "Archive", archive_admin_category_path(category), method: :patch,
+                        data: { turbo_confirm: "Archive #{category.name}? Students and supervisors won't be able to pick it for new requests. You can restore it later." },
+                        class: admin_archive_classes %>
+                <% end %>
               </div>
             </td>
           </tr>
@@ -38,6 +53,6 @@
   </div>
 <% else %>
   <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
-    No categories yet. Create a sub-division first, then add point-bearing categories under it.
+    <%= @show_archived ? "No archived categories." : "No categories yet. Create a sub-division first, then add point-bearing categories under it." %>
   </p>
 <% end %>
