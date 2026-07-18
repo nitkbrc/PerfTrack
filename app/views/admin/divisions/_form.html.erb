@@ -15,9 +15,9 @@
 
     <div>
       <%= f.label :dean_user_id, "Dean", class: admin_label_classes %>
-      <%= f.collection_select :dean_user_id, User.faculty.order(:name), :id,
+      <%= f.collection_select :dean_user_id, User.eligible_deans(division.dean_user_id).order(:name), :id,
             ->(u) { u.name.presence || u.email }, { prompt: "Select a faculty member" }, class: admin_input_classes %>
-      <p class="mt-1 text-xs text-slate-500">A dean cannot also be a supervisor of any sub-division.</p>
+      <p class="mt-1 text-xs text-slate-500">Only faculty who are not already a dean or a supervisor are listed.</p>
     </div>
 
     <div class="flex items-center gap-4">

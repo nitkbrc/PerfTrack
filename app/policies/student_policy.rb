@@ -1,8 +1,9 @@
 class StudentPolicy < ApplicationPolicy
-  # Every faculty member (assigned or not) and admins can browse the
-  # student directory with scores; students cannot see each other.
+  # Every faculty member (assigned or not) can browse the student directory
+  # with scores. Admins manage structure and accounts, not student records;
+  # students cannot see each other.
   def index?
-    user.faculty? || user.admin?
+    user.faculty?
   end
 
   def show?

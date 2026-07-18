@@ -37,8 +37,8 @@
         </div>
 
         <div>
-          <%= sp.label :section, class: admin_label_classes %>
-          <%= sp.text_field :section, class: admin_input_classes %>
+          <%= sp.label :sem, "Semester", class: admin_label_classes %>
+          <%= sp.select :sem, (1..8).to_a, { prompt: "Select a semester" }, class: admin_input_classes %>
         </div>
       <% end %>
     </fieldset>

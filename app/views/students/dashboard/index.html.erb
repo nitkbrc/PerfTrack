@@ -45,6 +45,9 @@
               <td class="px-4 py-3 font-medium">
                 <%= link_to request.title, student_achievement_request_path(request),
                       class: "text-indigo-600 hover:text-indigo-500" %>
+                <% if request.supervisor_reverted? %>
+                  <%= attention_dot("Reverted — waiting for your resubmission") %>
+                <% end %>
               </td>
               <td class="px-4 py-3 text-slate-600"><%= request.category.name %></td>
               <td class="px-4 py-3">

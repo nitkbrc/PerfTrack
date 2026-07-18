@@ -1,6 +1,9 @@
 <nav class="mx-auto mb-8 w-full max-w-4xl rounded-xl bg-white p-4 shadow-md ring-1 ring-slate-200">
   <div class="flex flex-wrap items-center justify-between gap-4">
-    <%= link_to "SCATS", student_root_path, class: "text-lg font-bold text-slate-900" %>
+    <span class="flex items-center gap-1.5">
+      <%= link_to "SCATS", student_root_path, class: "text-lg font-bold text-slate-900" %>
+      <%= attention_dot("A reverted request is waiting for you") if student_attention_needed? %>
+    </span>
     <div class="flex items-center gap-4">
       <%= render "shared/notification_bell" %>
       <span class="text-sm text-slate-500"><%= current_user.name.presence || current_user.email %></span>

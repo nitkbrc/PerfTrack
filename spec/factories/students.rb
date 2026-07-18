@@ -3,6 +3,6 @@ FactoryBot.define do
     sequence(:usn) { |n| "1XX23CS#{format('%03d', n)}" }
     user
     department
-    section { "A" }
+    sem { 3 }
   end
 end

@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "notifications" do %>
-  <details class="relative" <%= "open" if params[:open].present? %>>
+  <details class="relative" data-controller="dismiss" <%= "open" if params[:open].present? %>>
     <summary class="flex cursor-pointer list-none items-center gap-1 rounded-lg p-1.5 transition hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-6 w-6 text-slate-600">
         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
@@ -14,10 +14,18 @@
     <div class="absolute right-0 z-20 mt-2 w-80 rounded-xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
       <div class="mb-2 flex items-center justify-between">
         <h3 class="text-sm font-semibold text-slate-900">Notifications</h3>
-        <% if @unread_count.positive? %>
-          <%= button_to "Mark all read", mark_all_read_notifications_path, method: :patch,
-                class: "cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-500" %>
-        <% end %>
+        <div class="flex items-center gap-3">
+          <% if @unread_count.positive? %>
+            <%= button_to "Mark all read", mark_all_read_notifications_path, method: :patch,
+                  class: "cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-500" %>
+          <% end %>
+          <button type="button" data-action="dismiss#close" aria-label="Close notifications"
+                  class="cursor-pointer rounded p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <% if @notifications.any? %>

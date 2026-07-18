@@ -53,7 +53,7 @@ RSpec.describe "Admin users", type: :request do
       post "/admin/users", params: { user: {
         name: "New Student", email: "newstud@example.com", role: "student",
         password: "password123", password_confirmation: "password123",
-        student_profile_attributes: { usn: "1XX23CS999", department_id: department.id, section: "B" }
+        student_profile_attributes: { usn: "1XX23CS999", department_id: department.id, sem: 5 }
       } }
     }.to change(User, :count).by(1).and change(Student, :count).by(1)
 
@@ -67,7 +67,7 @@ RSpec.describe "Admin users", type: :request do
       post "/admin/users", params: { user: {
         name: "New Faculty 2", email: "newfac2@example.com", role: "faculty",
         password: "password123", password_confirmation: "password123",
-        student_profile_attributes: { usn: "", department_id: "", section: "" }
+        student_profile_attributes: { usn: "", department_id: "", sem: "" }
       } }
     }.to change(User, :count).by(1)
 

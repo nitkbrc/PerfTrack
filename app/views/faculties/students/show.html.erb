@@ -8,7 +8,7 @@
   <div class="mb-8 flex items-center justify-between">
     <div>
       <h1 class="text-2xl font-bold text-slate-900"><%= @student.user.name.presence || @student.user.email %></h1>
-      <p class="text-sm text-slate-500"><%= @student.usn %> · <%= @student.department.name %><%= " · Section #{@student.section}" if @student.section.present? %></p>
+      <p class="text-sm text-slate-500"><%= @student.usn %> · <%= @student.department.name %><%= " · Sem #{@student.sem}" if @student.sem.present? %></p>
     </div>
   </div>
 

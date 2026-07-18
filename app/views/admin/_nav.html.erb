@@ -12,6 +12,7 @@
         "Categories" => admin_categories_path,
         "Reason templates" => admin_reason_templates_path,
         "Users" => admin_users_path,
+        "Import users" => new_admin_user_import_path,
         "Settings" => edit_admin_settings_path
       }.each do |label, path| %>
         <%= link_to label, path,

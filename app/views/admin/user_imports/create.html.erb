@@ -1,0 +1,63 @@
+<div class="mx-auto max-w-3xl">
+  <h1 class="mb-2 text-2xl font-bold text-slate-900">Import results</h1>
+  <p class="mb-6 text-sm text-slate-500">
+    <span class="font-semibold text-green-700"><%= @import.created.size %> created</span> ·
+    <span class="font-semibold text-red-700"><%= @import.failed.size %> failed</span>
+  </p>
+
+  <% if @import.failed.any? %>
+    <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <p class="font-semibold">Some rows were not imported.</p>
+      <ul class="mt-1 list-disc pl-5">
+        <% @import.failed.each do |result| %>
+          <li>Line <%= result.line %> (<%= result.email.presence || result.name %>): <%= result.error %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-6 flex items-center gap-4">
+    <%# The passwords below are only available on this page — the CSV link
+        carries the same data for safekeeping. %>
+    <a href="data:text/csv;base64,<%= Base64.strict_encode64(@import.results_csv) %>"
+       download="scats_import_results.csv"
+       class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">
+      Download results CSV (includes passwords)
+    </a>
+    <%= link_to "Import another file", new_admin_user_import_path, class: admin_link_classes %>
+    <%= link_to "Back to users", admin_users_path, class: admin_link_classes %>
+  </div>
+
+  <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-3">Line</th>
+          <th class="px-4 py-3">Name</th>
+          <th class="px-4 py-3">Email</th>
+          <th class="px-4 py-3">Role</th>
+          <th class="px-4 py-3">Temporary password</th>
+          <th class="px-4 py-3">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <% @import.results.each do |result| %>
+          <tr class="<%= "bg-red-50/50" unless result.created? %>">
+            <td class="px-4 py-3 text-slate-500"><%= result.line %></td>
+            <td class="px-4 py-3 font-medium text-slate-900"><%= result.name %></td>
+            <td class="px-4 py-3 text-slate-600"><%= result.email %></td>
+            <td class="px-4 py-3 text-slate-600"><%= result.role %></td>
+            <td class="px-4 py-3 font-mono text-xs text-slate-700"><%= result.password || "—" %></td>
+            <td class="px-4 py-3">
+              <% if result.created? %>
+                <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Created</span>
+              <% else %>
+                <span class="text-xs text-red-700"><%= result.error %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -5,6 +5,9 @@ class Division < ApplicationRecord
 
   enum :div_type, { positive: "positive", negative: "negative" }
 
+  # Backs the unique DB index so a duplicate dean re-renders the form with an
+  # error instead of raising ActiveRecord::RecordNotUnique.
+  validates :dean_user_id, uniqueness: { message: "is already the dean of another division" }
   validate :dean_is_not_a_supervisor
 
   private

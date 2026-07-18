@@ -1,0 +1,15 @@
+<%# Dismissible flash banners; width is controlled by the caller. %>
+<% { notice: [ notice, "border-green-200 bg-green-50 text-green-800" ],
+     alert: [ alert, "border-red-200 bg-red-50 text-red-800" ] }.each do |kind, (message, classes)| %>
+  <% next if message.blank? %>
+  <div class="mb-6 flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm <%= classes %> <%= width_classes %>"
+       data-controller="dismiss" data-turbo-temporary>
+    <span><%= message %></span>
+    <button type="button" data-action="dismiss#remove" aria-label="Dismiss"
+            class="cursor-pointer rounded p-0.5 opacity-60 transition hover:opacity-100">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+<% end %>

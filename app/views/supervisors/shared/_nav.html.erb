@@ -6,7 +6,10 @@
     </div>
     <div class="flex items-center gap-4">
       <%= render "shared/notification_bell" %>
-      <%= link_to "Review queue", supervisor_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      <span class="flex items-center gap-1.5">
+        <%= link_to "Review queue", supervisor_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+        <%= attention_dot("A dean-reverted request is waiting for you") if supervisor_attention_needed? %>
+      </span>
       <%= link_to "Raise a request", new_supervisor_achievement_request_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <%= link_to "Students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <%= link_to "Change password", edit_account_password_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>

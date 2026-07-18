@@ -61,6 +61,9 @@ Rails.application.routes.draw do
   namespace :admin do
     root "divisions#index"
     resources :departments, :divisions, :sub_divisions, :categories, :reason_templates, :users
+    resources :user_imports, only: [ :new, :create ] do
+      get :template, on: :collection
+    end
     resource :settings, only: [ :edit, :update ]
   end
 end

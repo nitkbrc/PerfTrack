@@ -38,6 +38,14 @@ RSpec.describe "Faculty students directory", type: :request do
       expect(response.body).to include(other.usn)
     end
 
+    it "is denied to admins — student records are faculty-only" do
+      sign_in create(:user, :admin)
+
+      get faculty_students_path
+
+      expect(response).to redirect_to(root_path)
+    end
+
     it "is denied to students and signed-out users" do
       sign_in create(:user)
       get faculty_students_path

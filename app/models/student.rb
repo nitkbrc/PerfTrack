@@ -5,6 +5,7 @@ class Student < ApplicationRecord
   has_many :achievement_requests
 
   validates :usn, presence: true, uniqueness: true
+  validates :sem, numericality: { only_integer: true, in: 1..8 }, allow_nil: true
 
   # Totals are computed on every read, never stored (TRD section 6).
   def positive_total

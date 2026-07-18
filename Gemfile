@@ -28,6 +28,9 @@ gem "active_storage_validations"
 # Policy-object authorization [https://github.com/varvet/pundit]
 gem "pundit"
 
+# CSV parsing for bulk user imports (no longer a Ruby default gem since 3.4)
+gem "csv"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 

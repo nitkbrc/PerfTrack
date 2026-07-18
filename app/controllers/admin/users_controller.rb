@@ -49,7 +49,7 @@ module Admin
 
     def user_params
       permitted = params.expect(user: [ :name, :email, :role, :password, :password_confirmation,
-                                        { student_profile_attributes: [ :id, :usn, :department_id, :section ] } ])
+                                        { student_profile_attributes: [ :id, :usn, :department_id, :sem ] } ])
       # The profile fieldset is only meaningful for students; drop stray params
       # submitted while the fieldset was hidden.
       permitted.delete(:student_profile_attributes) unless permitted[:role] == "student"

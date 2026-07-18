@@ -12,4 +12,20 @@ class User < ApplicationRecord
   has_many :supervised_sub_divisions, class_name: "SubDivision", foreign_key: :supervisor_user_id
   has_many :req_histories, foreign_key: :actor_id
   has_many :notifications, foreign_key: :recipient_id, dependent: :destroy
+
+  # Faculty who may be assigned as a division dean: not already deaning a
+  # division (unique index on divisions.dean_user_id) and not supervising a
+  # sub-division (mutual exclusivity, TRD section 6). `keep_user_id` keeps the
+  # record's current dean selectable on edit forms.
+  def self.eligible_deans(keep_user_id = nil)
+    taken = Division.select(:dean_user_id)
+    taken = taken.where.not(dean_user_id: keep_user_id) if keep_user_id
+    faculty.where.not(id: taken).where.not(id: SubDivision.select(:supervisor_user_id))
+  end
+
+  # Faculty who may supervise a sub-division: anyone who isn't a dean.
+  # (Supervising several sub-divisions is allowed.)
+  def self.eligible_supervisors
+    faculty.where.not(id: Division.select(:dean_user_id))
+  end
 end
