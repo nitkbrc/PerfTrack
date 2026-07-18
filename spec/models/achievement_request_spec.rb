@@ -39,4 +39,40 @@ RSpec.describe AchievementRequest, type: :model do
       expect(request.errors[:proofs]).to be_present
     end
   end
+
+  describe "#dean_approve!" do
+    def request_in_division(div_type, points:)
+      division = create(:division, div_type: div_type)
+      sub_division = create(:sub_division, division: division)
+      category = create(:category, sub_division: sub_division, points: points)
+      create(:achievement_request, category: category, status: :supervisor_approved)
+    end
+
+    it "snapshots positive points in a positive division" do
+      request = request_in_division("positive", points: 20)
+
+      request.dean_approve!
+
+      expect(request.reload).to be_dean_approved
+      expect(request.points_awarded).to eq(20)
+    end
+
+    it "snapshots negative points in a negative division" do
+      request = request_in_division("negative", points: 15)
+
+      request.dean_approve!
+
+      expect(request.reload).to be_dean_approved
+      expect(request.points_awarded).to eq(-15)
+    end
+
+    it "does not change points_awarded when category points are edited after approval" do
+      request = request_in_division("positive", points: 20)
+      request.dean_approve!
+
+      request.category.update!(points: 100)
+
+      expect(request.reload.points_awarded).to eq(20)
+    end
+  end
 end
