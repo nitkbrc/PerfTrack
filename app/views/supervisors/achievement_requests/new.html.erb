@@ -1,0 +1,54 @@
+<%= render "supervisors/shared/nav" %>
+
+<div class="mx-auto w-full max-w-lg">
+  <h1 class="mb-2 text-2xl font-bold text-slate-900">Raise a request for a student</h1>
+  <p class="mb-6 text-sm text-slate-500">
+    Raising it yourself counts as the supervisor review — the request goes straight to the dean.
+  </p>
+
+  <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+    <%= form_with model: @achievement_request, url: supervisor_achievement_requests_path, class: "space-y-5" do |f| %>
+      <%= render "admin/shared/error_messages", record: @achievement_request %>
+
+      <div>
+        <%= f.label :student_id, "Student", class: "block text-sm font-medium text-slate-700" %>
+        <%= f.collection_select :student_id, ::Student.includes(:user).order(:usn), :id,
+              ->(s) { "#{s.usn} — #{s.user.name.presence || s.user.email}" },
+              { prompt: "Select a student", selected: params.dig(:achievement_request, :student_id) },
+              class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :category_id, "Category", class: "block text-sm font-medium text-slate-700" %>
+        <%= f.grouped_collection_select :category_id,
+              supervised_sub_divisions.includes(:categories, :division).order(:name), :categories, :name,
+              :id, ->(c) { "#{c.name} (#{c.points} pts)" },
+              { prompt: "Select a category", selected: params.dig(:achievement_request, :category_id) },
+              class: admin_input_classes %>
+        <p class="mt-1 text-xs text-slate-500">Only categories under your sub-divisions are listed.</p>
+      </div>
+
+      <div>
+        <%= f.label :title, class: "block text-sm font-medium text-slate-700" %>
+        <%= f.text_field :title, class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :description, class: "block text-sm font-medium text-slate-700" %>
+        <%= f.text_area :description, rows: 4, class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :proofs, "Proof (PNG, max 5MB each)", class: "block text-sm font-medium text-slate-700" %>
+        <%= f.file_field :proofs, multiple: true, accept: "image/png",
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <%= f.submit "Raise request",
+              class: "cursor-pointer rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
+        <%= link_to "Cancel", supervisor_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -21,7 +21,19 @@ Rails.application.routes.draw do
   # colliding with the Student model constant.
   namespace :student, module: "students" do
     root "dashboard#index"
-    resources :achievement_requests, only: [ :new, :create, :show ]
+    resources :achievement_requests, only: [ :new, :create, :show, :edit, :update ]
+  end
+
+  # Same module-vs-model collision avoidance as the student namespace.
+  namespace :supervisor, module: "supervisors" do
+    root "queue#index"
+    resources :achievement_requests, only: [ :show, :new, :create ] do
+      member do
+        patch :approve
+        patch :revert
+        patch :reject
+      end
+    end
   end
 
   namespace :admin do

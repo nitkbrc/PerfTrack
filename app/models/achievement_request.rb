@@ -6,6 +6,8 @@ class AchievementRequest < ApplicationRecord
 
   has_many_attached :proofs
 
+  validates :title, presence: true
+
   validates :proofs, attached: true,
                      content_type: [ "image/png" ],
                      size: { less_than: 5.megabytes }
@@ -21,6 +23,29 @@ class AchievementRequest < ApplicationRecord
       request = create!(attrs.merge(student: student, status: :submitted))
       request.req_histories.create!(actor: actor, action: "submit", to_status: "submitted")
       request
+    end
+  end
+
+  # Path B: the supervisor creating the request is itself the review step, so it
+  # skips submitted; the first history row records the supervisor as originator.
+  def self.supervisor_initiate!(student:, actor:, attrs:)
+    transaction do
+      request = create!(attrs.merge(student: student, status: :supervisor_approved))
+      request.req_histories.create!(actor: actor, action: "supervisor_initiate",
+                                    to_status: "supervisor_approved")
+      request
+    end
+  end
+
+  # Every review transition writes its history row in the same transaction as
+  # the status change (PRD section 6 — auditability).
+  def transition!(to:, actor:, action:, comment: nil, reason_template: nil)
+    transaction do
+      from = status
+      update!(status: to)
+      req_histories.create!(actor: actor, action: action, comment: comment,
+                            reason_template: reason_template,
+                            from_status: from, to_status: to.to_s)
     end
   end
 

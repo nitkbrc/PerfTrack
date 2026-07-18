@@ -1,0 +1,57 @@
+<%= render "supervisors/shared/nav" %>
+
+<div class="mx-auto w-full max-w-3xl">
+  <div class="mb-6">
+    <%= link_to "← Back to queue", supervisor_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+  </div>
+
+  <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+    <%= render "shared/achievement_request_details",
+          achievement_request: @achievement_request, histories: @histories %>
+  </div>
+
+  <% if @achievement_request.submitted? %>
+    <div class="mt-6 rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+      <h2 class="mb-4 text-lg font-semibold text-slate-900">Your decision</h2>
+
+      <%= button_to "Approve & forward to dean",
+            approve_supervisor_achievement_request_path(@achievement_request), method: :patch,
+            class: "cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-500" %>
+
+      <div class="mt-6 border-t border-slate-200 pt-6"
+           data-controller="reason-template"
+           data-reason-template-templates-value="<%= @reason_templates.to_h { |t| [ t.id.to_s, t.message_text ] }.to_json %>">
+        <h3 class="mb-3 text-sm font-semibold text-slate-700">Revert or reject (message required)</h3>
+
+        <%= form_with url: revert_supervisor_achievement_request_path(@achievement_request),
+              method: :patch, class: "space-y-4" do %>
+          <% if @reason_templates.any? %>
+            <div>
+              <label class="block text-sm font-medium text-slate-700">Pre-fill from a template (optional)</label>
+              <%= select_tag :reason_template_id,
+                    options_from_collection_for_select(@reason_templates, :id, ->(t) { truncate(t.message_text, length: 80) }),
+                    prompt: "Choose a reason template",
+                    class: admin_input_classes,
+                    data: { reason_template_target: "select", action: "change->reason-template#fill" } %>
+            </div>
+          <% end %>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Message to the student</label>
+            <%= text_area_tag :comment, "", rows: 3, class: admin_input_classes,
+                  data: { reason_template_target: "comment" } %>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <%= submit_tag "Revert to student",
+                  class: "cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-400" %>
+            <%= submit_tag "Reject",
+                  formaction: reject_supervisor_achievement_request_path(@achievement_request),
+                  class: "cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500",
+                  data: { turbo_confirm: "Rejecting is final — the student cannot resubmit. Continue?" } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

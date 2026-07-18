@@ -101,6 +101,50 @@ RSpec.describe AchievementRequestPolicy do
 
         expect(described_class.new(other.user, own_request).show?).to be false
       end
+
+      it "permits the request's supervisor" do
+        expect(described_class.new(supervisor, own_request).show?).to be true
+      end
+
+      it "denies unrelated faculty" do
+        expect(described_class.new(other_faculty, own_request).show?).to be false
+      end
+    end
+
+    describe "#resubmit?" do
+      it "permits the owning student when supervisor_reverted" do
+        own_request.update!(status: :supervisor_reverted)
+
+        expect(described_class.new(owner, own_request).resubmit?).to be true
+      end
+
+      it "denies the owner for other statuses" do
+        expect(described_class.new(owner, own_request).resubmit?).to be false
+      end
+
+      it "denies a different student even when reverted" do
+        own_request.update!(status: :supervisor_reverted)
+        other = create(:student)
+
+        expect(described_class.new(other.user, own_request).resubmit?).to be false
+      end
+    end
+  end
+
+  describe "#initiate?" do
+    it "permits faculty who supervise at least one sub-division" do
+      sub_division # materialize the assignment
+
+      expect(described_class.new(supervisor, AchievementRequest).initiate?).to be true
+    end
+
+    it "denies faculty with no supervised sub-divisions" do
+      expect(described_class.new(other_faculty, AchievementRequest).initiate?).to be false
+    end
+
+    it "denies students and admins" do
+      expect(described_class.new(student_user, AchievementRequest).initiate?).to be false
+      expect(described_class.new(admin, AchievementRequest).initiate?).to be false
     end
   end
 
@@ -114,7 +158,15 @@ RSpec.describe AchievementRequestPolicy do
       expect(resolved).to contain_exactly(own)
     end
 
-    it "resolves to none for faculty, admin, and profile-less students" do
+    it "resolves to the supervisor's sub-division requests only" do
+      in_queue = create(:achievement_request, category: category)
+      create(:achievement_request) # different sub-division
+
+      resolved = described_class::Scope.new(supervisor, AchievementRequest).resolve
+      expect(resolved).to contain_exactly(in_queue)
+    end
+
+    it "resolves to none for non-supervising faculty, admin, and profile-less students" do
       create(:achievement_request, category: category)
 
       [ other_faculty, admin, student_user ].each do |u|

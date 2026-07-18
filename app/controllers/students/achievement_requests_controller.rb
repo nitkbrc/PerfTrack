@@ -20,10 +20,36 @@ module Students
       @histories = @achievement_request.req_histories.includes(:actor).order(:created_at)
     end
 
+    # Edit + resubmit of a supervisor-reverted request (PRD section 6:
+    # Supervisor Reverted → Submitted). Category stays fixed; the student can
+    # fix title/description and add more proofs.
+    def edit
+      @achievement_request = authorize AchievementRequest.find(params[:id]), :resubmit?
+    end
+
+    def update
+      @achievement_request = authorize AchievementRequest.find(params[:id]), :resubmit?
+
+      ApplicationRecord.transaction do
+        # attach (rather than assign) so new files add to the existing proofs
+        @achievement_request.proofs.attach(update_params[:proofs]) if update_params[:proofs].present?
+        @achievement_request.update!(update_params.except(:proofs))
+        @achievement_request.transition!(to: :submitted, actor: current_user, action: "resubmit")
+      end
+      redirect_to student_achievement_request_path(@achievement_request),
+                  notice: "Your request has been resubmitted."
+    rescue ActiveRecord::RecordInvalid
+      render :edit, status: :unprocessable_content
+    end
+
     private
 
     def request_params
       params.expect(achievement_request: [ :category_id, :title, :description, { proofs: [] } ])
+    end
+
+    def update_params
+      @update_params ||= params.expect(achievement_request: [ :title, :description, { proofs: [] } ])
     end
 
     # Serialized once into the form so the cascading selects work without

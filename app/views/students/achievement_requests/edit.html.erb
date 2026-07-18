@@ -1,0 +1,48 @@
+<%= render "students/shared/nav" %>
+
+<div class="mx-auto w-full max-w-lg">
+  <h1 class="mb-2 text-2xl font-bold text-slate-900">Edit & resubmit</h1>
+  <p class="mb-6 text-sm text-slate-500">
+    Address your supervisor's feedback, then resubmit for review.
+    The category (<%= @achievement_request.category.name %>) cannot be changed.
+  </p>
+
+  <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+    <%= form_with model: @achievement_request, url: student_achievement_request_path(@achievement_request),
+          method: :patch, class: "space-y-5" do |f| %>
+      <%= render "admin/shared/error_messages", record: @achievement_request %>
+
+      <div>
+        <%= f.label :title, class: "block text-sm font-medium text-slate-700" %>
+        <%= f.text_field :title, class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :description, class: "block text-sm font-medium text-slate-700" %>
+        <%= f.text_area :description, rows: 4, class: admin_input_classes %>
+      </div>
+
+      <div>
+        <p class="block text-sm font-medium text-slate-700">Current proofs</p>
+        <div class="mt-2 flex flex-wrap gap-3">
+          <% @achievement_request.proofs.each do |proof| %>
+            <%= image_tag proof, class: "h-20 w-20 rounded-lg border border-slate-200 object-cover" %>
+          <% end %>
+        </div>
+      </div>
+
+      <div>
+        <%= f.label :proofs, "Add more proofs (PNG, max 5MB each)", class: "block text-sm font-medium text-slate-700" %>
+        <%= f.file_field :proofs, multiple: true, accept: "image/png",
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <%= f.submit "Resubmit request",
+              class: "cursor-pointer rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
+        <%= link_to "Cancel", student_achievement_request_path(@achievement_request),
+              class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -47,7 +47,13 @@
                       class: "text-indigo-600 hover:text-indigo-500" %>
               </td>
               <td class="px-4 py-3 text-slate-600"><%= request.category.name %></td>
-              <td class="px-4 py-3"><%= status_badge(request.status) %></td>
+              <td class="px-4 py-3">
+                <%= status_badge(request.status) %>
+                <% if request.supervisor_reverted? %>
+                  <%= link_to "Edit & resubmit", edit_student_achievement_request_path(request),
+                        class: "ml-2 text-xs font-medium text-indigo-600 hover:text-indigo-500" %>
+                <% end %>
+              </td>
               <td class="px-4 py-3 font-semibold text-slate-700"><%= request.points_awarded || "—" %></td>
               <td class="px-4 py-3 text-slate-500"><%= request.created_at.strftime("%d %b %Y") %></td>
             </tr>

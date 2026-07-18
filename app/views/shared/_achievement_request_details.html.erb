@@ -1,0 +1,54 @@
+<div class="mb-4 flex items-start justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900"><%= achievement_request.title %></h1>
+    <p class="mt-1 text-sm text-slate-500">
+      <%= achievement_request.category.sub_division.division.name %> /
+      <%= achievement_request.category.sub_division.name %> /
+      <%= achievement_request.category.name %>
+    </p>
+    <p class="mt-1 text-sm text-slate-500">
+      Student: <span class="font-medium text-slate-700"><%= achievement_request.student.usn %></span>
+    </p>
+  </div>
+  <%= status_badge(achievement_request.status) %>
+</div>
+
+<% if achievement_request.points_awarded %>
+  <p class="mb-4 text-sm font-semibold <%= achievement_request.points_awarded.positive? ? 'text-green-700' : 'text-red-700' %>">
+    Points awarded: <%= achievement_request.points_awarded %>
+  </p>
+<% end %>
+
+<% if achievement_request.description.present? %>
+  <p class="mb-6 whitespace-pre-line text-sm text-slate-700"><%= achievement_request.description %></p>
+<% end %>
+
+<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Proof</h2>
+<div class="mb-8 flex flex-wrap gap-4">
+  <% achievement_request.proofs.each do |proof| %>
+    <%= link_to url_for(proof), target: "_blank", rel: "noopener", class: "block" do %>
+      <%= image_tag proof, class: "h-32 w-32 rounded-lg border border-slate-200 object-cover shadow-sm transition hover:opacity-80" %>
+    <% end %>
+  <% end %>
+</div>
+
+<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">History</h2>
+<ol class="space-y-3">
+  <% histories.each do |history| %>
+    <li class="rounded-lg border border-slate-200 p-3 text-sm">
+      <div class="flex items-center justify-between">
+        <span class="font-medium text-slate-900"><%= history.action.humanize %></span>
+        <span class="text-xs text-slate-500"><%= history.created_at.strftime("%d %b %Y, %H:%M") %></span>
+      </div>
+      <p class="mt-1 text-xs text-slate-500">
+        by <%= history.actor.name.presence || history.actor.email %>
+        <% if history.from_status.present? %>
+          · <%= history.from_status.humanize %> → <%= history.to_status.humanize %>
+        <% end %>
+      </p>
+      <% if history.comment.present? %>
+        <p class="mt-2 text-slate-700"><%= history.comment %></p>
+      <% end %>
+    </li>
+  <% end %>
+</ol>

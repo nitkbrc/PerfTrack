@@ -1,0 +1,45 @@
+<%= render "supervisors/shared/nav" %>
+
+<div class="mx-auto w-full max-w-4xl">
+  <div class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-slate-900">Review queue</h1>
+    <%= link_to "Raise a request", new_supervisor_achievement_request_path,
+          class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
+  </div>
+
+  <% if @requests.any? %>
+    <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Student</th>
+            <th class="px-4 py-3">Title</th>
+            <th class="px-4 py-3">Category</th>
+            <th class="px-4 py-3">Submitted</th>
+            <th class="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% @requests.each do |request| %>
+            <tr>
+              <td class="px-4 py-3 font-medium text-slate-900"><%= request.student.usn %></td>
+              <td class="px-4 py-3 text-slate-700"><%= request.title %></td>
+              <td class="px-4 py-3 text-slate-600">
+                <%= request.category.sub_division.name %> / <%= request.category.name %>
+              </td>
+              <td class="px-4 py-3 text-slate-500"><%= request.created_at.strftime("%d %b %Y") %></td>
+              <td class="px-4 py-3 text-right">
+                <%= link_to "Review", supervisor_achievement_request_path(request),
+                      class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
+      No pending requests — you're all caught up.
+    </p>
+  <% end %>
+</div>
