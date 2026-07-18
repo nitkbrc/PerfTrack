@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+<div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200" data-controller="role-fields">
   <%= form_with model: [ :admin, user ], class: "space-y-5" do |f| %>
     <%= render "admin/shared/error_messages", record: user %>
 
@@ -14,8 +14,34 @@
 
     <div>
       <%= f.label :role, class: admin_label_classes %>
-      <%= f.select :role, User.roles.keys.map { |r| [ r.titleize, r ] }, {}, class: admin_input_classes %>
+      <%= f.select :role, User.roles.keys.map { |r| [ r.titleize, r ] }, {},
+            class: admin_input_classes,
+            data: { role_fields_target: "roleSelect", action: "change->role-fields#toggle" } %>
     </div>
+
+    <% user.build_student_profile if user.student_profile.nil? %>
+    <fieldset data-role-fields-target="studentFields" <%= "hidden" unless user.student? %>
+              class="space-y-5 rounded-lg border border-slate-200 p-4">
+      <legend class="px-1 text-sm font-semibold text-slate-700">Student profile</legend>
+
+      <%= f.fields_for :student_profile do |sp| %>
+        <div>
+          <%= sp.label :usn, "USN", class: admin_label_classes %>
+          <%= sp.text_field :usn, class: admin_input_classes %>
+        </div>
+
+        <div>
+          <%= sp.label :department_id, "Department", class: admin_label_classes %>
+          <%= sp.collection_select :department_id, Department.order(:name), :id, :name,
+                { prompt: "Select a department" }, class: admin_input_classes %>
+        </div>
+
+        <div>
+          <%= sp.label :section, class: admin_label_classes %>
+          <%= sp.text_field :section, class: admin_input_classes %>
+        </div>
+      <% end %>
+    </fieldset>
 
     <div>
       <%= f.label :password, class: admin_label_classes %>

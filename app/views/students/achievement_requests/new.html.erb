@@ -1,0 +1,66 @@
+<% selected_sub_division = @achievement_request.category&.sub_division %>
+<% selected_division_id = selected_sub_division&.division_id %>
+
+<%= render "students/shared/nav" %>
+
+<div class="mx-auto w-full max-w-lg">
+  <h1 class="mb-6 text-2xl font-bold text-slate-900">Submit an achievement request</h1>
+
+  <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200"
+       data-controller="cascading-select"
+       data-cascading-select-tree-value="<%= @division_tree.to_json %>">
+    <%= form_with model: @achievement_request, url: student_achievement_requests_path, class: "space-y-5" do |f| %>
+      <%= render "admin/shared/error_messages", record: @achievement_request %>
+
+      <div>
+        <%= label_tag :division_id, "Division", class: "block text-sm font-medium text-slate-700" %>
+        <%= select_tag :division_id,
+              options_for_select(@division_tree.map { |d| [ d[:name], d[:id] ] }, selected_division_id),
+              prompt: "Select a division",
+              class: admin_input_classes,
+              data: { cascading_select_target: "division", action: "change->cascading-select#divisionChanged" } %>
+        <p class="mt-1 text-xs text-slate-500" data-cascading-select-target="polarityNote"></p>
+      </div>
+
+      <div>
+        <%= label_tag :sub_division_id, "Sub-division", class: "block text-sm font-medium text-slate-700" %>
+        <%= select_tag :sub_division_id, nil,
+              prompt: "Select a sub-division",
+              class: admin_input_classes,
+              data: { cascading_select_target: "subDivision", action: "change->cascading-select#subDivisionChanged",
+                      selected: selected_sub_division&.id } %>
+      </div>
+
+      <div>
+        <%= f.label :category_id, "Category", class: "block text-sm font-medium text-slate-700" %>
+        <%= f.select :category_id, [],
+              { prompt: "Select a category" },
+              class: admin_input_classes,
+              data: { cascading_select_target: "category", selected: @achievement_request.category_id } %>
+      </div>
+
+      <div>
+        <%= f.label :title, class: "block text-sm font-medium text-slate-700" %>
+        <%= f.text_field :title, class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :description, class: "block text-sm font-medium text-slate-700" %>
+        <%= f.text_area :description, rows: 4, class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :proofs, "Proof (PNG, max 5MB each)", class: "block text-sm font-medium text-slate-700" %>
+        <%= f.file_field :proofs, multiple: true, accept: "image/png",
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+        <p class="mt-1 text-xs text-slate-500">Attach at least one PNG image as proof.</p>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <%= f.submit "Submit request",
+              class: "cursor-pointer rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
+        <%= link_to "Cancel", student_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      </div>
+    <% end %>
+  </div>
+</div>

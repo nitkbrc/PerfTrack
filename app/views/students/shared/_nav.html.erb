@@ -1,0 +1,12 @@
+<nav class="mx-auto mb-8 w-full max-w-4xl rounded-xl bg-white p-4 shadow-md ring-1 ring-slate-200">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <%= link_to "SCATS", student_root_path, class: "text-lg font-bold text-slate-900" %>
+    <div class="flex items-center gap-4">
+      <span class="text-sm text-slate-500"><%= current_user.name.presence || current_user.email %></span>
+      <%= link_to "Change password", edit_account_password_path,
+            class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      <%= button_to "Sign out", destroy_user_session_path, method: :delete,
+            class: "cursor-pointer rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700" %>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,63 @@
+<%= render "students/shared/nav" %>
+
+<div class="mx-auto w-full max-w-4xl">
+  <div class="mb-8 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">My dashboard</h1>
+      <p class="text-sm text-slate-500"><%= current_student.usn %> · <%= current_student.department.name %></p>
+    </div>
+    <%= link_to "Submit a request", new_student_achievement_request_path,
+          class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
+  </div>
+
+  <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="rounded-xl bg-indigo-600 p-6 text-center shadow-md">
+      <p class="text-sm font-medium text-indigo-100">Overall score</p>
+      <p class="mt-1 text-4xl font-bold text-white"><%= current_student.overall_score %><span class="text-lg font-medium text-indigo-200"> / 10</span></p>
+    </div>
+    <div class="rounded-xl bg-white p-6 text-center shadow-md ring-1 ring-slate-200">
+      <p class="text-sm font-medium text-slate-500">Positive points</p>
+      <p class="mt-1 text-4xl font-bold text-green-600">+<%= current_student.positive_total %></p>
+    </div>
+    <div class="rounded-xl bg-white p-6 text-center shadow-md ring-1 ring-slate-200">
+      <p class="text-sm font-medium text-slate-500">Negative points</p>
+      <p class="mt-1 text-4xl font-bold text-red-600"><%= current_student.negative_total %></p>
+    </div>
+  </div>
+
+  <h2 class="mb-4 text-lg font-semibold text-slate-900">My requests</h2>
+
+  <% if @requests.any? %>
+    <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Title</th>
+            <th class="px-4 py-3">Category</th>
+            <th class="px-4 py-3">Status</th>
+            <th class="px-4 py-3">Points</th>
+            <th class="px-4 py-3">Submitted</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% @requests.each do |request| %>
+            <tr>
+              <td class="px-4 py-3 font-medium">
+                <%= link_to request.title, student_achievement_request_path(request),
+                      class: "text-indigo-600 hover:text-indigo-500" %>
+              </td>
+              <td class="px-4 py-3 text-slate-600"><%= request.category.name %></td>
+              <td class="px-4 py-3"><%= status_badge(request.status) %></td>
+              <td class="px-4 py-3 font-semibold text-slate-700"><%= request.points_awarded || "—" %></td>
+              <td class="px-4 py-3 text-slate-500"><%= request.created_at.strftime("%d %b %Y") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
+      You haven't submitted any requests yet.
+    </p>
+  <% end %>
+</div>

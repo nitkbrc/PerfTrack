@@ -46,6 +46,34 @@ RSpec.describe "Admin users", type: :request do
     expect(user.reload.password_change_required).to be true
   end
 
+  it "creates a student user together with their Student profile" do
+    department = create(:department)
+
+    expect {
+      post "/admin/users", params: { user: {
+        name: "New Student", email: "newstud@example.com", role: "student",
+        password: "password123", password_confirmation: "password123",
+        student_profile_attributes: { usn: "1XX23CS999", department_id: department.id, section: "B" }
+      } }
+    }.to change(User, :count).by(1).and change(Student, :count).by(1)
+
+    profile = User.find_by(email: "newstud@example.com").student_profile
+    expect(profile.usn).to eq("1XX23CS999")
+    expect(profile.department).to eq(department)
+  end
+
+  it "ignores student profile params for non-student roles" do
+    expect {
+      post "/admin/users", params: { user: {
+        name: "New Faculty 2", email: "newfac2@example.com", role: "faculty",
+        password: "password123", password_confirmation: "password123",
+        student_profile_attributes: { usn: "", department_id: "", section: "" }
+      } }
+    }.to change(User, :count).by(1)
+
+    expect(User.find_by(email: "newfac2@example.com").student_profile).to be_nil
+  end
+
   it "prevents an admin from deleting their own account" do
     expect {
       delete "/admin/users/#{admin.id}"

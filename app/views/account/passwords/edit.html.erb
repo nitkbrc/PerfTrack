@@ -35,10 +35,12 @@
       </div>
     <% end %>
 
-    <% unless current_user.password_change_required? %>
-      <p class="mt-6 text-center">
+    <div class="mt-6 flex items-center justify-center gap-4">
+      <% unless current_user.password_change_required? %>
         <%= link_to "Back", root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
-      </p>
-    <% end %>
+      <% end %>
+      <%= button_to "Sign out", destroy_user_session_path, method: :delete,
+            class: "cursor-pointer text-sm font-medium text-slate-500 hover:text-slate-700" %>
+    </div>
   </div>
 </div>

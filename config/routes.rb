@@ -17,6 +17,13 @@ Rails.application.routes.draw do
     resource :password, only: [ :edit, :update ]
   end
 
+  # URLs stay /student/... but controllers live under Students:: to avoid
+  # colliding with the Student model constant.
+  namespace :student, module: "students" do
+    root "dashboard#index"
+    resources :achievement_requests, only: [ :new, :create, :show ]
+  end
+
   namespace :admin do
     root "divisions#index"
     resources :departments, :divisions, :sub_divisions, :categories, :reason_templates, :users

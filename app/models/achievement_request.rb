@@ -14,6 +14,16 @@ class AchievementRequest < ApplicationRecord
                   supervisor_reverted: "supervisor_reverted", dean_approved: "dean_approved",
                   dean_reverted: "dean_reverted", rejected: "rejected" }
 
+  # Path A submission: the request and its first history row are created in one
+  # transaction so neither can exist without the other (PRD section 7).
+  def self.submit!(student:, actor:, attrs:)
+    transaction do
+      request = create!(attrs.merge(student: student, status: :submitted))
+      request.req_histories.create!(actor: actor, action: "submit", to_status: "submitted")
+      request
+    end
+  end
+
   # Dean approval snapshots the signed point value in the same transaction as
   # the status change (TRD section 6), so later category.points edits never
   # retroactively change an already-verified record.
