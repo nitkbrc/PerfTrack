@@ -5,6 +5,7 @@
       <span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-purple-700">Dean</span>
     </div>
     <div class="flex items-center gap-4">
+      <%= render "shared/notification_bell" %>
       <%= link_to "Decision queue", dean_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <%= link_to "Change password", edit_account_password_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <%= button_to "Sign out", destroy_user_session_path, method: :delete,

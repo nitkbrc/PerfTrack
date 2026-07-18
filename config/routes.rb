@@ -17,6 +17,11 @@ Rails.application.routes.draw do
     resource :password, only: [ :edit, :update ]
   end
 
+  resources :notifications, only: [ :index ] do
+    member { patch :mark_read }
+    collection { patch :mark_all_read }
+  end
+
   # URLs stay /student/... but controllers live under Students:: to avoid
   # colliding with the Student model constant.
   namespace :student, module: "students" do

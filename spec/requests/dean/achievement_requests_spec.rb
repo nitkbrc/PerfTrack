@@ -50,6 +50,11 @@ RSpec.describe "Dean decision flow", type: :request do
       expect(history.actor).to eq(dean)
     end
 
+    it "enqueues the notification job for the student" do
+      expect { patch approve_dean_achievement_request_path(request_record) }
+        .to have_enqueued_job(DeanApprovalNotificationJob).with(request_record.id)
+    end
+
     it "snapshots negative points for a negative division" do
       division.update!(div_type: "negative")
 

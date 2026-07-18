@@ -3,6 +3,7 @@ class AchievementRequest < ApplicationRecord
   belongs_to :category
 
   has_many :req_histories
+  has_many :notifications, dependent: :destroy
 
   has_many_attached :proofs
 
@@ -65,5 +66,8 @@ class AchievementRequest < ApplicationRecord
       req_histories.create!(actor: actor, action: "dean_approve",
                             from_status: from, to_status: "dean_approved")
     end
+    # Enqueued after the transaction commits so the job never sees a rolled-back
+    # approval (PRD section 8 — notify on verification).
+    DeanApprovalNotificationJob.perform_later(id)
   end
 end

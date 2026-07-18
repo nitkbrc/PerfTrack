@@ -1,0 +1,43 @@
+<%= turbo_frame_tag "notifications" do %>
+  <details class="relative" <%= "open" if params[:open].present? %>>
+    <summary class="flex cursor-pointer list-none items-center gap-1 rounded-lg p-1.5 transition hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-6 w-6 text-slate-600">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+      </svg>
+      <% if @unread_count.positive? %>
+        <span class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-bold text-white">
+          <%= @unread_count %>
+        </span>
+      <% end %>
+    </summary>
+
+    <div class="absolute right-0 z-20 mt-2 w-80 rounded-xl bg-white p-3 shadow-lg ring-1 ring-slate-200">
+      <div class="mb-2 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-slate-900">Notifications</h3>
+        <% if @unread_count.positive? %>
+          <%= button_to "Mark all read", mark_all_read_notifications_path, method: :patch,
+                class: "cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-500" %>
+        <% end %>
+      </div>
+
+      <% if @notifications.any? %>
+        <ul class="max-h-80 space-y-2 overflow-y-auto">
+          <% @notifications.each do |notification| %>
+            <li class="rounded-lg border p-2.5 text-sm <%= notification.read? ? "border-slate-100 bg-white text-slate-500" : "border-indigo-100 bg-indigo-50 text-slate-800" %>">
+              <p><%= notification.message %></p>
+              <div class="mt-1.5 flex items-center justify-between">
+                <span class="text-xs text-slate-400"><%= notification.created_at.strftime("%d %b, %H:%M") %></span>
+                <% unless notification.read? %>
+                  <%= button_to "Mark read", mark_read_notification_path(notification), method: :patch,
+                        class: "cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-500" %>
+                <% end %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="py-4 text-center text-sm text-slate-500">No notifications yet.</p>
+      <% end %>
+    </div>
+  </details>
+<% end %>

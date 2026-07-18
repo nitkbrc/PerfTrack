@@ -2,6 +2,7 @@
   <div class="flex flex-wrap items-center justify-between gap-4">
     <%= link_to "SCATS", student_root_path, class: "text-lg font-bold text-slate-900" %>
     <div class="flex items-center gap-4">
+      <%= render "shared/notification_bell" %>
       <span class="text-sm text-slate-500"><%= current_user.name.presence || current_user.email %></span>
       <%= link_to "Change password", edit_account_password_path,
             class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
