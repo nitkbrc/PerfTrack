@@ -26,39 +26,27 @@
             data: { turbo_confirm: "Approve and snapshot the points? This cannot be undone." },
             class: "cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-500" %>
 
-      <div class="mt-6 border-t border-slate-200 pt-6"
-           data-controller="reason-template"
-           data-reason-template-templates-value="<%= @reason_templates.to_h { |t| [ t.id.to_s, t.message_text ] }.to_json %>">
-        <h3 class="mb-3 text-sm font-semibold text-slate-700">Revert to supervisor or reject (message required)</h3>
+      <div class="mt-6 space-y-6 border-t border-slate-200 pt-6">
+        <div>
+          <h3 class="mb-3 text-sm font-semibold text-slate-700">Revert to supervisor (message required)</h3>
+          <%= render "shared/decision_form",
+                url: revert_dean_achievement_request_path(@achievement_request),
+                button_label: "Revert for clarification",
+                button_classes: "bg-orange-500 hover:bg-orange-400",
+                reason_templates: @reason_templates,
+                comment_label: "Message" %>
+        </div>
 
-        <%= form_with url: revert_dean_achievement_request_path(@achievement_request),
-              method: :patch, class: "space-y-4" do %>
-          <% if @reason_templates.any? %>
-            <div>
-              <label class="block text-sm font-medium text-slate-700">Pre-fill from a template (optional)</label>
-              <%= select_tag :reason_template_id,
-                    options_from_collection_for_select(@reason_templates, :id, ->(t) { truncate(t.message_text, length: 80) }),
-                    prompt: "Choose a reason template",
-                    class: admin_input_classes,
-                    data: { reason_template_target: "select", action: "change->reason-template#fill" } %>
-            </div>
-          <% end %>
-
-          <div>
-            <label class="block text-sm font-medium text-slate-700">Message</label>
-            <%= text_area_tag :comment, "", rows: 3, class: admin_input_classes,
-                  data: { reason_template_target: "comment" } %>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <%= submit_tag "Revert for clarification",
-                  class: "cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-400" %>
-            <%= submit_tag "Reject",
-                  formaction: reject_dean_achievement_request_path(@achievement_request),
-                  class: "cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500",
-                  data: { turbo_confirm: "Rejecting is final — no points will be awarded. Continue?" } %>
-          </div>
-        <% end %>
+        <div class="border-t border-slate-100 pt-6">
+          <h3 class="mb-3 text-sm font-semibold text-slate-700">Reject (message required)</h3>
+          <%= render "shared/decision_form",
+                url: reject_dean_achievement_request_path(@achievement_request),
+                button_label: "Reject",
+                button_classes: "bg-red-600 hover:bg-red-500",
+                confirm: "Rejecting is final — no points will be awarded. Continue?",
+                reason_templates: @reason_templates,
+                comment_label: "Message" %>
+        </div>
       </div>
     </div>
   <% end %>

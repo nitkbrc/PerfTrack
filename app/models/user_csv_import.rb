@@ -24,12 +24,18 @@ class UserCsvImport
     end
   end
 
-  def initialize(file)
+  def initialize(file, staff_password: nil)
     @file = file
+    @staff_password = staff_password
     @results = []
   end
 
   def call
+    if @staff_password && @staff_password.length < 6
+      @error = "The temporary staff password must be at least 6 characters."
+      return false
+    end
+
     rows = CSV.parse(@file.read, headers: true, skip_blanks: true)
     rows.each.with_index(2) { |row, line| import_row(row, line) }
     true
@@ -70,9 +76,9 @@ class UserCsvImport
     end
 
     # Students get a predictable temporary password (their USN twice, which
-    # also clears Devise's 6-char minimum); staff get a random one that is
-    # only ever visible in these results.
-    password = role == "student" ? usn * 2 : SecureRandom.alphanumeric(12)
+    # also clears Devise's 6-char minimum); staff get the admin-chosen one, or
+    # a random one that is only ever visible in these results.
+    password = role == "student" ? usn * 2 : (@staff_password || SecureRandom.alphanumeric(12))
 
     user = User.new(name: name, email: email, role: role,
                     password: password, password_confirmation: password,

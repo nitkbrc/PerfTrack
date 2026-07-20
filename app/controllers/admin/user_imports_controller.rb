@@ -12,7 +12,7 @@ module Admin
         return
       end
 
-      @import = UserCsvImport.new(params[:file])
+      @import = UserCsvImport.new(params[:file], staff_password: params[:staff_password].presence)
       if @import.call
         render :create
       else

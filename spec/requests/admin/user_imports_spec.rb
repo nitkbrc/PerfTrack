@@ -6,9 +6,9 @@ RSpec.describe "Admin user imports", type: :request do
 
   before { sign_in admin }
 
-  def upload(csv_content)
+  def upload(csv_content, extra_params = {})
     file = Rack::Test::UploadedFile.new(StringIO.new(csv_content), "text/csv", original_filename: "users.csv")
-    post admin_user_imports_path, params: { file: file }
+    post admin_user_imports_path, params: { file: file }.merge(extra_params)
   end
 
   it "imports students with a doubled-USN password that must be changed" do
@@ -40,6 +40,32 @@ RSpec.describe "Admin user imports", type: :request do
     password = CSV.parse(Base64.decode64(response.body[/base64,([A-Za-z0-9+\/=]+)/, 1]), headers: true)
                   .first["temporary_password"]
     expect(user.valid_password?(password)).to be(true)
+  end
+
+  it "uses the admin-supplied temporary password for staff but not students" do
+    upload(<<~CSV, staff_password: "welcome2026")
+      name,email,role,usn,department,sem
+      Prof. Rao,rao@college.edu,faculty,,,
+      Asha Kumar,asha@college.edu,student,1XX22CS001,Computer Science,3
+    CSV
+
+    faculty = User.find_by(email: "rao@college.edu")
+    expect(faculty.valid_password?("welcome2026")).to be(true)
+    expect(faculty.password_change_required).to be(true)
+
+    student = User.find_by(email: "asha@college.edu")
+    expect(student.valid_password?("1XX22CS0011XX22CS001")).to be(true)
+  end
+
+  it "rejects a too-short staff password without importing anything" do
+    upload(<<~CSV, staff_password: "abc")
+      name,email,role,usn,department,sem
+      Prof. Rao,rao@college.edu,faculty,,,
+    CSV
+
+    expect(response).to redirect_to(new_admin_user_import_path)
+    expect(flash[:alert]).to eq("The temporary staff password must be at least 6 characters.")
+    expect(User.find_by(email: "rao@college.edu")).to be_nil
   end
 
   it "skips bad rows but imports the rest, reporting each error" do
