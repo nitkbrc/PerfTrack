@@ -17,13 +17,14 @@ RSpec.describe "Path B lifecycle", type: :system do
     visit new_user_session_path
     fill_in "Email", with: user.email
     fill_in "Password", with: "password123"
-    click_button "Log in"
-    expect(page).to have_content("Signed in as #{user.email}")
+    click_button "Sign in"
+    expect(page).to have_content("Signed in successfully")
   end
 
   def sign_out_via_nav
-    click_button "Sign out", match: :first
-    expect(page).to have_link("Log in")
+    visit profile_path
+    click_button "Sign out"
+    expect(page).to have_content("Welcome to SCATS")
   end
 
   it "goes straight to the dean and deducts points on approval" do
@@ -60,6 +61,9 @@ RSpec.describe "Path B lifecycle", type: :system do
     expect(page).to have_content("-15")
     expect(page).to have_content("4.3") # sigmoid(net -15, k 50) = 4.3
     find("summary").click
+    expect(page).to have_content(
+      'A conduct record raised by your supervisor for "Ragging incident report" was verified by the dean.'
+    )
     expect(page).to have_content("Negative: 15 points deducted from your record.")
   end
 end

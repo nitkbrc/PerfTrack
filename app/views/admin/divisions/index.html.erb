@@ -4,57 +4,42 @@
     <%= render "admin/shared/archived_toggle", show_archived: @show_archived,
           archived_count: @archived_count, active_path: admin_divisions_path,
           archived_path: admin_divisions_path(archived: 1) %>
-    <%= link_to "New division", new_admin_division_path, class: admin_primary_button_classes %>
   </div>
 </div>
 
-<% if @divisions.any? %>
-  <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
-    <table class="w-full text-left text-sm">
-      <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        <tr>
-          <th class="px-4 py-3">Name</th>
-          <th class="px-4 py-3">Type</th>
-          <th class="px-4 py-3">Dean</th>
-          <th class="px-4 py-3 text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        <% @divisions.each do |division| %>
-          <tr>
-            <td class="px-4 py-3 font-medium text-slate-900"><%= division.name %></td>
-            <td class="px-4 py-3">
-              <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= division.positive? ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' %>">
-                <%= division.div_type %>
-              </span>
-            </td>
-            <td class="px-4 py-3 text-slate-600">
-              <%= division.dean.name.presence || division.dean.email %>
-              <%= archived_badge(division) if division.archived? %>
-            </td>
-            <td class="px-4 py-3 text-right">
-              <div class="inline-flex items-center gap-4">
-                <% if division.archived? %>
-                  <%= button_to "Restore", restore_admin_division_path(division), method: :patch,
-                        class: admin_link_classes %>
-                  <%= button_to "Delete permanently", admin_division_path(division), method: :delete,
-                        data: { turbo_confirm: "Permanently delete #{division.name}? This cannot be undone." },
-                        class: admin_delete_classes %>
-                <% else %>
-                  <%= link_to "Edit", edit_admin_division_path(division), class: admin_link_classes %>
-                  <%= button_to "Archive", archive_admin_division_path(division), method: :patch,
-                        data: { turbo_confirm: "Archive #{division.name}? Its sub-divisions and categories will be archived too. You can restore it later." },
-                        class: admin_archive_classes %>
-                <% end %>
-              </div>
-            </td>
-          </tr>
+<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+  <% @divisions.each do |division| %>
+    <article class="clay-card p-5 <%= "relative cursor-pointer" unless division.archived? %>">
+      <% unless division.archived? %>
+        <%= link_to admin_division_path(division),
+              class: "absolute inset-0 z-0",
+              aria: { label: division.name } do %>
         <% end %>
-      </tbody>
-    </table>
-  </div>
-<% else %>
-  <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
-    <%= @show_archived ? "No archived divisions." : "No divisions yet. Create the first one." %>
-  </p>
-<% end %>
+      <% end %>
+      <div class="<%= "pointer-events-none relative z-10" unless division.archived? %>">
+        <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= division.positive? ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' %>"><%= division.div_type %></span>
+        <h2 class="mt-3 text-lg font-bold text-[#1B4332]"><%= division.name %></h2>
+        <p class="mt-1 text-sm text-slate-600">Dean: <%= division.dean.name.presence || division.dean.email %></p>
+        <%= archived_badge(division) if division.archived? %>
+      </div>
+      <div class="relative z-10 mt-5 flex flex-wrap items-center gap-2">
+        <% if division.archived? %>
+          <%= button_to admin_restore_action_label, restore_admin_division_path(division), method: :patch,
+                form: { onclick: "event.stopPropagation()" },
+                class: admin_secondary_button_classes %>
+        <% else %>
+          <%= link_to admin_edit_action_label, edit_admin_division_path(division), class: admin_secondary_button_classes, data: admin_modal_frame_data %>
+          <%= button_to admin_archive_action_label, archive_admin_division_path(division), method: :patch,
+                form: { onclick: "event.stopPropagation()" },
+                class: admin_warning_button_classes %>
+        <% end %>
+      </div>
+    </article>
+  <% end %>
+  <% unless @show_archived %>
+    <%= link_to new_admin_division_path,
+          class: "flex min-h-48 items-center justify-center rounded-3xl border-2 border-dashed border-[#1B4332]/25 p-5 text-4xl font-light text-[#1B4332] transition hover:bg-white/60",
+          aria: { label: "Create division" },
+          data: admin_modal_frame_data do %>+<% end %>
+  <% end %>
+</div>

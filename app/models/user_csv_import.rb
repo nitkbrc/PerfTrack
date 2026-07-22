@@ -5,7 +5,7 @@ require "csv"
 # (including generated temporary passwords) feed the results page and its
 # downloadable CSV.
 class UserCsvImport
-  HEADERS = %w[name email role usn department sem].freeze
+  HEADERS = %w[name email role phone address usn department sem].freeze
   ROLES = %w[admin faculty student].freeze
 
   Result = Struct.new(:line, :name, :email, :role, :password, :error) do
@@ -19,8 +19,8 @@ class UserCsvImport
     department = Department.order(:name).first&.name || "Computer Science"
     CSV.generate do |csv|
       csv << HEADERS
-      csv << [ "Asha Kumar", "asha@college.edu", "student", "1XX22CS001", department, "3" ]
-      csv << [ "Prof. Rao", "rao@college.edu", "faculty", "", "", "" ]
+      csv << [ "Asha Kumar", "asha@college.edu", "student", "9876543210", "123 Campus Road", "1XX22CS001", department, "3" ]
+      csv << [ "Prof. Rao", "rao@college.edu", "faculty", "9876543211", "Faculty Block, Room 12", "", "", "" ]
     end
   end
 
@@ -65,10 +65,20 @@ class UserCsvImport
     name = row["name"].to_s.strip
     email = row["email"].to_s.strip
     role = row["role"].to_s.strip.downcase
+    phone = row["phone"].to_s.strip
+    address = row["address"].to_s.strip
     usn = row["usn"].to_s.strip
 
     unless ROLES.include?(role)
       return add_result(line, name, email, role, nil, "role must be one of: #{ROLES.join(', ')}")
+    end
+
+    if phone.blank?
+      return add_result(line, name, email, role, nil, "phone is required")
+    end
+
+    if address.blank?
+      return add_result(line, name, email, role, nil, "address is required")
     end
 
     if role == "student" && usn.blank?
@@ -80,10 +90,11 @@ class UserCsvImport
     # a random one that is only ever visible in these results.
     password = role == "student" ? usn * 2 : (@staff_password || SecureRandom.alphanumeric(12))
 
-    user = User.new(name: name, email: email, role: role,
+    user = User.new(name: name, email: email, role: role, phone: phone, address: address,
                     password: password, password_confirmation: password,
                     password_change_required: true)
     user.student_profile = build_student(row, usn, user) if role == "student"
+    ::UserPhotoPlaceholder.attach!(user)
 
     if user.save
       add_result(line, name, email, role, password, nil)

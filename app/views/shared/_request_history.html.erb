@@ -1,0 +1,19 @@
+<ol class="space-y-3">
+  <% histories.sort_by(&:created_at).each do |history| %>
+    <li class="rounded-lg border border-slate-200 p-3 text-sm">
+      <div class="flex items-center justify-between">
+        <span class="font-medium text-slate-900"><%= history_label(history.action) %></span>
+        <span class="text-xs text-slate-500"><%= history.created_at.strftime("%d %b %Y, %H:%M") %></span>
+      </div>
+      <p class="mt-1 text-xs text-slate-500">
+        by <%= history.actor.name.presence || history.actor.email %>
+        <% if history.from_status.present? %>
+          · <%= history.from_status.humanize %> → <%= history.to_status.humanize %>
+        <% end %>
+      </p>
+      <% if history.comment.present? %>
+        <p class="mt-2 text-slate-700"><%= history.comment %></p>
+      <% end %>
+    </li>
+  <% end %>
+</ol>

@@ -1,2 +1,8 @@
-<h1 class="mb-6 text-2xl font-bold text-slate-900">New sub-division</h1>
-<%= render "form", sub_division: @sub_division %>
+<% return_url = @sub_division.division_id.present? ? admin_division_path(@sub_division.division) : admin_sub_divisions_path %>
+<% content_for :modal do %>
+  <%= turbo_frame_tag "modal" do %>
+    <%= render layout: "admin/shared/modal", locals: { title: "New sub-division", return_url: return_url } do %>
+      <%= render "form", sub_division: @sub_division %>
+    <% end %>
+  <% end %>
+<% end %>

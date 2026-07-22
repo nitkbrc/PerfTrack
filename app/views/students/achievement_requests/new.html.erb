@@ -1,19 +1,18 @@
 <% selected_sub_division = @achievement_request.category&.sub_division %>
 <% selected_division_id = selected_sub_division&.division_id %>
 
-<%= render "students/shared/nav" %>
-
 <div class="mx-auto w-full max-w-lg">
-  <h1 class="mb-6 text-2xl font-bold text-slate-900">Submit an achievement request</h1>
+  <h1 class="mb-2 text-2xl font-bold text-[#1B4332]">Submit an achievement request</h1>
+  <p class="mb-6 text-sm text-slate-600">Choose the division path, then add title, description, and PNG proof.</p>
 
-  <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200"
+  <div class="clay-card p-6 sm:p-8"
        data-controller="cascading-select"
        data-cascading-select-tree-value="<%= @division_tree.to_json %>">
     <%= form_with model: @achievement_request, url: student_achievement_requests_path, class: "space-y-5" do |f| %>
       <%= render "admin/shared/error_messages", record: @achievement_request %>
 
       <div>
-        <%= label_tag :division_id, "Division", class: "block text-sm font-medium text-slate-700" %>
+        <%= label_tag :division_id, "Division", class: admin_label_classes %>
         <%= select_tag :division_id,
               options_for_select(@division_tree.map { |d| [ d[:name], d[:id] ] }, selected_division_id),
               prompt: "Select a division",
@@ -23,7 +22,7 @@
       </div>
 
       <div>
-        <%= label_tag :sub_division_id, "Sub-division", class: "block text-sm font-medium text-slate-700" %>
+        <%= label_tag :sub_division_id, "Sub-division", class: admin_label_classes %>
         <%= select_tag :sub_division_id, nil,
               prompt: "Select a sub-division",
               class: admin_input_classes,
@@ -32,7 +31,7 @@
       </div>
 
       <div>
-        <%= f.label :category_id, "Category", class: "block text-sm font-medium text-slate-700" %>
+        <%= f.label :category_id, "Category", class: admin_label_classes %>
         <%= f.select :category_id, [],
               { prompt: "Select a category" },
               class: admin_input_classes,
@@ -40,26 +39,27 @@
       </div>
 
       <div>
-        <%= f.label :title, class: "block text-sm font-medium text-slate-700" %>
+        <%= f.label :title, class: admin_label_classes %>
         <%= f.text_field :title, class: admin_input_classes %>
       </div>
 
       <div>
-        <%= f.label :description, class: "block text-sm font-medium text-slate-700" %>
+        <%= f.label :description, class: admin_label_classes %>
         <%= f.text_area :description, rows: 4, class: admin_input_classes %>
       </div>
 
-      <div>
-        <%= f.label :proofs, "Proof (PNG, max 5MB each)", class: "block text-sm font-medium text-slate-700" %>
+      <div data-controller="proof-preview">
+        <%= f.label :proofs, "Proof (PNG, max 5MB each)", class: admin_label_classes %>
         <%= f.file_field :proofs, multiple: true, accept: "image/png",
-              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-xl file:border-0 file:bg-[#D8F3DC] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#1B4332] hover:file:bg-[#B7E4C7]",
+              data: { proof_preview_target: "input", action: "change->proof-preview#preview" } %>
         <p class="mt-1 text-xs text-slate-500">Attach at least one PNG image as proof.</p>
+        <div data-proof-preview-target="list" class="mt-3 flex flex-wrap gap-3"></div>
       </div>
 
-      <div class="flex items-center gap-4">
-        <%= f.submit "Submit request",
-              class: "cursor-pointer rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" %>
-        <%= link_to "Cancel", student_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      <div class="flex flex-wrap items-center gap-4 pt-1">
+        <%= f.submit "Submit request", class: "scats-primary-button" %>
+        <%= link_to "Cancel", student_root_path, class: admin_link_classes %>
       </div>
     <% end %>
   </div>

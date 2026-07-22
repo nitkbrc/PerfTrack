@@ -1,28 +1,26 @@
-<div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
-  <%= form_with model: [ :admin, sub_division ], class: "space-y-5" do |f| %>
-    <%= render "admin/shared/error_messages", record: sub_division %>
+<%= form_with model: [ :admin, sub_division ], class: "space-y-5" do |f| %>
+  <%= render "admin/shared/error_messages", record: sub_division %>
 
-    <div>
-      <%= f.label :division_id, "Division", class: admin_label_classes %>
-      <%= f.collection_select :division_id, Division.active.order(:name), :id, :name,
-            { prompt: "Select a division" }, class: admin_input_classes %>
-    </div>
+  <div>
+    <%= f.label :division_id, "Division", class: admin_label_classes %>
+    <%= f.collection_select :division_id, Division.active.order(:name), :id, :name,
+          { prompt: "Select a division" }, class: admin_input_classes %>
+  </div>
 
-    <div>
-      <%= f.label :name, class: admin_label_classes %>
-      <%= f.text_field :name, class: admin_input_classes %>
-    </div>
+  <div>
+    <%= f.label :name, class: admin_label_classes %>
+    <%= f.text_field :name, class: admin_input_classes %>
+  </div>
 
-    <div>
-      <%= f.label :supervisor_user_id, "Supervisor", class: admin_label_classes %>
-      <%= f.collection_select :supervisor_user_id, User.eligible_supervisors.order(:name), :id,
-            ->(u) { u.name.presence || u.email }, { prompt: "Select a faculty member" }, class: admin_input_classes %>
-      <p class="mt-1 text-xs text-slate-500">Faculty who are already a dean are not listed.</p>
-    </div>
+  <div>
+    <%= f.label :supervisor_user_id, "Supervisor", class: admin_label_classes %>
+    <%= f.collection_select :supervisor_user_id, User.eligible_supervisors.order(:name), :id,
+          ->(u) { u.name.presence || u.email }, { prompt: "Select a faculty member" }, class: admin_input_classes %>
+    <p class="mt-1 text-xs text-slate-500">Faculty who are already a dean are not listed.</p>
+  </div>
 
-    <div class="flex items-center gap-4">
-      <%= f.submit class: admin_primary_button_classes %>
-      <%= link_to "Cancel", admin_sub_divisions_path, class: admin_link_classes %>
-    </div>
-  <% end %>
-</div>
+  <div class="flex items-center gap-4">
+    <%= f.submit class: admin_primary_button_classes %>
+    <button type="button" data-action="modal#close" class="<%= admin_link_classes %>">Cancel</button>
+  </div>
+<% end %>

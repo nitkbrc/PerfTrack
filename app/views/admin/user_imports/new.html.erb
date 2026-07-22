@@ -1,46 +1,132 @@
-<div class="mx-auto max-w-lg">
-  <h1 class="mb-2 text-2xl font-bold text-slate-900">Import users from CSV</h1>
-  <p class="mb-6 text-sm text-slate-500">
-    Upload a CSV with the columns <code class="rounded bg-slate-100 px-1 py-0.5 text-xs">name, email, role, usn, department, sem</code>.
-    The last three columns only apply to students. Each user must change their temporary password on first login.
-  </p>
+<div class="mx-auto max-w-xl">
+  <div class="mb-6">
+    <h1 class="mb-2 text-2xl font-bold text-slate-900">Import users</h1>
+    <p class="text-sm text-slate-500">
+      Add one person manually, or upload a CSV to create many accounts at once.
+    </p>
+  </div>
 
-  <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
-    <ul class="mb-6 list-disc space-y-1 pl-5 text-sm text-slate-600">
-      <li>Students' temporary password is their USN typed twice.</li>
-      <li>Faculty and admin passwords come from the field below, or are auto-generated (shown once in the import results) when it is left blank.</li>
-      <li><code>role</code> must be admin, faculty or student.</li>
-      <li>
-        <code>department</code> must match an existing department name exactly:
-        <span class="font-semibold"><%= Department.order(:name).pluck(:name).join(", ").presence || "none created yet — add departments first" %></span>
-      </li>
-      <li>Rows with errors are skipped — everything else still imports.</li>
-    </ul>
-
-    <%# turbo: false — the results page is a rendered (non-redirect) response,
-        which Turbo would silently discard on a form submission. %>
-    <%= form_with url: admin_user_imports_path, multipart: true, data: { turbo: false }, class: "space-y-5" do %>
-      <div>
-        <%= label_tag :file, "CSV file", class: admin_label_classes %>
-        <%= file_field_tag :file, accept: ".csv,text/csv",
-              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+  <div class="clay-card p-6 sm:p-8"
+       data-controller="import-mode"
+       data-import-mode-mode-value="manual">
+    <div class="mb-6">
+      <%# Listen only on this switch — role switch inside the form also fires
+          segmented-switch:change and must not reach import-mode. %>
+      <div class="scats-switch w-full"
+           role="tablist"
+           aria-label="Import method"
+           data-controller="segmented-switch"
+           data-segmented-switch-selected-value="manual"
+           data-action="segmented-switch:change->import-mode#select">
+        <span class="scats-switch__pill" data-segmented-switch-target="pill" aria-hidden="true"></span>
+        <button type="button"
+                role="tab"
+                data-segmented-switch-target="option"
+                data-value="manual"
+                data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                class="scats-switch__option">
+          Import users
+        </button>
+        <button type="button"
+                role="tab"
+                data-segmented-switch-target="option"
+                data-value="csv"
+                data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                class="scats-switch__option">
+          Import from CSV
+        </button>
       </div>
+    </div>
 
-      <div>
-        <%= label_tag :staff_password, "Temporary password for faculty & admin (optional)", class: admin_label_classes %>
-        <%= text_field_tag :staff_password, nil, class: admin_input_classes,
-              placeholder: "Leave blank to auto-generate", autocomplete: "off" %>
-        <p class="mt-1 text-xs text-slate-500">
-          Used for every faculty/admin row in this file (min 6 characters). Students always get their USN typed twice.
-          Everyone must change their password on first login.
-        </p>
-      </div>
+    <div data-import-mode-target="panel" data-mode="manual" role="tabpanel">
+      <p class="mb-5 text-sm text-slate-500">
+        Create a single account with name, contact details, role, and temporary password.
+      </p>
+      <%= render "admin/users/form", user: @user %>
+    </div>
 
-      <div class="flex items-center gap-4">
-        <%= submit_tag "Import users", class: admin_primary_button_classes %>
-        <%= link_to "Download template", template_admin_user_imports_path, class: admin_link_classes %>
-        <%= link_to "Cancel", admin_users_path, class: admin_link_classes %>
-      </div>
-    <% end %>
+    <div data-import-mode-target="panel" data-mode="csv" role="tabpanel" class="hidden">
+      <p class="mb-4 text-sm text-slate-500">
+        Upload a CSV with the columns
+        <code class="rounded bg-[#1B4332]/8 px-1 py-0.5 text-xs text-[#1B4332]">name, email, role, phone, address, usn, department, sem</code>.
+        The last three columns only apply to students. Each user must change their temporary password on first login.
+      </p>
+
+      <ul class="mb-6 list-disc space-y-1 pl-5 text-sm text-slate-600">
+        <li><code>phone</code> and <code>address</code> are required on every row.</li>
+        <li>CSV import attaches a placeholder profile photo — replace it by editing the user afterward.</li>
+        <li>Students' temporary password is their USN typed twice.</li>
+        <li>Faculty and admin passwords come from the field below (default <code>pass123</code>), or are auto-generated when it is left blank.</li>
+        <li><code>role</code> must be admin, faculty or student.</li>
+        <li>
+          <code>department</code> must match an existing department name exactly:
+          <span class="font-semibold"><%= Department.order(:name).pluck(:name).join(", ").presence || "none created yet — add departments first" %></span>
+        </li>
+        <li>Rows with errors are skipped — everything else still imports.</li>
+      </ul>
+
+      <%# turbo: false — the results page is a rendered (non-redirect) response,
+          which Turbo would silently discard on a form submission. %>
+      <%= form_with url: admin_user_imports_path, multipart: true, data: { turbo: false }, class: "space-y-5" do %>
+        <div>
+          <%= label_tag :file, "CSV file", class: admin_label_classes %>
+          <div class="relative mt-1" data-controller="file-picker">
+            <%= file_field_tag :file, accept: ".csv,text/csv",
+                  tabindex: -1,
+                  aria: { hidden: true },
+                  class: "pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0",
+                  data: {
+                    file_picker_target: "input",
+                    action: "change->file-picker#changed"
+                  } %>
+            <div class="flex flex-wrap items-center gap-3">
+              <button type="button"
+                      data-action="file-picker#pick"
+                      class="<%= admin_primary_button_classes %>">
+                Choose file
+              </button>
+              <span data-file-picker-target="name" class="text-sm text-slate-500">No file chosen</span>
+            </div>
+          </div>
+        </div>
+
+        <div data-controller="staff-password-field">
+          <%= label_tag :staff_password, "Temporary password for faculty & admin (optional)", class: admin_label_classes %>
+          <p data-staff-password-field-target="hint"
+             class="mt-1 text-xs font-medium text-red-600"
+             hidden>
+            password must be atleast 6 letters
+          </p>
+          <%= text_field_tag :staff_password, "pass123",
+                class: admin_input_classes,
+                autocomplete: "off",
+                placeholder: "Leave blank to auto-generate",
+                data: {
+                  controller: "remembered-field",
+                  staff_password_field_target: "input",
+                  remembered_field_key_value: "scats:staff_password",
+                  remembered_field_default_value: "pass123",
+                  action: [
+                    "input->staff-password-field#sync",
+                    "change->staff-password-field#sync",
+                    "input->remembered-field#persist",
+                    "change->remembered-field#persist"
+                  ].join(" ")
+                } %>
+          <p class="mt-1 text-xs text-slate-500">
+            Used for every faculty/admin row in this file. Starts as
+            <code class="rounded bg-[#1B4332]/8 px-1 py-0.5 text-xs text-[#1B4332]">pass123</code>;
+            clear the field to auto-generate instead. Your edits are kept until you change them again.
+            Students always get their USN typed twice. Everyone must change their password on first login.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4">
+          <%= submit_tag "Import users", class: admin_primary_button_classes %>
+          <%= link_to "Download template", template_admin_user_imports_path, class: admin_link_classes %>
+          <%= link_to "Cancel", admin_users_path, class: admin_link_classes %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>

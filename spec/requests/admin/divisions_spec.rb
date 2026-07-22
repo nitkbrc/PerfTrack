@@ -15,6 +15,24 @@ RSpec.describe "Admin divisions", type: :request do
     expect(response).to redirect_to("/admin/divisions")
   end
 
+  it "opens the new division form inside the modal turbo frame" do
+    get "/admin/divisions/new"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('id="modal"')
+    expect(response.body).to include('data-controller="modal"')
+    expect(response.body).to include("New division")
+    expect(response.body).to include("Name")
+  end
+
+  it "targets the modal frame from the divisions index create links" do
+    get "/admin/divisions"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('id="modal"')
+    expect(response.body).to include('data-turbo-frame="modal"')
+  end
+
   it "re-renders with a friendly error when the dean already deans another division" do
     dean = create(:user, :faculty)
     create(:division, dean: dean)
@@ -69,5 +87,26 @@ RSpec.describe "Admin divisions", type: :request do
 
     expect(response).to have_http_status(:unprocessable_content)
     expect(response.body).to include("is already a supervisor of a sub-division")
+  end
+
+  it "shows a division's sub-divisions" do
+    division = create(:division, name: "Sports")
+    sub_division = create(:sub_division, division: division, name: "Athletics")
+
+    get admin_division_path(division)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(sub_division.name)
+  end
+
+  it "shows categories for a sub-division" do
+    sub_division = create(:sub_division, name: "Athletics")
+    category = create(:category, sub_division: sub_division, name: "Gold medal")
+
+    get admin_sub_division_path(sub_division)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(category.name)
+    expect(response.body).to include("+")
   end
 end

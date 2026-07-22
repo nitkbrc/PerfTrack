@@ -1,5 +1,3 @@
-<%= render "supervisors/shared/nav" %>
-
 <div class="mx-auto w-full max-w-lg">
   <h1 class="mb-2 text-2xl font-bold text-slate-900">Raise a request for a student</h1>
   <p class="mb-6 text-sm text-slate-500">
@@ -12,10 +10,17 @@
 
       <div>
         <%= f.label :student_id, "Student", class: "block text-sm font-medium text-slate-700" %>
-        <%= f.collection_select :student_id, ::Student.includes(:user).order(:usn), :id,
-              ->(s) { "#{s.usn} — #{s.user.name.presence || s.user.email}" },
-              { prompt: "Select a student", selected: params.dig(:achievement_request, :student_id) },
-              class: admin_input_classes %>
+        <% if @achievement_request.student_id.present? && (locked_student = ::Student.includes(:user).find_by(id: @achievement_request.student_id)) %>
+          <%= f.hidden_field :student_id %>
+          <p class="mt-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900">
+            <%= locked_student.usn %> — <%= locked_student.user.name.presence || locked_student.user.email %>
+          </p>
+        <% else %>
+          <%= f.collection_select :student_id, ::Student.includes(:user).order(:usn), :id,
+                ->(s) { "#{s.usn} — #{s.user.name.presence || s.user.email}" },
+                { prompt: "Select a student", selected: @achievement_request.student_id },
+                class: admin_input_classes %>
+        <% end %>
       </div>
 
       <div>
@@ -38,10 +43,12 @@
         <%= f.text_area :description, rows: 4, class: admin_input_classes %>
       </div>
 
-      <div>
+      <div data-controller="proof-preview">
         <%= f.label :proofs, "Proof (PNG, max 5MB each)", class: "block text-sm font-medium text-slate-700" %>
         <%= f.file_field :proofs, multiple: true, accept: "image/png",
-              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100",
+              data: { proof_preview_target: "input", action: "change->proof-preview#preview" } %>
+        <div data-proof-preview-target="list" class="mt-3 flex flex-wrap gap-3"></div>
       </div>
 
       <div class="flex items-center gap-4">

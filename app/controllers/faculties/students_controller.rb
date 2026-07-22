@@ -2,12 +2,24 @@ module Faculties
   class StudentsController < BaseController
     def index
       authorize ::Student
-      @students = ::Student.includes(:user, :department).joins(:user).order("users.name")
+      @students = ::Student.includes(:department, user: { photo_attachment: :blob })
+                          .joins(:user).order("users.name")
+      @students = @students.where(department_id: params[:department_id]) if params[:department_id].present?
+      @students = @students.where(sem: params[:sem]) if params[:sem].present?
+      if params[:q].present?
+        term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].strip)}%"
+        @students = @students.where(
+          "users.name ILIKE :term OR users.email ILIKE :term OR students.usn ILIKE :term",
+          term: term
+        )
+      end
+      @departments = Department.order(:name)
       @scores = ::Student.overall_scores
     end
 
     def show
-      @student = authorize ::Student.find(params[:id])
+      @student = authorize ::Student.includes(:department, user: { photo_attachment: :blob })
+                                    .find(params[:id])
 
       approved = @student.achievement_requests.dean_approved
                          .includes(category: { sub_division: :division })

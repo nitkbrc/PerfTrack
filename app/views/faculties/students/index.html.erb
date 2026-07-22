@@ -1,32 +1,56 @@
-<%= render "faculties/shared/nav" %>
-
 <div class="mx-auto w-full max-w-4xl">
   <h1 class="mb-1 text-2xl font-bold text-slate-900">Students</h1>
   <p class="mb-6 text-sm text-slate-500">All students with their current overall score. Select a student for the full breakdown.</p>
 
+  <%= form_with url: faculty_students_path, method: :get, class: "clay-card mb-6 flex flex-col gap-4 p-4" do |f| %>
+    <div class="w-full">
+      <%= f.search_field :q, value: params[:q], placeholder: "Search name, email, or USN", class: "#{admin_input_classes} mt-0 w-full" %>
+    </div>
+    <div class="grid grid-cols-1 items-end gap-3 sm:grid-cols-3">
+      <div class="min-w-0">
+        <%= f.collection_select :department_id, @departments, :id, :name, { include_blank: "All departments", selected: params[:department_id] }, class: "#{admin_input_classes} mt-0 w-full" %>
+      </div>
+      <div class="min-w-0">
+        <%= f.select :sem, [["All semesters", ""]] + (1..8).map { |sem| ["Semester #{sem}", sem] }, { selected: params[:sem] }, class: "#{admin_input_classes} mt-0 w-full" %>
+      </div>
+      <div class="flex w-full min-w-0 gap-2">
+        <%= f.submit "Filter", class: "#{admin_primary_button_classes} flex-1" %>
+        <%= link_to "Clear", faculty_students_path,
+              class: "inline-flex flex-1 items-center justify-center rounded-xl border border-[#1B4332]/25 bg-white px-4 py-2 text-sm font-semibold text-[#1B4332] shadow-sm transition hover:border-[#1B4332]/40 hover:bg-[#1B4332]/5 focus:outline-none focus:ring-2 focus:ring-[#74C69D] focus:ring-offset-2" %>
+      </div>
+    </div>
+  <% end %>
+
   <% if @students.any? %>
-    <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+    <div class="clay-card scats-list-shell">
       <table class="w-full text-left text-sm">
         <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
           <tr>
-            <th class="px-4 py-3">Name</th>
-            <th class="px-4 py-3">USN</th>
-            <th class="px-4 py-3">Department</th>
-            <th class="px-4 py-3 text-right">Overall score</th>
+            <th class="w-16 px-3 py-3 sm:px-4">Photo</th>
+            <th class="px-3 py-3 sm:px-4">Name</th>
+            <th class="w-32 px-3 py-3 sm:px-4">USN</th>
+            <th class="hidden px-3 py-3 sm:table-cell sm:px-4">Department</th>
+            <th class="w-28 whitespace-nowrap px-3 py-3 text-right sm:px-4">Score</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody class="scats-list divide-y divide-slate-100">
           <% @students.each do |student| %>
-            <tr class="transition hover:bg-slate-50">
-              <td class="px-4 py-3 font-medium">
-                <%= link_to student.user.name.presence || student.user.email, faculty_student_path(student),
-                      class: "text-indigo-600 hover:text-indigo-500" %>
+            <tr class="relative cursor-pointer">
+              <td class="scats-list-photo px-3 py-3 sm:px-4">
+                <%= link_to "", faculty_student_path(student),
+                      class: "absolute inset-0 z-0",
+                      aria: { label: "View #{student.user.name.presence || student.user.email}" } %>
+                <div class="pointer-events-none relative z-10 inline-flex shrink-0 p-0.5">
+                  <%= user_photo_tag(student.user, size: 36) %>
+                </div>
               </td>
-              <td class="px-4 py-3 text-slate-600"><%= student.usn %></td>
-              <td class="px-4 py-3 text-slate-600"><%= student.department.name %></td>
-              <td class="px-4 py-3 text-right">
-                <span class="font-semibold text-slate-900"><%= @scores[student.id] %></span>
-                <span class="text-xs text-slate-400">/ 10</span>
+              <td class="pointer-events-none relative z-10 min-w-0 truncate px-3 py-3 font-medium text-slate-900 sm:px-4">
+                <%= student.user.name.presence || student.user.email %>
+              </td>
+              <td class="pointer-events-none relative z-10 truncate px-3 py-3 text-slate-600 sm:px-4"><%= student.usn %></td>
+              <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-3 py-3 text-slate-600 sm:table-cell sm:px-4"><%= student.department.name %></td>
+              <td class="pointer-events-none relative z-10 whitespace-nowrap px-3 py-3 text-right sm:px-4">
+                <span class="font-bold text-[#1B4332]"><%= @scores[student.id] %></span>
               </td>
             </tr>
           <% end %>
@@ -35,7 +59,7 @@
     </div>
   <% else %>
     <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
-      No students yet.
+      No students found.
     </p>
   <% end %>
 </div>

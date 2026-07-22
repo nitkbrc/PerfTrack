@@ -159,4 +159,28 @@ RSpec.describe "Supervisor review actions", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
     end
   end
+
+  describe "GET new (Path B)" do
+    let(:student_profile) { create(:student, usn: "1SC24ME001", user: create(:user, name: "Arjun Menon")) }
+
+    before { sub_division }
+
+    it "locks the student field when student_id is prefilled" do
+      get new_supervisor_achievement_request_path(achievement_request: { student_id: student_profile.id })
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("1SC24ME001")
+      expect(response.body).to include("Arjun Menon")
+      expect(response.body).to include('name="achievement_request[student_id]"')
+      expect(response.body).to include('type="hidden"')
+      expect(response.body).not_to include("Select a student")
+    end
+
+    it "keeps the student dropdown when no student_id is given" do
+      get new_supervisor_achievement_request_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Select a student")
+    end
+  end
 end

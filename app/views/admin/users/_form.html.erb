@@ -1,6 +1,13 @@
-<div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200" data-controller="role-fields">
-  <%= form_with model: [ :admin, user ], class: "space-y-5" do |f| %>
+<div data-controller="role-fields">
+  <%= form_with model: [ :admin, user ], html: { multipart: true }, class: "space-y-5" do |f| %>
     <%= render "admin/shared/error_messages", record: user %>
+
+    <% if user.photo.attached? %>
+      <div class="flex items-center gap-4">
+        <%= user_photo_tag(user, size: 64) %>
+        <p class="text-xs text-slate-500">Upload a new file below to replace the current photo.</p>
+      </div>
+    <% end %>
 
     <div>
       <%= f.label :name, class: admin_label_classes %>
@@ -13,10 +20,56 @@
     </div>
 
     <div>
-      <%= f.label :role, class: admin_label_classes %>
-      <%= f.select :role, User.roles.keys.map { |r| [ r.titleize, r ] }, {},
-            class: admin_input_classes,
-            data: { role_fields_target: "roleSelect", action: "change->role-fields#toggle" } %>
+      <%= f.label :phone, class: admin_label_classes %>
+      <%= f.telephone_field :phone, autocomplete: "off", class: admin_input_classes %>
+    </div>
+
+    <div>
+      <%= f.label :address, class: admin_label_classes %>
+      <%= f.text_area :address, rows: 3, autocomplete: "off", class: admin_input_classes %>
+    </div>
+
+    <div>
+      <%= f.label :photo, user.persisted? ? "Photo (optional — replaces current)" : "Photo", class: admin_label_classes %>
+      <%= f.file_field :photo, accept: "image/png,image/jpeg",
+            class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+      <p class="mt-1 text-xs text-slate-500">PNG or JPEG, max 5 MB.</p>
+    </div>
+
+    <div>
+      <%= f.label :role, class: admin_label_classes, id: "user_role_label" %>
+      <% if user.persisted? %>
+        <p class="mt-1 text-sm font-medium text-slate-900"><%= user.role.titleize %></p>
+        <p class="mt-1 text-xs text-slate-500">Role is set at creation and cannot be changed.</p>
+      <% else %>
+        <div data-controller="segmented-switch"
+             data-segmented-switch-selected-value="<%= user.role %>">
+          <%= f.select :role, User.roles.keys.map { |r| [ r.titleize, r ] }, {},
+                id: "user_role",
+                class: "hidden",
+                data: {
+                  segmented_switch_target: "input",
+                  role_fields_target: "roleSelect",
+                  action: "change->role-fields#toggle"
+                } %>
+          <div class="scats-switch mt-1 w-full"
+               role="radiogroup"
+               aria-labelledby="user_role_label"
+               data-segmented-switch-target="track">
+            <span class="scats-switch__pill" data-segmented-switch-target="pill" aria-hidden="true"></span>
+            <% User.roles.keys.each do |role| %>
+              <button type="button"
+                      role="radio"
+                      data-segmented-switch-target="option"
+                      data-value="<%= role %>"
+                      data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                      class="scats-switch__option">
+                <%= role.titleize %>
+              </button>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
     </div>
 
     <% user.build_student_profile if user.student_profile.nil? %>
@@ -58,7 +111,11 @@
 
     <div class="flex items-center gap-4">
       <%= f.submit class: admin_primary_button_classes %>
-      <%= link_to "Cancel", admin_users_path, class: admin_link_classes %>
+      <% if local_assigns.fetch(:in_modal, false) %>
+        <button type="button" data-action="modal#close" class="<%= admin_link_classes %>">Cancel</button>
+      <% else %>
+        <%= link_to "Cancel", admin_users_path, class: admin_link_classes %>
+      <% end %>
     </div>
   <% end %>
 </div>

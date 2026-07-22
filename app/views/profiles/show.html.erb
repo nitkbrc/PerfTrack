@@ -1,0 +1,26 @@
+<div class="mx-auto max-w-2xl">
+  <section class="clay-card p-6 sm:p-8">
+    <div class="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
+      <%= user_photo_tag(@user, size: 104) %>
+      <div>
+        <h1 class="text-3xl font-bold text-[#1B4332]"><%= @user.name.presence || "SCATS user" %></h1>
+        <p class="mt-1 text-slate-600"><%= @user.email %></p>
+        <span class="mt-3 inline-block rounded-full bg-[#74C69D]/35 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#1B4332]"><%= @user.role %></span>
+      </div>
+    </div>
+
+    <dl class="mt-8 grid gap-5 border-t border-[#1B4332]/10 pt-6 sm:grid-cols-2">
+      <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</dt><dd class="mt-1 text-slate-800"><%= @user.phone %></dd></div>
+      <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</dt><dd class="mt-1 text-slate-800"><%= @user.address %></dd></div>
+      <% if @user.student_profile %>
+        <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">USN</dt><dd class="mt-1 text-slate-800"><%= @user.student_profile.usn %></dd></div>
+        <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Department / semester</dt><dd class="mt-1 text-slate-800"><%= @user.student_profile.department.name %> · Semester <%= @user.student_profile.sem %></dd></div>
+      <% end %>
+    </dl>
+
+    <div class="mt-8 flex flex-wrap gap-3">
+      <%= link_to "Change password", edit_account_password_path, class: "scats-primary-button" %>
+      <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "cursor-pointer rounded-xl border border-[#1B4332]/20 px-4 py-2 text-sm font-semibold text-[#1B4332] transition hover:bg-[#1B4332]/5" %>
+    </div>
+  </section>
+</div>

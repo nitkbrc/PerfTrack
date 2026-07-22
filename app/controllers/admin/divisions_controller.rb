@@ -8,6 +8,14 @@ module Admin
       @archived_count = Division.archived.count
     end
 
+    def show
+      @division = authorize Division.find(params[:id])
+      @show_archived = params[:archived].present?
+      scope = @show_archived ? @division.sub_divisions.archived : @division.sub_divisions.active
+      @sub_divisions = scope.includes(:supervisor).order(:name)
+      @archived_count = @division.sub_divisions.archived.count
+    end
+
     def new
       @division = authorize Division.new
     end

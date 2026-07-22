@@ -8,6 +8,13 @@
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <script>
+      try {
+        if (sessionStorage.getItem("scats-sidebar-expanded") === "true") {
+          document.documentElement.classList.add("sidebar-expanded")
+        }
+      } catch (e) {}
+    </script>
 
     <%= yield :head %>
 
@@ -23,11 +30,22 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-    <main class="container mx-auto mt-16 px-5 pb-16">
-      <%= render "shared/flash", width_classes: "mx-auto w-full max-w-md" %>
-
-      <%= yield %>
-    </main>
+  <%# Forced first-login password change uses the same full-bleed auth chrome as sign-in. %>
+  <% authenticated_chrome = user_signed_in? && !current_user.password_change_required? %>
+  <body class="min-h-screen bg-[#F7FAF7] text-slate-900 antialiased"<% if authenticated_chrome %> data-controller="page-nav"<% end %>>
+    <%= render "shared/campus_background", intensity: authenticated_chrome ? :subtle : :full %>
+    <% if authenticated_chrome %>
+      <%= render "shared/sidebar" %>
+      <main class="scats-main">
+        <%= render "shared/flash", width_classes: "" %>
+        <%= yield %>
+      </main>
+      <%= render "shared/bottom_nav" %>
+    <% else %>
+      <main class="container mx-auto px-5 py-10">
+        <%= render "shared/flash", width_classes: "mx-auto w-full max-w-md" %>
+        <%= yield %>
+      </main>
+    <% end %>
   </body>
 </html>

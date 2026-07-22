@@ -4,42 +4,53 @@
     <%= render "admin/shared/archived_toggle", show_archived: @show_archived,
           archived_count: @archived_count, active_path: admin_sub_divisions_path,
           archived_path: admin_sub_divisions_path(archived: 1) %>
-    <%= link_to "New sub-division", new_admin_sub_division_path, class: admin_primary_button_classes %>
+    <%= link_to "New sub-division", new_admin_sub_division_path, class: admin_primary_button_classes, data: admin_modal_frame_data %>
   </div>
 </div>
 
 <% if @sub_divisions.any? %>
-  <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+  <div class="clay-card scats-list-shell">
     <table class="w-full text-left text-sm">
       <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
         <tr>
           <th class="px-4 py-3">Name</th>
-          <th class="px-4 py-3">Division</th>
-          <th class="px-4 py-3">Supervisor</th>
-          <th class="px-4 py-3 text-right">Actions</th>
+          <th class="hidden px-4 py-3 sm:table-cell">Division</th>
+          <th class="hidden px-4 py-3 md:table-cell">Supervisor</th>
+          <th class="w-40 whitespace-nowrap px-4 py-3 text-right">Actions</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody class="scats-list divide-y divide-slate-100">
         <% @sub_divisions.each do |sub_division| %>
-          <tr>
-            <td class="px-4 py-3 font-medium text-slate-900"><%= sub_division.name %></td>
-            <td class="px-4 py-3 text-slate-600"><%= sub_division.division.name %></td>
-            <td class="px-4 py-3 text-slate-600">
+          <tr class="<%= "relative cursor-pointer" unless sub_division.archived? %>">
+            <td class="min-w-0 px-4 py-3 font-medium text-slate-900">
+              <% unless sub_division.archived? %>
+                <%= link_to edit_admin_sub_division_path(sub_division),
+                      class: "absolute inset-0 z-0",
+                      data: admin_modal_frame_data,
+                      aria: { label: "Edit #{sub_division.name}" } do %>
+                <% end %>
+              <% end %>
+              <span class="<%= "pointer-events-none relative z-10" unless sub_division.archived? %> block truncate"><%= sub_division.name %></span>
+            </td>
+            <td class="<%= "pointer-events-none relative z-10" unless sub_division.archived? %> hidden min-w-0 truncate px-4 py-3 text-slate-600 sm:table-cell"><%= sub_division.division.name %></td>
+            <td class="<%= "pointer-events-none relative z-10" unless sub_division.archived? %> hidden min-w-0 truncate px-4 py-3 text-slate-600 md:table-cell">
               <%= sub_division.supervisor.name.presence || sub_division.supervisor.email %>
               <%= archived_badge(sub_division) if sub_division.archived? %>
             </td>
-            <td class="px-4 py-3 text-right">
+            <td class="relative z-10 whitespace-nowrap px-4 py-3 text-right">
               <div class="inline-flex items-center gap-4">
                 <% if sub_division.archived? %>
                   <%= button_to "Restore", restore_admin_sub_division_path(sub_division), method: :patch,
+                        form: { class: "inline", onclick: "event.stopPropagation()" },
                         class: admin_link_classes %>
                   <%= button_to "Delete permanently", admin_sub_division_path(sub_division), method: :delete,
                         data: { turbo_confirm: "Permanently delete #{sub_division.name}? This cannot be undone." },
+                        form: { class: "inline", onclick: "event.stopPropagation()" },
                         class: admin_delete_classes %>
                 <% else %>
-                  <%= link_to "Edit", edit_admin_sub_division_path(sub_division), class: admin_link_classes %>
                   <%= button_to "Archive", archive_admin_sub_division_path(sub_division), method: :patch,
                         data: { turbo_confirm: "Archive #{sub_division.name}? Its categories will be archived too. You can restore it later." },
+                        form: { class: "inline", onclick: "event.stopPropagation()" },
                         class: admin_archive_classes %>
                 <% end %>
               </div>

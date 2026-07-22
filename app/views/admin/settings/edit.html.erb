@@ -7,11 +7,14 @@
     <div>
       <%= f.label :score_scale_k, "Score scale constant (k)", class: admin_label_classes %>
       <%= f.number_field :score_scale_k, min: 1, class: admin_input_classes %>
-      <p class="mt-1 text-xs text-slate-500">
-        Controls how steeply net points map to the 0–10 overall score. Smaller values
-        make scores react faster to points. Changing it immediately rescales every
-        student's displayed score — stored point history is never affected.
-      </p>
+      <aside class="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-3 text-sm text-amber-950" role="note">
+        <p class="font-semibold text-amber-900">Read before changing</p>
+        <p class="mt-1 leading-relaxed text-amber-900/90">
+          Controls how steeply net points map to the 0–10 overall score. Smaller values
+          make scores react faster to points. Changing it immediately rescales every
+          student's displayed score — stored point history is never affected.
+        </p>
+      </aside>
     </div>
 
     <div>

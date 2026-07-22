@@ -1,0 +1,57 @@
+<aside class="scats-sidebar" data-controller="sidebar">
+  <div class="scats-sidebar-header">
+    <span class="scats-sidebar-mark" aria-hidden="true">S</span>
+    <span class="scats-nav-label scats-sidebar-brand">SCATS</span>
+    <button type="button"
+            class="scats-sidebar-toggle"
+            data-sidebar-target="toggle"
+            data-action="sidebar#toggle"
+            aria-expanded="false"
+            aria-label="Expand sidebar"
+            title="Toggle sidebar">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25A2.25 2.25 0 0 1 6 3h12a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 18 21H6a2.25 2.25 0 0 1-2.25-2.25V5.25ZM9 3v18" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="relative min-h-0 flex-1">
+    <div class="pointer-events-none absolute inset-x-0 top-0 z-10 h-7 bg-gradient-to-b from-[#1B4332] to-transparent" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-7 bg-gradient-to-t from-[#1B4332] to-transparent" aria-hidden="true"></div>
+    <nav class="scats-sidebar-nav h-full space-y-1.5 overflow-y-auto">
+      <% navigation_items.each do |label, path, icon| %>
+        <%= link_to path,
+              class: "scats-nav-link #{nav_link_active?(path) ? 'scats-nav-link-active' : ''}",
+              title: label,
+              "aria-label": label,
+              data: {
+                action: "mousedown->sidebar#prepareVisit mousedown->page-nav#activate click->sidebar#expand focus->sidebar#expand"
+              } do %>
+          <span class="scats-nav-icon" aria-hidden="true"><%= nav_icon(icon) %></span>
+          <span class="scats-nav-label"><%= label %></span>
+          <% if label == "Dashboard" && student_attention_needed? %>
+            <%= attention_dot("A reverted request is waiting for you") %>
+          <% elsif label == "Review queue" && supervisor_attention_needed? %>
+            <%= attention_dot("A dean-reverted request is waiting for you") %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </nav>
+  </div>
+
+  <div class="scats-sidebar-footer">
+    <% if current_user.student? %>
+      <div class="scats-sidebar-notify"><%= render "shared/notification_bell", frame_id: "notifications" %></div>
+    <% end %>
+    <%= link_to profile_path,
+          class: "scats-nav-link scats-sidebar-profile #{current_page?(profile_path) ? 'scats-nav-link-active' : ''}",
+          title: "Profile",
+          "aria-label": "Profile",
+          data: {
+            action: "mousedown->sidebar#prepareVisit mousedown->page-nav#activate click->sidebar#expand focus->sidebar#expand"
+          } do %>
+      <%= user_photo_tag(current_user, size: 36) %>
+      <span class="scats-nav-label">Profile</span>
+    <% end %>
+  </div>
+</aside>

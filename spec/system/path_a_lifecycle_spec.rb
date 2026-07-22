@@ -18,15 +18,14 @@ RSpec.describe "Path A lifecycle", type: :system do
     visit new_user_session_path
     fill_in "Email", with: user.email
     fill_in "Password", with: "password123"
-    click_button "Log in"
-    # Wait for the redirect to finish before navigating elsewhere.
-    expect(page).to have_content("Signed in as #{user.email}")
+    click_button "Sign in"
+    expect(page).to have_content("Signed in successfully")
   end
 
   def sign_out_via_nav
-    click_button "Sign out", match: :first
-    # Wait until the session is actually gone before signing in the next role.
-    expect(page).to have_link("Log in")
+    visit profile_path
+    click_button "Sign out"
+    expect(page).to have_content("Welcome to SCATS")
   end
 
   it "walks a request from submission to an updated score and notification" do
@@ -72,9 +71,9 @@ RSpec.describe "Path A lifecycle", type: :system do
     sign_in_as student_user
     visit student_root_path
 
-    expect(page).to have_content("Dean approved")
+    expect(page).to have_content("Approved by Dean Ley")
     expect(page).to have_content("6.0") # sigmoid(net 20, k 50) = 6.0
-    within("nav") { expect(page).to have_content("1") } # unread badge
+    within("#notifications") { expect(page).to have_content("1") } # unread badge
     find("summary").click
     expect(page).to have_content('Your request "Won the state hackathon" was approved by the dean.')
     expect(page).to have_content("Positive: 20 points added to your record.")

@@ -58,6 +58,10 @@ module Supervisors
     def new
       authorize AchievementRequest, :initiate?
       @achievement_request = AchievementRequest.new
+      student_id = params.dig(:achievement_request, :student_id)
+      if student_id.present? && ::Student.exists?(id: student_id)
+        @achievement_request.student_id = student_id
+      end
     end
 
     def create
@@ -66,7 +70,7 @@ module Supervisors
       # A category outside the supervisor's sub-divisions is rejected up front;
       # blank student/category/title fall through to model validations below.
       if request_params[:category_id].present? && !supervised_categories.exists?(id: request_params[:category_id])
-        @achievement_request = AchievementRequest.new(request_params.except(:student_id))
+        @achievement_request = AchievementRequest.new(request_params)
         @achievement_request.errors.add(:category, "must be under one of your sub-divisions")
         return render :new, status: :unprocessable_content
       end

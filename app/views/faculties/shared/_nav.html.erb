@@ -5,13 +5,14 @@
       <span class="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-sky-700">Faculty</span>
     </div>
     <div class="flex items-center gap-4">
-      <%= render "shared/notification_bell" %>
-      <%= link_to "Students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <% if current_user.supervised_sub_divisions.exists? %>
-        <%= link_to "Supervisor panel", supervisor_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
-      <% end %>
-      <% if current_user.deaned_divisions.exists? %>
-        <%= link_to "Dean panel", dean_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+        <%= link_to "Students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+        <%= link_to "Review queue", supervisor_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      <% elsif current_user.deaned_divisions.exists? %>
+        <%= link_to "Students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+        <%= link_to "Decision queue", dean_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+      <% else %>
+        <%= link_to "Students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <% end %>
       <%= link_to "Change password", edit_account_password_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <%= button_to "Sign out", destroy_user_session_path, method: :delete,

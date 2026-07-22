@@ -8,11 +8,6 @@ module StudentHelper
     "rejected" => "bg-red-100 text-red-700"
   }.freeze
 
-  def status_badge(status)
-    classes = STATUS_BADGES.fetch(status, "bg-slate-100 text-slate-700")
-    tag.span status.humanize, class: "rounded-full px-2 py-0.5 text-xs font-semibold #{classes}"
-  end
-
   # Unambiguous history wording — "Supervisor initiate" reads like the student
   # submitted it; spell out who did what instead.
   HISTORY_LABELS = {
@@ -27,6 +22,33 @@ module StudentHelper
     "dean_revert" => "Sent back to supervisor by dean",
     "dean_reject" => "Rejected by dean"
   }.freeze
+
+  def status_badge(request)
+    classes = STATUS_BADGES.fetch(request.status, "bg-slate-100 text-slate-700")
+    tag.span request_status_label(request),
+             class: "scats-status-badge #{classes}"
+  end
+
+  def request_status_label(request)
+    latest = request.req_histories.max_by(&:created_at)
+    return request.status.humanize unless latest
+
+    actor_name = latest.actor.name.presence || latest.actor.email
+
+    case latest.action
+    when "submit" then "Submitted"
+    when "resubmit" then "Resubmitted"
+    when "supervisor_initiate" then "Raised by #{actor_name}"
+    when "supervisor_approve" then "Approved by #{actor_name}"
+    when "supervisor_reforward" then "Re-forwarded by #{actor_name}"
+    when "supervisor_revert" then "Reverted by #{actor_name}"
+    when "supervisor_reject" then "Rejected by #{actor_name}"
+    when "dean_approve" then "Approved by #{actor_name}"
+    when "dean_revert" then "Sent back by #{actor_name}"
+    when "dean_reject" then "Rejected by #{actor_name}"
+    else request.status.humanize
+    end
+  end
 
   def history_label(action)
     HISTORY_LABELS.fetch(action, action.humanize)

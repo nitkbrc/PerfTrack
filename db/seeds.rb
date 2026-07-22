@@ -11,13 +11,21 @@ def proof
   { io: StringIO.new(PROOF_PNG), filename: "proof.png", content_type: "image/png" }
 end
 
-def seed_user(name:, email:, role:)
-  User.find_or_create_by!(email: email) do |user|
-    user.name = name
-    user.role = role
-    user.password = "password123"
-    user.password_change_required = false
+def seed_user(name:, email:, role:, phone:, address:)
+  user = User.find_or_create_by!(email: email) do |u|
+    u.name = name
+    u.role = role
+    u.phone = phone
+    u.address = address
+    u.password = role == "admin" ? "admin123" : "password123"
+    u.password_change_required = false
+    UserPhotoPlaceholder.attach!(u)
   end
+  unless user.photo.attached?
+    UserPhotoPlaceholder.attach!(user)
+    user.save!
+  end
+  user
 end
 
 puts "Seeding departments..."
@@ -26,20 +34,22 @@ departments = [ "CSE", "ECE", "Mechanical" ].index_with do |name|
 end
 
 puts "Seeding faculty..."
-dean_tech       = seed_user(name: "Dr. Meera Nair",    email: "meera.nair@scats.edu",    role: "faculty")
-dean_culture    = seed_user(name: "Dr. Suresh Iyer",   email: "suresh.iyer@scats.edu",   role: "faculty")
-dean_discipline = seed_user(name: "Dr. Arjun Rao",     email: "arjun.rao@scats.edu",     role: "faculty")
-sup_technical   = seed_user(name: "Prof. Kavya Shetty", email: "kavya.shetty@scats.edu", role: "faculty")
-sup_culture     = seed_user(name: "Prof. Anil Joshi",  email: "anil.joshi@scats.edu",    role: "faculty")
-sup_conduct     = seed_user(name: "Prof. Ravi Kumar",  email: "ravi.kumar@scats.edu",    role: "faculty")
+dean_tech = seed_user(name: "Dr. Meera Nair", email: "meera.nair@scats.edu", role: "faculty",
+                      phone: "9100000101", address: "Faculty Quarters, Block A")
+dean_culture = seed_user(name: "Dr. Suresh Iyer", email: "suresh.iyer@scats.edu", role: "faculty",
+                         phone: "9100000102", address: "Faculty Quarters, Block B")
+dean_discipline = seed_user(name: "Dr. Arjun Rao", email: "arjun.rao@scats.edu", role: "faculty",
+                            phone: "9100000103", address: "Faculty Quarters, Block C")
+sup_technical = seed_user(name: "Prof. Kavya Shetty", email: "kavya.shetty@scats.edu", role: "faculty",
+                          phone: "9100000201", address: "CS Department, Room 204")
+sup_culture = seed_user(name: "Prof. Anil Joshi", email: "anil.joshi@scats.edu", role: "faculty",
+                        phone: "9100000202", address: "Sports Complex Office")
+sup_conduct = seed_user(name: "Prof. Ravi Kumar", email: "ravi.kumar@scats.edu", role: "faculty",
+                        phone: "9100000203", address: "Student Affairs Office")
 
 puts "Seeding admin..."
-User.find_or_create_by!(email: "admin@scats.edu") do |user|
-  user.name = "SCATS Admin"
-  user.role = "admin"
-  user.password = "admin123"
-  user.password_change_required = false
-end
+seed_user(name: "SCATS Admin", email: "admin@scats.edu", role: "admin",
+          phone: "9000000000", address: "Administration Block, Main Campus")
 
 puts "Seeding divisions, sub-divisions and categories..."
 structure = {
@@ -85,18 +95,18 @@ puts "Seeding reason templates..."
 
 puts "Seeding students..."
 student_rows = [
-  [ "Asha Kumar",    "asha.kumar@scats.edu",    "1SC22CS001", "CSE", 5 ],
-  [ "Vikram Singh",  "vikram.singh@scats.edu",  "1SC22CS002", "CSE", 5 ],
-  [ "Priya Patel",   "priya.patel@scats.edu",   "1SC23CS003", "CSE", 3 ],
-  [ "Rahul Desai",   "rahul.desai@scats.edu",   "1SC22EC001", "ECE", 5 ],
-  [ "Sneha Reddy",   "sneha.reddy@scats.edu",   "1SC23EC002", "ECE", 3 ],
-  [ "Arjun Menon",   "arjun.menon@scats.edu",   "1SC24ME001", "Mechanical", 1 ],
-  [ "Divya Sharma",  "divya.sharma@scats.edu",  "1SC22ME002", "Mechanical", 5 ],
-  [ "Karthik Gowda", "karthik.gowda@scats.edu", "1SC23CS004", "CSE", 3 ]
+  [ "Asha Kumar",    "asha.kumar@scats.edu",    "1SC22CS001", "CSE", 5, "9200000001", "Hostel A, Room 101" ],
+  [ "Vikram Singh",  "vikram.singh@scats.edu",  "1SC22CS002", "CSE", 5, "9200000002", "Hostel A, Room 102" ],
+  [ "Priya Patel",   "priya.patel@scats.edu",   "1SC23CS003", "CSE", 3, "9200000003", "Hostel B, Room 201" ],
+  [ "Rahul Desai",   "rahul.desai@scats.edu",   "1SC22EC001", "ECE", 5, "9200000004", "Hostel B, Room 202" ],
+  [ "Sneha Reddy",   "sneha.reddy@scats.edu",   "1SC23EC002", "ECE", 3, "9200000005", "Hostel C, Room 301" ],
+  [ "Arjun Menon",   "arjun.menon@scats.edu",   "1SC24ME001", "Mechanical", 1, "9200000006", "Hostel C, Room 302" ],
+  [ "Divya Sharma",  "divya.sharma@scats.edu",  "1SC22ME002", "Mechanical", 5, "9200000007", "Hostel D, Room 401" ],
+  [ "Karthik Gowda", "karthik.gowda@scats.edu", "1SC23CS004", "CSE", 3, "9200000008", "Hostel D, Room 402" ]
 ]
 
-students = student_rows.map do |name, email, usn, dept, sem|
-  user = seed_user(name: name, email: email, role: "student")
+students = student_rows.map do |name, email, usn, dept, sem, phone, address|
+  user = seed_user(name: name, email: email, role: "student", phone: phone, address: address)
   Student.find_or_create_by!(usn: usn) do |s|
     s.user = user
     s.department = departments.fetch(dept)

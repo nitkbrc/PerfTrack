@@ -4,24 +4,29 @@
 </div>
 
 <% if @reason_templates.any? %>
-  <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+  <div class="clay-card scats-list-shell">
     <table class="w-full text-left text-sm">
       <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
         <tr>
           <th class="px-4 py-3">Message</th>
-          <th class="px-4 py-3 text-right">Actions</th>
+          <th class="w-20 whitespace-nowrap px-4 py-3 text-right">Actions</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody class="scats-list divide-y divide-slate-100">
         <% @reason_templates.each do |template| %>
-          <tr>
-            <td class="px-4 py-3 text-slate-700"><%= truncate(template.message_text, length: 120) %></td>
-            <td class="px-4 py-3 text-right">
-              <div class="inline-flex items-center gap-4">
-                <%= link_to "Edit", edit_admin_reason_template_path(template), class: admin_link_classes %>
-                <%= button_to "Delete", admin_reason_template_path(template), method: :delete,
-                      data: { turbo_confirm: "Delete this template?" }, class: admin_delete_classes %>
-              </div>
+          <tr class="relative cursor-pointer">
+            <td class="min-w-0 px-4 py-3 text-slate-700">
+              <%= link_to edit_admin_reason_template_path(template),
+                    class: "absolute inset-0 z-0",
+                    aria: { label: "Edit reason template" } do %>
+              <% end %>
+              <span class="pointer-events-none relative z-10"><%= truncate(template.message_text, length: 120) %></span>
+            </td>
+            <td class="relative z-10 whitespace-nowrap px-4 py-3 text-right">
+              <%= button_to "Delete", admin_reason_template_path(template), method: :delete,
+                    data: { turbo_confirm: "Delete this template?" },
+                    form: { class: "inline", onclick: "event.stopPropagation()" },
+                    class: admin_delete_classes %>
             </td>
           </tr>
         <% end %>

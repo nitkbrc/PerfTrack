@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe "Account passwords", type: :request do
   describe "forced password change" do
-    let(:user) { create(:user, password: "temp123456", password_change_required: true) }
+    let(:user) { create(:user, :faculty, password: "temp123456", password_change_required: true) }
 
     before { sign_in user }
 
@@ -35,12 +35,14 @@ RSpec.describe "Account passwords", type: :request do
       expect(user.valid_password?("mynewpass99")).to be true
 
       get root_path
+      expect(response).to redirect_to(faculty_root_path)
+      follow_redirect!
       expect(response).to have_http_status(:ok)
     end
   end
 
   describe "voluntary password change" do
-    let(:user) { create(:user, password: "password123") }
+    let(:user) { create(:user, :faculty, password: "password123") }
 
     before { sign_in user }
 
@@ -53,6 +55,8 @@ RSpec.describe "Account passwords", type: :request do
       expect(user.reload.valid_password?("anotherpass1")).to be true
 
       get root_path
+      expect(response).to redirect_to(faculty_root_path)
+      follow_redirect!
       expect(response).to have_http_status(:ok)
     end
 

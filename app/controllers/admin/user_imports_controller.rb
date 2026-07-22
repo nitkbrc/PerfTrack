@@ -2,6 +2,7 @@ module Admin
   class UserImportsController < BaseController
     def new
       authorize User, :create?
+      @user = User.new
     end
 
     def create

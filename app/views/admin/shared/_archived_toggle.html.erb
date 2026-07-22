@@ -1,6 +1,6 @@
 <%# Switches an admin index between active records and the archived view. %>
 <% if show_archived %>
-  <%= link_to "← Back to active", active_path, class: admin_link_classes %>
+  <%= link_to "← Back to active", active_path, class: admin_back_link_classes %>
 <% elsif archived_count.positive? %>
   <%= link_to "Archived (#{archived_count})", archived_path,
         class: "text-sm font-medium text-slate-500 hover:text-slate-700" %>

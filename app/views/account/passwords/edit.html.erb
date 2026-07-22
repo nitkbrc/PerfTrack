@@ -1,46 +1,47 @@
-<div class="mx-auto w-full max-w-md">
-  <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
-    <h1 class="mb-1 text-center text-2xl font-bold text-slate-900">Change your password</h1>
-    <% if current_user.password_change_required? %>
-      <p class="mb-6 text-center text-sm text-slate-500">Your account was set up with a temporary password. Please choose your own to continue.</p>
+<% forced = current_user.password_change_required? %>
+
+<div class="mx-auto grid min-h-[75vh] w-full max-w-md place-items-center">
+  <section class="glass-panel w-full p-7">
+    <h1 class="text-2xl font-bold text-[#1B4332]">
+      <%= forced ? "Set your password" : "Change your password" %>
+    </h1>
+    <% if forced %>
+      <p class="mt-1 text-sm text-slate-600">Your account was set up with a temporary password. Please choose your own to continue.</p>
     <% else %>
-      <p class="mb-6 text-center text-sm text-slate-500">Enter your current password, then choose a new one</p>
+      <p class="mt-1 text-sm text-slate-600">Enter your current password, then choose a new one.</p>
     <% end %>
 
-    <%= form_with model: @user, url: account_password_path, method: :put, scope: :user, class: "space-y-5" do |f| %>
+    <%= form_with model: @user, url: account_password_path, method: :put, scope: :user, class: "mt-6 space-y-4" do |f| %>
       <%= render "admin/shared/error_messages", record: @user %>
 
       <div>
         <%= f.label :current_password, class: "block text-sm font-medium text-slate-700" %>
         <%= f.password_field :current_password, autofocus: true, autocomplete: "current-password",
-              class: "mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" %>
+              class: "mt-1 w-full rounded-xl border-slate-200 bg-white/80 px-3 py-2.5 focus:border-[#74C69D] focus:ring-[#74C69D]" %>
       </div>
 
       <div>
         <%= f.label :password, "New password", class: "block text-sm font-medium text-slate-700" %>
         <span class="text-xs text-slate-500">(6 characters minimum)</span>
         <%= f.password_field :password, autocomplete: "new-password",
-              class: "mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" %>
+              class: "mt-1 w-full rounded-xl border-slate-200 bg-white/80 px-3 py-2.5 focus:border-[#74C69D] focus:ring-[#74C69D]" %>
       </div>
 
       <div>
         <%= f.label :password_confirmation, "Confirm new password", class: "block text-sm font-medium text-slate-700" %>
         <%= f.password_field :password_confirmation, autocomplete: "new-password",
-              class: "mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" %>
+              class: "mt-1 w-full rounded-xl border-slate-200 bg-white/80 px-3 py-2.5 focus:border-[#74C69D] focus:ring-[#74C69D]" %>
       </div>
 
-      <div>
-        <%= f.submit "Change my password",
-              class: "w-full cursor-pointer rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-      </div>
+      <%= f.submit "Change my password", class: "scats-primary-button w-full" %>
     <% end %>
 
-    <div class="mt-6 flex items-center justify-center gap-4">
-      <% unless current_user.password_change_required? %>
-        <%= link_to "Back", root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+    <div class="mt-4 flex items-center justify-center gap-4 text-sm">
+      <% unless forced %>
+        <%= link_to "Back", root_path, class: "font-medium text-[#1B4332] hover:text-[#2D6A4F]" %>
       <% end %>
       <%= button_to "Sign out", destroy_user_session_path, method: :delete,
-            class: "cursor-pointer text-sm font-medium text-slate-500 hover:text-slate-700" %>
+            class: "cursor-pointer font-medium text-slate-500 hover:text-slate-700" %>
     </div>
-  </div>
+  </section>
 </div>

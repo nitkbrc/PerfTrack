@@ -1,2 +1,8 @@
-<h1 class="mb-6 text-2xl font-bold text-slate-900">New category</h1>
-<%= render "form", category: @category %>
+<% return_url = @category.sub_division_id.present? ? admin_sub_division_path(@category.sub_division) : admin_categories_path %>
+<% content_for :modal do %>
+  <%= turbo_frame_tag "modal" do %>
+    <%= render layout: "admin/shared/modal", locals: { title: "New category", return_url: return_url } do %>
+      <%= render "form", category: @category %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -9,13 +9,13 @@ module Admin
     end
 
     def new
-      @category = authorize Category.new
+      @category = authorize Category.new(sub_division_id: params[:sub_division_id])
     end
 
     def create
       @category = authorize Category.new(category_params)
       if @category.save
-        redirect_to admin_categories_path, notice: "Category created."
+        redirect_to admin_sub_division_path(@category.sub_division), notice: "Category created."
       else
         render :new, status: :unprocessable_entity
       end
@@ -28,7 +28,7 @@ module Admin
     def update
       @category = authorize Category.find(params[:id])
       if @category.update(category_params)
-        redirect_to admin_categories_path, notice: "Category updated."
+        redirect_to admin_sub_division_path(@category.sub_division), notice: "Category updated."
       else
         render :edit, status: :unprocessable_entity
       end
@@ -36,24 +36,25 @@ module Admin
 
     def destroy
       category = authorize Category.find(params[:id])
+      sub_division = category.sub_division
       category.destroy!
-      redirect_to admin_categories_path, notice: "Category deleted."
+      redirect_to admin_sub_division_path(sub_division), notice: "Category deleted."
     end
 
     def archive
       category = authorize Category.find(params[:id])
       category.archive!
-      redirect_to admin_categories_path, notice: "#{category.name} archived."
+      redirect_to admin_sub_division_path(category.sub_division), notice: "#{category.name} archived."
     end
 
     def restore
       category = authorize Category.find(params[:id])
       if category.sub_division.archived?
-        redirect_to admin_categories_path(archived: 1),
+        redirect_to admin_sub_division_path(category.sub_division, archived: 1),
                     alert: "Restore the #{category.sub_division.name} sub-division first."
       else
         category.restore!
-        redirect_to admin_categories_path(archived: 1), notice: "#{category.name} restored."
+        redirect_to admin_sub_division_path(category.sub_division, archived: 1), notice: "#{category.name} restored."
       end
     end
 

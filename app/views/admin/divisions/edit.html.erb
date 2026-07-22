@@ -1,2 +1,7 @@
-<h1 class="mb-6 text-2xl font-bold text-slate-900">Edit division</h1>
-<%= render "form", division: @division %>
+<% content_for :modal do %>
+  <%= turbo_frame_tag "modal" do %>
+    <%= render layout: "admin/shared/modal", locals: { title: "Edit division", return_url: admin_divisions_path } do %>
+      <%= render "form", division: @division %>
+    <% end %>
+  <% end %>
+<% end %>

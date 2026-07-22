@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <script>
+      try {
+        if (sessionStorage.getItem("scats-sidebar-expanded") === "true") {
+          document.documentElement.classList.add("sidebar-expanded")
+        }
+      } catch (e) {}
+    </script>
 
     <%= yield :head %>
 
@@ -15,13 +22,14 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-    <main class="mx-auto mt-8 w-full max-w-6xl px-5 pb-16">
-      <%= render "admin/nav" %>
-
+  <body class="min-h-screen bg-[#F7FAF7] text-slate-900 antialiased" data-controller="page-nav">
+    <%= render "shared/campus_background", intensity: :subtle %>
+    <%= render "shared/sidebar" %>
+    <main class="scats-main">
       <%= render "shared/flash", width_classes: "" %>
-
       <%= yield %>
     </main>
+    <%= content_for?(:modal) ? yield(:modal) : turbo_frame_tag("modal") %>
+    <%= render "shared/bottom_nav" %>
   </body>
 </html>

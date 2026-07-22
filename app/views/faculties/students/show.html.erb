@@ -1,16 +1,48 @@
-<%= render "faculties/shared/nav" %>
-
 <div class="mx-auto w-full max-w-4xl">
   <div class="mb-6">
-    <%= link_to "← Back to students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+    <%= link_to "← Back to students", faculty_students_path, class: admin_back_link_classes %>
   </div>
 
-  <div class="mb-8 flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900"><%= @student.user.name.presence || @student.user.email %></h1>
-      <p class="text-sm text-slate-500"><%= @student.usn %> · <%= @student.department.name %><%= " · Sem #{@student.sem}" if @student.sem.present? %></p>
+  <section class="clay-card mb-8 p-5 sm:p-6">
+    <div class="flex flex-wrap items-start justify-between gap-5">
+      <div class="flex min-w-0 flex-1 items-start gap-4">
+        <%= user_photo_tag(@student.user, size: 80) %>
+        <div class="min-w-0 flex-1">
+          <h1 class="text-2xl font-bold tracking-tight text-[#1B4332]">
+            <%= @student.user.name.presence || @student.user.email %>
+          </h1>
+          <p class="mt-1 text-sm font-medium text-slate-600">
+            <span class="font-mono text-[#1B4332]"><%= @student.usn %></span>
+            <span class="mx-1.5 text-slate-300">·</span>
+            <%= @student.department.name %>
+            <% if @student.sem.present? %>
+              <span class="mx-1.5 text-slate-300">·</span>
+              Sem <%= @student.sem %>
+            <% end %>
+          </p>
+
+          <dl class="mt-5 grid gap-4 border-t border-[#1B4332]/10 pt-4 sm:grid-cols-2">
+            <div>
+              <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</dt>
+              <dd class="mt-1 text-sm text-slate-800"><%= @student.user.phone.presence || "—" %></dd>
+            </div>
+            <div>
+              <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</dt>
+              <dd class="mt-1 text-sm leading-relaxed text-slate-800"><%= @student.user.address.presence || "—" %></dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <% if current_user.supervised_sub_divisions.exists? %>
+        <div class="shrink-0">
+          <%= link_to "Raise a request",
+                new_supervisor_achievement_request_path(achievement_request: { student_id: @student.id }),
+                class: "scats-primary-button" %>
+        </div>
+      <% end %>
     </div>
-  </div>
+  </section>
 
   <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
     <div class="rounded-xl bg-indigo-600 p-6 text-center shadow-md">

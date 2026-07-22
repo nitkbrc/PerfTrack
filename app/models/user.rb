@@ -2,9 +2,17 @@ class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   # No :registerable — accounts are created by admins only (PRD section 3).
-  devise :database_authenticatable, :recoverable, :rememberable, :validatable
+  # No :recoverable — password reset via email is disabled; admins set temporary passwords.
+  devise :database_authenticatable, :rememberable, :validatable
 
   enum :role, { admin: "admin", faculty: "faculty", student: "student" }
+
+  has_one_attached :photo
+
+  validates :phone, :address, presence: true
+  validates :photo, attached: true,
+                    content_type: [ "image/png", "image/jpeg" ],
+                    size: { less_than: 5.megabytes }
 
   has_one :student_profile, class_name: "Student"
   accepts_nested_attributes_for :student_profile

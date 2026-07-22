@@ -25,34 +25,34 @@
       Download results CSV (includes passwords)
     </a>
     <%= link_to "Import another file", new_admin_user_import_path, class: admin_link_classes %>
-    <%= link_to "Back to users", admin_users_path, class: admin_link_classes %>
+    <%= link_to "← Back to users", admin_users_path, class: admin_back_link_classes %>
   </div>
 
-  <div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+  <div class="clay-card scats-list-shell">
     <table class="w-full text-left text-sm">
       <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
         <tr>
-          <th class="px-4 py-3">Line</th>
+          <th class="w-14 px-4 py-3">Line</th>
           <th class="px-4 py-3">Name</th>
-          <th class="px-4 py-3">Email</th>
-          <th class="px-4 py-3">Role</th>
-          <th class="px-4 py-3">Temporary password</th>
-          <th class="px-4 py-3">Status</th>
+          <th class="hidden px-4 py-3 sm:table-cell">Email</th>
+          <th class="w-24 px-4 py-3">Role</th>
+          <th class="hidden px-4 py-3 md:table-cell">Temporary password</th>
+          <th class="w-28 px-4 py-3">Status</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody class="scats-list divide-y divide-slate-100">
         <% @import.results.each do |result| %>
           <tr class="<%= "bg-red-50/50" unless result.created? %>">
             <td class="px-4 py-3 text-slate-500"><%= result.line %></td>
-            <td class="px-4 py-3 font-medium text-slate-900"><%= result.name %></td>
-            <td class="px-4 py-3 text-slate-600"><%= result.email %></td>
-            <td class="px-4 py-3 text-slate-600"><%= result.role %></td>
-            <td class="px-4 py-3 font-mono text-xs text-slate-700"><%= result.password || "—" %></td>
-            <td class="px-4 py-3">
+            <td class="min-w-0 truncate px-4 py-3 font-medium text-slate-900"><%= result.name %></td>
+            <td class="hidden min-w-0 truncate px-4 py-3 text-slate-600 sm:table-cell"><%= result.email %></td>
+            <td class="truncate px-4 py-3 text-slate-600"><%= result.role %></td>
+            <td class="hidden truncate px-4 py-3 font-mono text-xs text-slate-700 md:table-cell"><%= result.password || "—" %></td>
+            <td class="min-w-0 px-4 py-3">
               <% if result.created? %>
                 <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Created</span>
               <% else %>
-                <span class="text-xs text-red-700"><%= result.error %></span>
+                <span class="block truncate text-xs text-red-700" title="<%= result.error %>"><%= result.error %></span>
               <% end %>
             </td>
           </tr>

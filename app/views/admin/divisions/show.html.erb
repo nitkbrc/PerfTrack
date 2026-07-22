@@ -1,0 +1,38 @@
+<div class="mb-6 flex items-center justify-between">
+  <div><%= link_to "? Back to divisions", admin_divisions_path, class: admin_back_link_classes %><h1 class="mt-2 text-2xl font-bold text-slate-900"><%= @division.name %></h1></div>
+  <div class="flex items-center gap-4">
+    <%= render "admin/shared/archived_toggle", show_archived: @show_archived, archived_count: @archived_count, active_path: admin_division_path(@division), archived_path: admin_division_path(@division, archived: 1) %>
+  </div>
+</div>
+<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+  <% @sub_divisions.each do |sub_division| %>
+    <article class="clay-card p-5 <%= "relative cursor-pointer" unless sub_division.archived? %>">
+      <% unless sub_division.archived? %>
+        <%= link_to admin_sub_division_path(sub_division),
+              class: "absolute inset-0 z-0",
+              aria: { label: sub_division.name } do %>
+        <% end %>
+      <% end %>
+      <div class="<%= "pointer-events-none relative z-10" unless sub_division.archived? %>">
+        <h2 class="text-lg font-bold text-[#1B4332]"><%= sub_division.name %></h2>
+        <p class="mt-1 text-sm text-slate-600">Supervisor: <%= sub_division.supervisor.name.presence || sub_division.supervisor.email %></p>
+        <%= archived_badge(sub_division) if sub_division.archived? %>
+      </div>
+      <div class="relative z-10 mt-5 flex flex-wrap items-center gap-2">
+        <%= link_to admin_edit_action_label, edit_admin_sub_division_path(sub_division), class: admin_secondary_button_classes, data: admin_modal_frame_data unless sub_division.archived? %>
+        <%= button_to(
+              sub_division.archived? ? admin_restore_action_label : admin_archive_action_label,
+              sub_division.archived? ? restore_admin_sub_division_path(sub_division) : archive_admin_sub_division_path(sub_division),
+              method: :patch,
+              form: { onclick: "event.stopPropagation()" },
+              class: sub_division.archived? ? admin_secondary_button_classes : admin_warning_button_classes
+            ) %>
+      </div>
+    </article>
+  <% end %>
+  <% unless @show_archived %>
+    <%= link_to "+", new_admin_sub_division_path(division_id: @division.id),
+          class: "flex min-h-44 items-center justify-center rounded-3xl border-2 border-dashed border-[#1B4332]/25 text-4xl text-[#1B4332]",
+          data: admin_modal_frame_data %>
+  <% end %>
+</div>

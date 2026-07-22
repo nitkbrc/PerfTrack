@@ -1,39 +1,83 @@
-<div class="mb-6 flex items-center justify-between">
+<div class="mb-6">
   <h1 class="text-2xl font-bold text-slate-900">Users</h1>
-  <%= link_to "New user", new_admin_user_path, class: admin_primary_button_classes %>
 </div>
 
-<div class="overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200">
+<%= form_with url: admin_users_path, method: :get, class: "clay-card mb-6 flex flex-col gap-4 p-4" do |f| %>
+  <div class="w-full">
+    <%= f.search_field :q, value: params[:q], placeholder: "Search name, email, or USN", class: "#{admin_input_classes} mt-0 w-full" %>
+  </div>
+  <div class="grid grid-cols-1 items-end gap-3 sm:grid-cols-4">
+    <div class="min-w-0">
+      <%= f.select :role, [["All roles", ""]] + User.roles.keys.map { |role| [role.titleize, role] } + [["Supervisors", "supervisor"], ["Deans", "dean"]], { selected: params[:role] }, class: "#{admin_input_classes} mt-0 w-full" %>
+    </div>
+    <div class="min-w-0">
+      <%= f.collection_select :department_id, @departments, :id, :name, { include_blank: "All departments", selected: params[:department_id] }, class: "#{admin_input_classes} mt-0 w-full" %>
+    </div>
+    <div class="min-w-0">
+      <%= f.select :sem, [["All semesters", ""]] + (1..8).map { |sem| ["Semester #{sem}", sem] }, { selected: params[:sem] }, class: "#{admin_input_classes} mt-0 w-full" %>
+    </div>
+    <div class="flex w-full min-w-0 gap-2">
+      <%= f.submit "Filter", class: "#{admin_primary_button_classes} flex-1" %>
+      <%= link_to "Clear", admin_users_path,
+            class: "inline-flex flex-1 items-center justify-center rounded-xl border border-[#1B4332]/25 bg-white px-4 py-2 text-sm font-semibold text-[#1B4332] shadow-sm transition hover:border-[#1B4332]/40 hover:bg-[#1B4332]/5 focus:outline-none focus:ring-2 focus:ring-[#74C69D] focus:ring-offset-2" %>
+    </div>
+  </div>
+<% end %>
+
+<div class="clay-card scats-list-shell">
   <table class="w-full text-left text-sm">
     <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
       <tr>
-        <th class="px-4 py-3">Name</th>
-        <th class="px-4 py-3">Email</th>
-        <th class="px-4 py-3">Role</th>
-        <th class="px-4 py-3 text-right">Actions</th>
+        <th class="w-16 px-3 py-3 sm:px-4">Photo</th>
+        <th class="px-3 py-3 sm:px-4">Name</th>
+        <th class="hidden px-3 py-3 md:table-cell md:px-4">Email</th>
+        <th class="hidden px-3 py-3 md:table-cell md:px-4">Phone</th>
+        <th class="px-3 py-3 sm:px-4">Role</th>
+        <th class="w-20 whitespace-nowrap px-3 py-3 text-right sm:px-4">Actions</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-slate-100">
+    <tbody class="scats-list divide-y divide-slate-100">
       <% @users.each do |user| %>
-        <tr>
-          <td class="px-4 py-3 font-medium text-slate-900">
-            <%= user.name.presence || "—" %>
+        <tr class="relative cursor-pointer">
+          <td class="scats-list-photo px-3 py-3 sm:px-4">
+            <%= link_to edit_admin_user_path(user),
+                  class: "absolute inset-0 z-0",
+                  data: admin_modal_frame_data,
+                  aria: { label: "Edit #{user.name.presence || user.email}" } do %>
+            <% end %>
+            <div class="pointer-events-none relative z-10 inline-flex shrink-0 p-0.5">
+              <%= user_photo_tag(user, size: 36) %>
+            </div>
+          </td>
+          <td class="pointer-events-none relative z-10 min-w-0 px-3 py-3 font-medium text-slate-900 sm:px-4">
+            <span class="block truncate"><%= user.name.presence || "—" %></span>
+            <span class="mt-0.5 block truncate text-xs text-slate-500 md:hidden" title="<%= user.email %>"><%= user.email %></span>
             <% if user == current_user %>
-              <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">you</span>
+              <span class="mt-0.5 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">you</span>
             <% end %>
           </td>
-          <td class="px-4 py-3 text-slate-600"><%= user.email %></td>
-          <td class="px-4 py-3">
-            <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-indigo-700"><%= user.role %></span>
+          <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-3 py-3 text-slate-600 md:table-cell md:px-4" title="<%= user.email %>">
+            <%= user.email %>
           </td>
-          <td class="px-4 py-3 text-right">
-            <div class="inline-flex items-center gap-4">
-              <%= link_to "Edit", edit_admin_user_path(user), class: admin_link_classes %>
-              <% unless user == current_user %>
-                <%= button_to "Delete", admin_user_path(user), method: :delete,
-                      data: { turbo_confirm: "Delete #{user.email}?" }, class: admin_delete_classes %>
+          <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-3 py-3 text-slate-600 md:table-cell md:px-4" title="<%= user.phone %>">
+            <%= user.phone %>
+          </td>
+          <td class="pointer-events-none relative z-10 min-w-0 px-3 py-3 sm:px-4">
+            <div class="flex flex-wrap gap-1">
+              <% user_role_labels(user).each do |label| %>
+                <span class="<%= user_role_badge_classes %>"><%= label %></span>
               <% end %>
             </div>
+          </td>
+          <td class="relative z-10 whitespace-nowrap px-3 py-3 text-right sm:px-4">
+            <% unless user == current_user %>
+              <%= button_to "Delete", admin_user_path(user), method: :delete,
+                    data: { turbo_confirm: "Delete #{user.email}?" },
+                    form: { class: "inline", onclick: "event.stopPropagation()" },
+                    class: admin_delete_classes %>
+            <% else %>
+              <span class="text-xs text-slate-400">—</span>
+            <% end %>
           </td>
         </tr>
       <% end %>

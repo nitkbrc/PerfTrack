@@ -2,11 +2,31 @@ module Admin
   class UsersController < BaseController
     def index
       authorize User
-      @users = User.order(:name)
+      @users = User.with_attached_photo
+                   .includes(:deaned_divisions, :supervised_sub_divisions, student_profile: :department)
+                   .order(:name)
+      case params[:role]
+      when "supervisor"
+        @users = @users.faculty.joins(:supervised_sub_divisions).distinct
+      when "dean"
+        @users = @users.faculty.joins(:deaned_divisions).distinct
+      when "admin", "faculty", "student"
+        @users = @users.where(role: params[:role])
+      end
+      @users = @users.joins(:student_profile).where(students: { department_id: params[:department_id] }) if params[:department_id].present?
+      @users = @users.joins(:student_profile).where(students: { sem: params[:sem] }) if params[:sem].present?
+      if params[:q].present?
+        term = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].strip)}%"
+        @users = @users.left_joins(:student_profile)
+                       .where("users.name ILIKE :term OR users.email ILIKE :term OR students.usn ILIKE :term", term: term)
+                       .distinct
+      end
+      @departments = Department.order(:name)
     end
 
     def new
-      @user = authorize User.new
+      authorize User, :create?
+      redirect_to new_admin_user_import_path
     end
 
     def create
@@ -16,7 +36,7 @@ module Admin
       if @user.save
         redirect_to admin_users_path, notice: "User created."
       else
-        render :new, status: :unprocessable_entity
+        render "admin/user_imports/new", status: :unprocessable_entity
       end
     end
 
@@ -48,7 +68,8 @@ module Admin
     private
 
     def user_params
-      permitted = params.expect(user: [ :name, :email, :role, :password, :password_confirmation,
+      permitted = params.expect(user: [ :name, :email, :role, :phone, :address, :photo,
+                                        :password, :password_confirmation,
                                         { student_profile_attributes: [ :id, :usn, :department_id, :sem ] } ])
       # The profile fieldset is only meaningful for students; drop stray params
       # submitted while the fieldset was hidden.
@@ -57,8 +78,12 @@ module Admin
     end
 
     # Leaving the password fields blank on edit keeps the current password.
+    # Role is immutable after create — never accept role changes on update.
     def user_update_params
-      permitted = user_params
+      permitted = params.expect(user: [ :name, :email, :phone, :address, :photo,
+                                        :password, :password_confirmation,
+                                        { student_profile_attributes: [ :id, :usn, :department_id, :sem ] } ])
+      permitted.delete(:student_profile_attributes) unless @user.student?
       if permitted[:password].blank?
         permitted.except(:password, :password_confirmation)
       else
