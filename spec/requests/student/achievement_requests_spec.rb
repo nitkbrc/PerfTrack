@@ -28,11 +28,14 @@ RSpec.describe "Student achievement requests", type: :request do
       request = AchievementRequest.last
       expect(request.status).to eq("submitted")
       expect(request.student).to eq(profile)
+      expect(request.request_versions.count).to eq(1)
+      expect(request.current_version.version_number).to eq(1)
 
       history = request.req_histories.sole
       expect(history.action).to eq("submit")
       expect(history.actor).to eq(profile.user)
       expect(history.to_status).to eq("submitted")
+      expect(history.request_version).to eq(request.current_version)
     end
 
     it "creates no orphan history row when the request is invalid" do
@@ -69,7 +72,8 @@ RSpec.describe "Student achievement requests", type: :request do
     let(:request_record) { create(:achievement_request, student: profile) }
 
     it "shows the student's own request with its history" do
-      request_record.req_histories.create!(actor: profile.user, action: "submit", to_status: "submitted")
+      request_record.req_histories.create!(actor: profile.user, action: "submit", to_status: "submitted",
+                                           request_version: request_record.current_version)
 
       get student_achievement_request_path(request_record)
 

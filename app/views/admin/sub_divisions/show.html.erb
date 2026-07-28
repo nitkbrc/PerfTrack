@@ -6,7 +6,7 @@
 </div>
 <div class="clay-card scats-list-shell">
   <table class="w-full text-left text-sm">
-    <thead class="bg-[#1B4332]/5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <thead class="bg-[#000666]/5 text-xs font-semibold uppercase tracking-wide text-slate-500">
       <tr>
         <th class="px-4 py-3">Category</th>
         <th class="w-24 px-4 py-3">Points</th>
@@ -47,7 +47,7 @@
 
 <% unless @show_archived %>
   <%= link_to new_admin_category_path(sub_division_id: @sub_division.id),
-        class: "mt-5 flex min-h-24 items-center justify-center rounded-3xl border-2 border-dashed border-[#1B4332]/25 text-4xl text-[#1B4332] transition hover:bg-white/60",
+        class: "mt-5 flex min-h-24 items-center justify-center rounded-3xl border-2 border-dashed border-[#000666]/25 text-4xl text-[#000666] transition hover:bg-white/60",
         aria: { label: "Create category" },
         data: admin_modal_frame_data do %>+<% end %>
 <% end %>

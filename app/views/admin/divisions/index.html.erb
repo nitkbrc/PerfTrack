@@ -18,7 +18,7 @@
       <% end %>
       <div class="<%= "pointer-events-none relative z-10" unless division.archived? %>">
         <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= division.positive? ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' %>"><%= division.div_type %></span>
-        <h2 class="mt-3 text-lg font-bold text-[#1B4332]"><%= division.name %></h2>
+        <h2 class="mt-3 text-lg font-bold text-[#000666]"><%= division.name %></h2>
         <p class="mt-1 text-sm text-slate-600">Dean: <%= division.dean.name.presence || division.dean.email %></p>
         <%= archived_badge(division) if division.archived? %>
       </div>
@@ -38,7 +38,7 @@
   <% end %>
   <% unless @show_archived %>
     <%= link_to new_admin_division_path,
-          class: "flex min-h-48 items-center justify-center rounded-3xl border-2 border-dashed border-[#1B4332]/25 p-5 text-4xl font-light text-[#1B4332] transition hover:bg-white/60",
+          class: "flex min-h-48 items-center justify-center rounded-3xl border-2 border-dashed border-[#000666]/25 p-5 text-4xl font-light text-[#000666] transition hover:bg-white/60",
           aria: { label: "Create division" },
           data: admin_modal_frame_data do %>+<% end %>
   <% end %>

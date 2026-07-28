@@ -19,18 +19,6 @@
   </p>
 <% end %>
 
-<% if achievement_request.description.present? %>
-  <p class="mb-6 whitespace-pre-line text-sm text-slate-700"><%= achievement_request.description %></p>
-<% end %>
-
-<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Proof</h2>
-<div class="mb-8 flex flex-wrap gap-4">
-  <% achievement_request.proofs.each do |proof| %>
-    <%= link_to url_for(proof), target: "_blank", rel: "noopener", class: "block" do %>
-      <%= image_tag proof, class: "h-32 w-32 rounded-lg border border-slate-200 object-cover shadow-sm transition hover:opacity-80" %>
-    <% end %>
-  <% end %>
-</div>
-
-<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">History</h2>
-<%= render "shared/request_history", histories: histories %>
+<h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Timeline</h2>
+<%= render "shared/request_timeline",
+      versions: achievement_request.request_versions.sort_by(&:version_number) %>

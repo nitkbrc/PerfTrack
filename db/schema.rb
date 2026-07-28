@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_28_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -109,11 +109,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
     t.datetime "created_at", null: false
     t.string "from_status"
     t.bigint "reason_template_id"
+    t.bigint "request_version_id", null: false
     t.string "to_status"
     t.datetime "updated_at", null: false
     t.index ["achievement_request_id"], name: "index_req_histories_on_achievement_request_id"
     t.index ["actor_id"], name: "index_req_histories_on_actor_id"
     t.index ["reason_template_id"], name: "index_req_histories_on_reason_template_id"
+    t.index ["request_version_id"], name: "index_req_histories_on_request_version_id"
+  end
+
+  create_table "request_versions", force: :cascade do |t|
+    t.bigint "achievement_request_id", null: false
+    t.bigint "category_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.integer "version_number", null: false
+    t.index ["achievement_request_id", "version_number"], name: "index_request_versions_on_request_and_number", unique: true
+    t.index ["achievement_request_id"], name: "index_request_versions_on_achievement_request_id"
+    t.index ["category_id"], name: "index_request_versions_on_category_id"
   end
 
   create_table "settings", force: :cascade do |t|
@@ -173,7 +188,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_120000) do
   add_foreign_key "notifications", "users", column: "recipient_id"
   add_foreign_key "req_histories", "achievement_requests"
   add_foreign_key "req_histories", "reason_templates"
+  add_foreign_key "req_histories", "request_versions"
   add_foreign_key "req_histories", "users", column: "actor_id"
+  add_foreign_key "request_versions", "achievement_requests"
+  add_foreign_key "request_versions", "categories"
   add_foreign_key "students", "departments"
   add_foreign_key "students", "users"
   add_foreign_key "sub_divisions", "divisions"

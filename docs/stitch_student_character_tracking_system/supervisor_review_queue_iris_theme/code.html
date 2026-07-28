@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ethos Supervisor Review Queue | IRIS NITK SaaS</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "tertiary-fixed-dim": "#ffb59d",
+                "on-background": "#181c1c",
+                "secondary-container": "#668efe",
+                "text-main": "#212529",
+                "error": "#ba1a1a",
+                "on-tertiary-fixed-variant": "#7b2e12",
+                "secondary": "#2857c4",
+                "surface-dim": "#d7dbda",
+                "on-secondary-fixed-variant": "#003ea7",
+                "on-tertiary-fixed": "#390c00",
+                "surface-white": "#FFFFFF",
+                "primary-container": "#1a237e",
+                "on-primary-container": "#8690ee",
+                "surface-variant": "#e0e3e2",
+                "inverse-on-surface": "#eef1f0",
+                "tertiary-fixed": "#ffdbd0",
+                "inverse-primary": "#bdc2ff",
+                "secondary-fixed": "#dbe1ff",
+                "outline": "#767683",
+                "tertiary": "#380b00",
+                "surface-container-lowest": "#ffffff",
+                "surface-bright": "#f7faf9",
+                "on-surface-variant": "#454652",
+                "primary-fixed-dim": "#bdc2ff",
+                "on-tertiary-container": "#e17c5a",
+                "text-muted": "#6C757D",
+                "on-secondary-fixed": "#00174b",
+                "on-primary-fixed-variant": "#343d96",
+                "error-container": "#ffdad6",
+                "surface-container": "#ebeeed",
+                "on-primary-fixed": "#000767",
+                "background": "#f7faf9",
+                "secondary-fixed-dim": "#b4c5ff",
+                "surface-container-low": "#f1f4f3",
+                "on-error-container": "#93000a",
+                "inverse-surface": "#2d3131",
+                "surface-tint": "#4c56af",
+                "on-error": "#ffffff",
+                "on-secondary-container": "#00266e",
+                "primary": "#000666",
+                "surface-container-high": "#e6e9e8",
+                "outline-variant": "#c6c5d4",
+                "tertiary-container": "#5c1800",
+                "on-tertiary": "#ffffff",
+                "primary-fixed": "#e0e0ff",
+                "on-primary": "#ffffff",
+                "border-subtle": "#DEE2E6",
+                "surface": "#f7faf9",
+                "on-secondary": "#ffffff",
+                "on-surface": "#181c1c",
+                "surface-container-highest": "#e0e3e2"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "spacing": {
+                "margin-desktop": "32px",
+                "stack-md": "16px",
+                "margin-mobile": "16px",
+                "gutter": "24px",
+                "baseline": "4px",
+                "container-max": "1440px",
+                "stack-sm": "8px",
+                "stack-lg": "24px"
+            },
+            "fontFamily": {
+                "headline-md": ["Inter"],
+                "headline-lg": ["Inter"],
+                "body-lg": ["Inter"],
+                "label-md": ["Inter"],
+                "body-md": ["Inter"],
+                "headline-sm": ["Inter"],
+                "title-md": ["Inter"],
+                "label-sm": ["Inter"]
+            },
+            "fontSize": {
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #F4F7F6;
+            color: #212529;
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #DEE2E6;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #767683;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex overflow-hidden">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col py-stack-lg border-r border-outline/20 bg-primary dark:bg-primary-container shadow-md z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-white rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-headline-sm text-on-primary">Ethos Admin</h1>
+<p class="text-label-sm text-on-primary/60">Academic Character Tracker</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 rounded-lg px-4 py-3 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md font-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 rounded-lg px-4 py-3 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-label-md font-label-md">Student Directory</span>
+</a>
+<!-- Active State Logic: Mapping Work Queue to current review intent -->
+<a class="flex items-center gap-stack-md bg-secondary-container text-on-secondary-container rounded-lg px-4 py-3 mx-2 transition-all scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+<span class="text-label-md font-label-md">Work Queue</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 rounded-lg px-4 py-3 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined">request_quote</span>
+<span class="text-label-md font-label-md">My Requests</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 rounded-lg px-4 py-3 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="text-label-md font-label-md">Org Structure</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 rounded-lg px-4 py-3 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-label-md font-label-md">History</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-on-primary/10 pt-4">
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 rounded-lg px-4 py-3 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-md font-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 rounded-lg px-4 py-3 mx-2 transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-label-md font-label-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 ml-64 flex flex-col h-screen overflow-y-auto bg-background">
+<!-- TopNavBar (Shared Component) -->
+<header class="flex justify-between items-center w-full px-margin-desktop sticky top-0 z-40 bg-surface-white dark:bg-inverse-surface border-b border-border-subtle dark:border-outline shadow-sm h-16 shrink-0">
+<div class="flex items-center gap-6 flex-1">
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary dark:text-inverse-primary">Supervisor Review</h2>
+<div class="max-w-md w-full relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-body-md focus:ring-2 focus:ring-primary-container transition-all" placeholder="Search students or categories..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">swap_horiz</span>
+</button>
+<div class="h-8 w-px bg-border-subtle mx-2"></div>
+<div class="flex items-center gap-2 cursor-pointer hover:bg-surface-container p-1 px-2 rounded-lg transition-colors">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-border-subtle">
+<img class="w-full h-full object-cover" data-alt="A clean, professional headshot of a faculty member with neutral lighting and a simple gray background, wearing a formal suit. The image represents an academic administrator at a top-tier technical university like NITK, emphasizing authority, reliability, and institutional trust in a high-utility SaaS interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAP_z3zvsX4n5kWq9iif4C2r1a-ADoiONpiOMt2I9hEPZlw1ggGaf_BPruYOuK4JUti-q9uc5KMb6QqZeIaeWaBAkJsD4wJQjlx6qYFPmrYCbGXKR6oEWt4Nb7w2A6x9znl3k-iVgMil0XlgVGzM5svcstUQB6Q23lg5YFWxSpe1mcsZKP3N5hJDZ1Sn_lJxHKzQ1VyumbZTe7gfMSpuOgWEDSqsK90nr9jxVGp490WbGpE1pSpXnpcEYbFeg_1N0mGw0Bhhjg_HN0"/>
+</div>
+<span class="material-symbols-outlined text-outline">person</span>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="p-margin-desktop space-y-gutter max-w-container-max mx-auto w-full">
+<!-- Metrics Bar: Division Level -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Pending Approval Card -->
+<div class="bg-surface-white p-stack-lg rounded-lg border border-border-subtle shadow-sm flex items-center justify-between group hover:border-primary transition-colors">
+<div>
+<p class="text-label-md text-text-muted mb-1 uppercase tracking-wider">Pending Approval</p>
+<h3 class="text-headline-lg text-primary">142</h3>
+<p class="text-label-sm text-secondary flex items-center gap-1 mt-2">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+                            12% from yesterday
+                        </p>
+</div>
+<div class="w-12 h-12 bg-secondary-container/20 rounded-full flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_late</span>
+</div>
+</div>
+<!-- Avg Response Time -->
+<div class="bg-surface-white p-stack-lg rounded-lg border border-border-subtle shadow-sm flex items-center justify-between group hover:border-primary transition-colors">
+<div>
+<p class="text-label-md text-text-muted mb-1 uppercase tracking-wider">Avg. Response Time</p>
+<h3 class="text-headline-lg text-primary">4.2h</h3>
+<p class="text-label-sm text-tertiary-container flex items-center gap-1 mt-2">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+                            Target: &lt; 6.0h
+                        </p>
+</div>
+<div class="w-12 h-12 bg-surface-container flex items-center justify-center text-primary-container rounded-full group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">timer</span>
+</div>
+</div>
+<!-- Honors Velocity -->
+<div class="bg-surface-white p-stack-lg rounded-lg border border-border-subtle shadow-sm flex items-center justify-between group hover:border-primary transition-colors">
+<div>
+<p class="text-label-md text-text-muted mb-1 uppercase tracking-wider">Honors Velocity</p>
+<h3 class="text-headline-lg text-primary">8.5 <span class="text-title-md font-normal text-text-muted">pts/day</span></h3>
+<p class="text-label-sm text-on-secondary-fixed-variant flex items-center gap-1 mt-2">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                            High activity zone
+                        </p>
+</div>
+<div class="w-12 h-12 bg-tertiary-fixed/30 text-tertiary-fixed-dim rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+</div>
+</div>
+<!-- Main Queue Section: Sub-division -->
+<div class="bg-surface-white rounded-lg border border-border-subtle shadow-sm overflow-hidden">
+<div class="px-gutter py-stack-md border-b border-border-subtle flex flex-wrap justify-between items-center gap-4">
+<h3 class="text-title-md text-primary">Work Queue: Pending Requests</h3>
+<div class="flex gap-stack-sm">
+<button class="px-4 py-1.5 bg-surface-container rounded-full text-label-md text-text-main hover:bg-surface-container-high transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                            Filter
+                        </button>
+<button class="px-4 py-1.5 border border-border-subtle rounded-full text-label-md text-text-main hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                            Export
+                        </button>
+</div>
+</div>
+<!-- Data Table: Categories -->
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-bright border-b border-border-subtle">
+<tr>
+<th class="px-gutter py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold">Student Name</th>
+<th class="px-gutter py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold">Category</th>
+<th class="px-gutter py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold text-center">Points</th>
+<th class="px-gutter py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold">Submitted On</th>
+<th class="px-gutter py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-gutter py-5">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-primary-container text-white flex items-center justify-center font-bold text-label-md">
+                                            AS
+                                        </div>
+<div>
+<p class="text-body-md font-semibold text-text-main">Abhishek Sharma</p>
+<p class="text-label-sm text-text-muted">211CS142 • Semester 5</p>
+</div>
+</div>
+</td>
+<td class="px-gutter py-5">
+<span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-label-sm">Technical Project</span>
+</td>
+<td class="px-gutter py-5 text-center">
+<span class="text-title-md font-bold text-primary">150</span>
+</td>
+<td class="px-gutter py-5 text-label-sm text-text-muted">
+                                    Oct 24, 2023 • 14:30
+                                </td>
+<td class="px-gutter py-5 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-container transition-all shadow-sm" title="Approve">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-border-subtle text-text-main hover:bg-surface-container transition-all" title="Revert">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-error/20 text-error hover:bg-error-container/20 transition-all" title="Reject">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-gutter py-5">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-tertiary-container text-white flex items-center justify-center font-bold text-label-md">
+                                            RR
+                                        </div>
+<div>
+<p class="text-body-md font-semibold text-text-main">Riya Rao</p>
+<p class="text-label-sm text-text-muted">221EE056 • Semester 3</p>
+</div>
+</div>
+</td>
+<td class="px-gutter py-5">
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full text-label-sm">Community Service</span>
+</td>
+<td class="px-gutter py-5 text-center">
+<span class="text-title-md font-bold text-primary">75</span>
+</td>
+<td class="px-gutter py-5 text-label-sm text-text-muted">
+                                    Oct 25, 2023 • 09:12
+                                </td>
+<td class="px-gutter py-5 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-container transition-all shadow-sm" title="Approve">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-border-subtle text-text-main hover:bg-surface-container transition-all" title="Revert">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-error/20 text-error hover:bg-error-container/20 transition-all" title="Reject">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-gutter py-5">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-secondary-container text-white flex items-center justify-center font-bold text-label-md">
+                                            KN
+                                        </div>
+<div>
+<p class="text-body-md font-semibold text-text-main">Kiran Nair</p>
+<p class="text-label-sm text-text-muted">201ME221 • Semester 7</p>
+</div>
+</div>
+</td>
+<td class="px-gutter py-5">
+<span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-label-sm">Research Paper</span>
+</td>
+<td class="px-gutter py-5 text-center">
+<span class="text-title-md font-bold text-primary">200</span>
+</td>
+<td class="px-gutter py-5 text-label-sm text-text-muted">
+                                    Oct 25, 2023 • 11:45
+                                </td>
+<td class="px-gutter py-5 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-container transition-all shadow-sm" title="Approve">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-border-subtle text-text-main hover:bg-surface-container transition-all" title="Revert">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-error/20 text-error hover:bg-error-container/20 transition-all" title="Reject">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-gutter py-5">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-on-background text-white flex items-center justify-center font-bold text-label-md">
+                                            DP
+                                        </div>
+<div>
+<p class="text-body-md font-semibold text-text-main">Deepa Prabhu</p>
+<p class="text-label-sm text-text-muted">231IT012 • Semester 1</p>
+</div>
+</div>
+</td>
+<td class="px-gutter py-5">
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-label-sm">Club Leadership</span>
+</td>
+<td class="px-gutter py-5 text-center">
+<span class="text-title-md font-bold text-primary">50</span>
+</td>
+<td class="px-gutter py-5 text-label-sm text-text-muted">
+                                    Oct 26, 2023 • 08:05
+                                </td>
+<td class="px-gutter py-5 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-container transition-all shadow-sm" title="Approve">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-border-subtle text-text-main hover:bg-surface-container transition-all" title="Revert">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-error/20 text-error hover:bg-error-container/20 transition-all" title="Reject">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-gutter py-4 bg-surface-container-lowest border-t border-border-subtle flex justify-between items-center">
+<p class="text-label-md text-text-muted">Showing <span class="font-semibold text-text-main">1-4</span> of 142 requests</p>
+<div class="flex gap-2">
+<button class="px-3 py-1 rounded border border-border-subtle hover:bg-surface-container transition-colors opacity-50 cursor-not-allowed">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="px-3 py-1 rounded bg-primary text-white text-label-md">1</button>
+<button class="px-3 py-1 rounded border border-border-subtle hover:bg-surface-container transition-colors text-label-md">2</button>
+<button class="px-3 py-1 rounded border border-border-subtle hover:bg-surface-container transition-colors text-label-md">3</button>
+<button class="px-3 py-1 rounded border border-border-subtle hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Focus Card: Detailed Insight -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<div class="lg:col-span-8 bg-surface-white rounded-lg border border-border-subtle p-stack-lg shadow-sm">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="text-title-md text-primary">Current Approval Focus</h3>
+<p class="text-label-sm text-text-muted">Priority items requiring immediate validation</p>
+</div>
+<div class="px-3 py-1 bg-error-container text-on-error-container rounded-full text-label-sm animate-pulse">
+                            High Priority (8)
+                        </div>
+</div>
+<div class="space-y-stack-md">
+<div class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low border border-border-subtle hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="w-12 h-12 flex-shrink-0 rounded-full bg-secondary-fixed flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">verified</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<p class="text-body-md font-bold text-text-main">IEEE Xplore Research Publication</p>
+<p class="text-label-md font-bold text-primary">+200 pts</p>
+</div>
+<p class="text-label-sm text-text-muted mt-1 truncate max-w-md">Student: Rohan Gupta • Awaiting verification from Lab supervisor...</p>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low border border-border-subtle hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="w-12 h-12 flex-shrink-0 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed-variant">
+<span class="material-symbols-outlined">emoji_events</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<p class="text-body-md font-bold text-text-main">Inter-College Hackathon Winner</p>
+<p class="text-label-md font-bold text-primary">+350 pts</p>
+</div>
+<p class="text-label-sm text-text-muted mt-1 truncate max-w-md">Student: Anjali Rao • Verification code valid, pending peer review...</p>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Activity Feed / Sidebar -->
+<div class="lg:col-span-4 bg-surface-white rounded-lg border border-border-subtle p-stack-lg shadow-sm">
+<h3 class="text-title-md text-primary mb-4">Recent Actions</h3>
+<div class="space-y-stack-lg">
+<div class="flex gap-3">
+<div class="w-2 h-2 mt-2 bg-secondary rounded-full flex-shrink-0"></div>
+<div>
+<p class="text-label-md font-semibold">You approved 'NSS Camp'</p>
+<p class="text-label-sm text-text-muted">for Varun Joshi (211EE004)</p>
+<p class="text-[10px] text-outline mt-1 uppercase">2 mins ago</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="w-2 h-2 mt-2 bg-error rounded-full flex-shrink-0"></div>
+<div>
+<p class="text-label-md font-semibold">You rejected 'Library Assistant'</p>
+<p class="text-label-sm text-text-muted">Missing certificate upload (221ME098)</p>
+<p class="text-[10px] text-outline mt-1 uppercase">1 hour ago</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="w-2 h-2 mt-2 bg-primary rounded-full flex-shrink-0"></div>
+<div>
+<p class="text-label-md font-semibold">System Alert: Batch Sync</p>
+<p class="text-label-sm text-text-muted">12 requests automatically validated</p>
+<p class="text-[10px] text-outline mt-1 uppercase">3 hours ago</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-2 text-label-md font-semibold text-secondary hover:underline transition-all">View Full Audit Log</button>
+</div>
+</div>
+</div>
+<!-- Footer Context -->
+<footer class="mt-auto px-margin-desktop py-stack-md border-t border-border-subtle text-label-sm text-text-muted flex justify-between items-center">
+<p>© 2023 Ethos • IRIS NITK Academic SaaS Cluster</p>
+<div class="flex gap-4">
+<a class="hover:text-primary transition-colors" href="#">Documentation</a>
+<a class="hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="hover:text-primary transition-colors" href="#">Release Notes (v2.4.1)</a>
+</div>
+</footer>
+</main>
+<!-- FAB Suppression: On Review Queue, we don't want a generic FAB distracting from the table -->
+<script>
+        // Micro-interactions for button scale effects
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = 'scale(1)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'scale(1)';
+            });
+        });
+
+        // Simple mock for "approving" a row (visual only)
+        function approveRow(btn) {
+            const row = btn.closest('tr');
+            row.style.opacity = '0.4';
+            row.style.transition = 'all 0.5s ease';
+            row.style.pointerEvents = 'none';
+            setTimeout(() => {
+                row.remove();
+            }, 500);
+        }
+
+        document.querySelectorAll('button[title="Approve"]').forEach(btn => {
+            btn.addEventListener('click', () => approveRow(btn));
+        });
+    </script>
+</body></html>

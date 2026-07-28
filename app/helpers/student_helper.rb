@@ -14,6 +14,7 @@ module StudentHelper
     "submit" => "Submitted by student",
     "resubmit" => "Edited & resubmitted by student",
     "supervisor_initiate" => "Raised by supervisor on the student's behalf",
+    "supervisor_revise" => "Revised by supervisor after dean feedback",
     "supervisor_approve" => "Approved & forwarded to dean by supervisor",
     "supervisor_reforward" => "Clarified & re-forwarded to dean by supervisor",
     "supervisor_revert" => "Reverted to student by supervisor",
@@ -39,6 +40,7 @@ module StudentHelper
     when "submit" then "Submitted"
     when "resubmit" then "Resubmitted"
     when "supervisor_initiate" then "Raised by #{actor_name}"
+    when "supervisor_revise" then "Revised by #{actor_name}"
     when "supervisor_approve" then "Approved by #{actor_name}"
     when "supervisor_reforward" then "Re-forwarded by #{actor_name}"
     when "supervisor_revert" then "Reverted by #{actor_name}"
@@ -52,5 +54,20 @@ module StudentHelper
 
   def history_label(action)
     HISTORY_LABELS.fetch(action, action.humanize)
+  end
+
+  # Short past-tense verb for "You {verb} {title} on {date}" review-history rows.
+  def review_history_verb(action)
+    {
+      "supervisor_initiate" => "raised",
+      "supervisor_revise" => "revised",
+      "supervisor_approve" => "approved",
+      "supervisor_reforward" => "re-forwarded",
+      "supervisor_revert" => "reverted",
+      "supervisor_reject" => "rejected",
+      "dean_approve" => "approved",
+      "dean_revert" => "sent back",
+      "dean_reject" => "rejected"
+    }.fetch(action, action.to_s.tr("_", " "))
   end
 end

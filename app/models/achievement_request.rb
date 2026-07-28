@@ -3,9 +3,8 @@ class AchievementRequest < ApplicationRecord
   belongs_to :category
 
   has_many :req_histories
+  has_many :request_versions, dependent: :destroy
   has_many :notifications, dependent: :destroy
-
-  has_many_attached :proofs
 
   validates :title, presence: true
 
@@ -13,20 +12,45 @@ class AchievementRequest < ApplicationRecord
   # categories keep their existing requests but never accept new ones.
   validate :category_is_not_archived, on: :create
 
-  validates :proofs, attached: true,
-                     content_type: [ "image/png" ],
-                     size: { less_than: 5.megabytes }
-
   enum :status, { submitted: "submitted", supervisor_approved: "supervisor_approved",
                   supervisor_reverted: "supervisor_reverted", dean_approved: "dean_approved",
                   dean_reverted: "dean_reverted", rejected: "rejected" }
 
-  # Path A submission: the request and its first history row are created in one
-  # transaction so neither can exist without the other (PRD section 7).
+  # Actions that lock a version as sent (immutable snapshot). Edits after that
+  # create a new draft; further edits coalesce onto that draft until the next send.
+  VERSION_SENT_ACTIONS = %w[
+    submit
+    resubmit
+    supervisor_initiate
+    supervisor_reforward
+  ].freeze
+
+  def current_version
+    request_versions.order(version_number: :desc).first
+  end
+
+  def version_sent?(version)
+    version.req_histories.exists?(action: VERSION_SENT_ACTIONS)
+  end
+
+  def current_version_sent?
+    version = current_version
+    version.present? && version_sent?(version)
+  end
+
+  # Proofs live on RequestVersion; convenience for views/controllers that still
+  # read request.proofs (always the latest version's attachments).
+  delegate :proofs, to: :current_version
+
+  # Path A submission: the request, first version, and first history row are
+  # created in one transaction so none can exist without the others.
   def self.submit!(student:, actor:, attrs:)
+    attrs, proofs = split_proofs(attrs)
     transaction do
       request = create!(attrs.merge(student: student, status: :submitted))
-      request.req_histories.create!(actor: actor, action: "submit", to_status: "submitted")
+      version = request.create_version!(version_number: 1, proofs: proofs)
+      request.req_histories.create!(actor: actor, action: "submit", to_status: "submitted",
+                                    request_version: version)
       request
     end
   end
@@ -39,12 +63,70 @@ class AchievementRequest < ApplicationRecord
   # Path B: the supervisor creating the request is itself the review step, so it
   # skips submitted; the first history row records the supervisor as originator.
   def self.supervisor_initiate!(student:, actor:, attrs:)
+    attrs, proofs = split_proofs(attrs)
     transaction do
       request = create!(attrs.merge(student: student, status: :supervisor_approved))
+      version = request.create_version!(version_number: 1, proofs: proofs)
       request.req_histories.create!(actor: actor, action: "supervisor_initiate",
-                                    to_status: "supervisor_approved")
+                                    to_status: "supervisor_approved",
+                                    request_version: version)
       request
     end
+  end
+
+  # Student edit-and-resubmit after supervisor_reverted: new version + history.
+  def resubmit!(actor:, attrs:)
+    attrs, new_proofs, remove_proof_ids = self.class.split_proof_attrs(attrs)
+    transaction do
+      version = if current_version_sent?
+        append_version!(title: attrs[:title], description: attrs[:description],
+                        new_proofs: new_proofs, remove_proof_ids: remove_proof_ids)
+      else
+        update_version!(current_version, title: attrs[:title], description: attrs[:description],
+                                         new_proofs: new_proofs, remove_proof_ids: remove_proof_ids)
+      end
+      from = status
+      update!(title: version.title, description: version.description, status: :submitted)
+      req_histories.create!(actor: actor, action: "resubmit",
+                            from_status: from, to_status: "submitted",
+                            request_version: version)
+    end
+  end
+
+  # Path B supervisor fix-up after dean_reverted.
+  # First edit after a sent version creates a draft (N+1); further saves update
+  # that draft in place until re-forward locks it.
+  def revise!(actor:, attrs:)
+    attrs, new_proofs, remove_proof_ids = self.class.split_proof_attrs(attrs)
+    transaction do
+      if current_version_sent?
+        version = append_version!(title: attrs[:title], description: attrs[:description],
+                                  new_proofs: new_proofs, remove_proof_ids: remove_proof_ids)
+        update!(title: version.title, description: version.description)
+        req_histories.create!(actor: actor, action: "supervisor_revise",
+                              from_status: status, to_status: status,
+                              request_version: version)
+      else
+        version = update_version!(current_version, title: attrs[:title], description: attrs[:description],
+                                                   new_proofs: new_proofs, remove_proof_ids: remove_proof_ids)
+        update!(title: version.title, description: version.description)
+      end
+    end
+  end
+
+  def remove_saved_proof!(actor:, signed_id:, draft_action: nil)
+    transaction do
+      version = editable_version_for!(actor: actor, draft_action: draft_action)
+      proof = version.proofs.find { |attachment| attachment.signed_id == signed_id.to_s }
+      raise ActiveRecord::RecordNotFound, "Proof not found" unless proof
+      raise ActiveRecord::RecordInvalid, version if version.proofs.count <= 1
+
+      proof.purge
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    version = current_version || request_versions.build(category_id: category_id, version_number: 1)
+    version.errors.add(:proofs, "must include at least one file")
+    raise e
   end
 
   # Every review transition writes its history row in the same transaction as
@@ -55,7 +137,8 @@ class AchievementRequest < ApplicationRecord
       update!(status: to)
       req_histories.create!(actor: actor, action: action, comment: comment,
                             reason_template: reason_template,
-                            from_status: from, to_status: to.to_s)
+                            from_status: from, to_status: to.to_s,
+                            request_version: current_version)
     end
   end
 
@@ -68,11 +151,80 @@ class AchievementRequest < ApplicationRecord
       from = status
       update!(status: :dean_approved, points_awarded: category.points * sign)
       req_histories.create!(actor: actor, action: "dean_approve",
-                            from_status: from, to_status: "dean_approved")
+                            from_status: from, to_status: "dean_approved",
+                            request_version: current_version)
     end
     # Enqueued after the transaction commits so the job never sees a rolled-back
     # approval (PRD section 8 — notify on verification).
     DeanApprovalNotificationJob.perform_later(id)
+  end
+
+  def create_version!(version_number:, proofs:, title: self.title, description: self.description)
+    version = request_versions.build(
+      version_number: version_number,
+      title: title,
+      description: description,
+      category_id: category_id
+    )
+    Array(proofs).each { |proof| version.proofs.attach(proof) }
+    version.save!
+    version
+  end
+
+  # Snapshot a new version from the previous one, carrying forward existing
+  # proofs (minus any marked for removal) and appending newly uploaded files.
+  def append_version!(title:, description:, new_proofs: [], remove_proof_ids: [])
+    previous = current_version
+    kept = previous.proofs.reject { |proof| remove_proof_ids.include?(proof.signed_id) }
+                   .map(&:blob)
+    create_version!(
+      version_number: previous.version_number + 1,
+      title: title,
+      description: description,
+      proofs: kept + Array(new_proofs)
+    )
+  end
+
+  def editable_version_for!(actor:, draft_action: nil)
+    return current_version unless current_version_sent?
+
+    version = append_version!(title: title, description: description)
+    if draft_action.present?
+      req_histories.create!(actor: actor, action: draft_action,
+                            from_status: status, to_status: status,
+                            request_version: version)
+    end
+    update!(title: version.title, description: version.description)
+    version
+  end
+
+  def update_version!(version, title:, description:, new_proofs: [], remove_proof_ids: [])
+    version.assign_attributes(title: title, description: description)
+    purge_proofs!(version, remove_proof_ids)
+    version.proofs.attach(new_proofs) if new_proofs.present?
+    version.save!
+    version
+  end
+
+  def purge_proofs!(version, remove_proof_ids)
+    return if remove_proof_ids.blank?
+
+    version.proofs.each do |proof|
+      proof.purge if remove_proof_ids.include?(proof.signed_id)
+    end
+  end
+
+  def self.split_proofs(attrs)
+    attrs, proofs, _remove_ids = split_proof_attrs(attrs)
+    [ attrs, proofs ]
+  end
+
+  def self.split_proof_attrs(attrs)
+    attrs = attrs.to_unsafe_h if attrs.respond_to?(:to_unsafe_h)
+    attrs = attrs.symbolize_keys
+    proofs = Array(attrs.delete(:proofs)).reject(&:blank?)
+    remove_ids = Array(attrs.delete(:remove_proof_ids)).reject(&:blank?).map(&:to_s)
+    [ attrs, proofs, remove_ids ]
   end
 
   private

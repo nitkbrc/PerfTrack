@@ -7,16 +7,27 @@ FactoryBot.define do
 
     transient do
       with_proof { true }
+      with_version { true }
     end
 
-    after(:build) do |request, evaluator|
+    after(:create) do |request, evaluator|
+      next unless evaluator.with_version
+      next if request.request_versions.exists?
+
+      version = request.request_versions.build(
+        version_number: 1,
+        title: request.title,
+        description: request.description,
+        category: request.category
+      )
       if evaluator.with_proof
-        request.proofs.attach(
+        version.proofs.attach(
           io: Rails.root.join("spec/fixtures/files/proof.png").open,
           filename: "proof.png",
           content_type: "image/png"
         )
       end
+      version.save!(validate: evaluator.with_proof)
     end
   end
 end

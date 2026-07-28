@@ -8,37 +8,37 @@ module AdminHelper
   end
 
   def admin_input_classes
-    "mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm " \
-    "placeholder:text-slate-400 focus:border-[#74C69D] focus:outline-none focus:ring-2 focus:ring-[#74C69D]/40"
+    "mt-1 block w-full rounded-md border border-[#DEE2E6] bg-white px-3 py-2 text-[#212529] shadow-sm " \
+    "placeholder:text-[#6C757D] focus:border-[#000666] focus:outline-none focus:ring-2 focus:ring-[#668efe]/40"
   end
 
   def admin_primary_button_classes
-    "cursor-pointer rounded-xl bg-[#1B4332] px-4 py-2 text-sm font-semibold text-white shadow-sm " \
-    "transition hover:bg-[#2D6A4F] focus:outline-none focus:ring-2 focus:ring-[#74C69D] focus:ring-offset-2"
+    "cursor-pointer rounded-md bg-[#000666] px-4 py-2 text-sm font-semibold text-white shadow-sm " \
+    "transition hover:bg-[#1a237e] focus:outline-none focus:ring-2 focus:ring-[#668efe] focus:ring-offset-2"
   end
 
   def admin_link_classes
-    "text-sm font-medium text-[#1B4332] hover:text-[#2D6A4F]"
+    "text-sm font-medium text-[#000666] hover:text-[#1a237e]"
   end
 
   def admin_back_link_classes
-    "inline-flex items-center gap-1.5 rounded-full border border-[#1B4332]/30 bg-[#D8F3DC]/60 " \
-    "px-3 py-1.5 text-sm font-semibold text-[#1B4332] shadow-sm transition " \
-    "hover:border-[#1B4332]/50 hover:bg-[#D8F3DC] hover:text-[#081C15] " \
-    "focus:outline-none focus:ring-2 focus:ring-[#74C69D] focus:ring-offset-2"
+    "inline-flex items-center gap-1.5 rounded-md border border-[#DEE2E6] bg-[#e0e0ff]/60 " \
+    "px-3 py-1.5 text-sm font-semibold text-[#000666] shadow-sm transition " \
+    "hover:border-[#000666]/30 hover:bg-[#e0e0ff] hover:text-[#000666] " \
+    "focus:outline-none focus:ring-2 focus:ring-[#668efe] focus:ring-offset-2"
   end
 
-  # Mint/forest pill for secondary card actions (Edit, Restore).
+  # Navy-tint pill for secondary card actions (Edit, Restore).
   def admin_secondary_button_classes
-    "inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#1B4332]/30 " \
-    "bg-[#D8F3DC]/70 px-3 py-1.5 text-sm font-semibold text-[#1B4332] shadow-sm " \
-    "transition hover:scale-[1.02] hover:border-[#1B4332]/50 hover:bg-[#D8F3DC] " \
-    "focus:outline-none focus:ring-2 focus:ring-[#74C69D] focus:ring-offset-2"
+    "inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-[#DEE2E6] " \
+    "bg-[#e0e0ff]/70 px-3 py-1.5 text-sm font-semibold text-[#000666] shadow-sm " \
+    "transition hover:scale-[1.02] hover:border-[#000666]/30 hover:bg-[#e0e0ff] " \
+    "focus:outline-none focus:ring-2 focus:ring-[#668efe] focus:ring-offset-2"
   end
 
   # Amber warning pill for Archive — visually secondary to Edit.
   def admin_warning_button_classes
-    "inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-400/70 " \
+    "inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-amber-400/70 " \
     "bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800 shadow-sm " \
     "transition hover:scale-[1.02] hover:bg-amber-100 " \
     "focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2"
@@ -81,6 +81,6 @@ module AdminHelper
   end
 
   def user_role_badge_classes
-    "rounded-full bg-[#74C69D]/30 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[#1B4332]"
+    "rounded-full bg-[#e0e0ff] px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[#000666]"
   end
 end

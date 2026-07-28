@@ -47,6 +47,7 @@ RSpec.describe "Student dashboard", type: :request do
     request_record = create(:achievement_request, student: profile, category: category, title: "Hackathon win")
     submitted_at = Time.zone.local(2026, 3, 15, 10, 30)
     request_record.req_histories.create!(actor: profile.user, action: "submit", to_status: "submitted",
+                                         request_version: request_record.current_version,
                                          created_at: submitted_at)
     request_record.transition!(to: :supervisor_approved, actor: supervisor, action: "supervisor_approve")
 

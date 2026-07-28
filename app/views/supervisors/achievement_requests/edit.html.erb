@@ -1,7 +1,8 @@
 <div class="mx-auto w-full max-w-lg">
   <h1 class="mb-2 text-2xl font-bold text-slate-900">Edit request</h1>
   <p class="mb-6 text-sm text-slate-500">
-    Address the dean's feedback, save, then re-forward from the request page.
+    Address the dean's feedback. Saves update the current unsent draft (a new version
+    is only created after the previous one was re-forwarded), then re-forward from the request page.
   </p>
 
   <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
@@ -19,14 +20,9 @@
         <%= f.text_area :description, rows: 4, class: admin_input_classes %>
       </div>
 
-      <div>
-        <p class="block text-sm font-medium text-slate-700">Current proofs</p>
-        <div class="mt-2 flex flex-wrap gap-3">
-          <% @achievement_request.proofs.each do |proof| %>
-            <%= image_tag proof, class: "h-20 w-20 rounded-lg border border-slate-200 object-cover" %>
-          <% end %>
-        </div>
-      </div>
+      <%= render "shared/editable_proofs",
+            proofs: @achievement_request.proofs,
+            remove_path: ->(proof) { proof_supervisor_achievement_request_path(@achievement_request, proof.signed_id) } %>
 
       <div data-controller="proof-preview">
         <%= f.label :proofs, "Add more proofs (PNG, max 5MB each)", class: "block text-sm font-medium text-slate-700" %>

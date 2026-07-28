@@ -1,28 +1,47 @@
-<div class="mx-auto grid min-h-[75vh] w-full max-w-5xl place-items-center lg:grid-cols-2 lg:gap-16">
-  <section class="glass-panel w-full max-w-lg p-7 text-center lg:text-left">
-    <p class="mb-3 text-sm font-bold uppercase tracking-[.25em] text-[#2D6A4F]">Student life, recognised</p>
-    <h1 class="text-5xl font-bold tracking-tight text-[#1B4332]">Welcome to SCATS</h1>
-    <p class="mt-5 max-w-lg text-lg leading-8 text-slate-600">Student Character and Achievement Tracking System brings achievements, requests, and decisions into one thoughtful place.</p>
-  </section>
-  <section class="glass-panel w-full max-w-md p-7">
-    <h2 class="text-2xl font-bold text-[#1B4332]">Sign in</h2>
-    <p class="mt-1 text-sm text-slate-600">Use your SCATS account to continue.</p>
-    <%= form_with scope: :user, url: user_session_path, class: "mt-6 space-y-4" do |f| %>
-      <div>
-        <%= f.label :email, class: "block text-sm font-medium text-slate-700" %>
-        <%= f.email_field :email, autofocus: true, autocomplete: "email",
-              class: "mt-1 w-full rounded-xl border-slate-200 bg-white/80 px-3 py-2.5 focus:border-[#74C69D] focus:ring-[#74C69D]" %>
-      </div>
-      <div>
-        <%= f.label :password, class: "block text-sm font-medium text-slate-700" %>
-        <%= f.password_field :password, autocomplete: "current-password",
-              class: "mt-1 w-full rounded-xl border-slate-200 bg-white/80 px-3 py-2.5 focus:border-[#74C69D] focus:ring-[#74C69D]" %>
-      </div>
-      <div class="flex items-center gap-2">
-        <%= f.check_box :remember_me, class: "h-4 w-4 rounded border-slate-300 text-[#1B4332] focus:ring-[#74C69D]" %>
-        <%= f.label :remember_me, class: "text-sm text-slate-700" %>
-      </div>
-      <%= f.submit "Sign in", class: "scats-primary-button w-full" %>
+<div class="grid min-h-screen w-full grid-cols-1 lg:grid-cols-5">
+  <section class="scats-auth-campus relative lg:col-span-2"
+           data-controller="campus-rotator"
+           data-campus-rotator-full-value="true">
+    <% campus_image_paths.each_with_index do |path, index| %>
+      <%= image_tag path, data: { campus_rotator_target: "image" },
+            class: "absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 #{index.zero? ? '' : 'opacity-0'}",
+            alt: "" %>
     <% end %>
+    <div class="absolute inset-0 bg-[#000666]/50"></div>
+    <div class="relative z-10 flex h-full flex-col justify-end p-8 text-white sm:p-10 lg:p-12">
+      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-[#8690ee]">Student life, recognised</p>
+      <h1 class="mt-3 max-w-sm text-3xl font-bold tracking-tight sm:text-4xl">
+        Welcome to SCATS
+      </h1>
+      <p class="mt-4 max-w-md text-sm leading-relaxed text-white/80 sm:text-base">
+        Student Character and Achievement Tracking System brings achievements, requests, and decisions into one thoughtful place.
+      </p>
+    </div>
+  </section>
+
+  <section class="scats-auth-form-panel lg:col-span-3">
+    <div class="mx-auto w-full max-w-md">
+      <p class="text-xs font-bold uppercase tracking-[0.3em] text-[#2857c4]">SCATS</p>
+      <h2 class="mt-2 text-3xl font-bold tracking-tight text-[#000666]">Sign in</h2>
+      <p class="mt-1 text-sm text-[#6C757D]">Use your SCATS account to continue.</p>
+
+      <%= form_with scope: :user, url: user_session_path, class: "mt-8 space-y-4" do |f| %>
+        <div>
+          <%= f.label :email, class: "block text-sm font-medium text-[#212529]" %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email",
+                class: "mt-1 w-full rounded-md border border-[#DEE2E6] bg-white px-3 py-2.5 text-[#212529] focus:border-[#000666] focus:outline-none focus:ring-2 focus:ring-[#668efe]/40" %>
+        </div>
+        <div>
+          <%= f.label :password, class: "block text-sm font-medium text-[#212529]" %>
+          <%= f.password_field :password, autocomplete: "current-password",
+                class: "mt-1 w-full rounded-md border border-[#DEE2E6] bg-white px-3 py-2.5 text-[#212529] focus:border-[#000666] focus:outline-none focus:ring-2 focus:ring-[#668efe]/40" %>
+        </div>
+        <div class="flex items-center gap-2">
+          <%= f.check_box :remember_me, class: "h-4 w-4 rounded border-[#DEE2E6] text-[#000666] focus:ring-[#668efe]" %>
+          <%= f.label :remember_me, class: "text-sm text-[#212529]" %>
+        </div>
+        <%= f.submit "Sign in", class: "scats-primary-button w-full" %>
+      <% end %>
+    </div>
   </section>
 </div>

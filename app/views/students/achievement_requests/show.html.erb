@@ -1,6 +1,6 @@
 <div class="mx-auto w-full max-w-3xl">
   <div class="mb-6">
-    <%= link_to "← Back to dashboard", student_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+    <%= link_to "← Back to dashboard", student_root_path, class: admin_back_link_classes %>
   </div>
 
   <% if @achievement_request.supervisor_reverted? %>

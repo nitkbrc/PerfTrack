@@ -118,10 +118,12 @@ RSpec.describe "Supervisor review actions", type: :request do
       request = AchievementRequest.last
       expect(request.status).to eq("supervisor_approved")
       expect(request.student).to eq(student_profile)
+      expect(request.request_versions.count).to eq(1)
 
       history = request.req_histories.sole
       expect(history.action).to eq("supervisor_initiate")
       expect(history.actor).to eq(supervisor)
+      expect(history.request_version).to eq(request.current_version)
     end
 
     it "rejects categories outside the supervisor's sub-divisions" do
@@ -157,6 +159,9 @@ RSpec.describe "Supervisor review actions", type: :request do
       }.not_to change(AchievementRequest, :count)
 
       expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to match(/proofs/i)
+      expect(response.body).to include(%(value="#{student_profile.id}"))
+      expect(response.body).to include("Unauthorized absence")
     end
   end
 

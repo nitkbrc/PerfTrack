@@ -1,0 +1,434 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Ethos | Student Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#ffb59d",
+                        "on-background": "#181c1c",
+                        "secondary-container": "#668efe",
+                        "text-main": "#212529",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#7b2e12",
+                        "secondary": "#2857c4",
+                        "surface-dim": "#d7dbda",
+                        "on-secondary-fixed-variant": "#003ea7",
+                        "on-tertiary-fixed": "#390c00",
+                        "surface-white": "#FFFFFF",
+                        "primary-container": "#1a237e",
+                        "on-primary-container": "#8690ee",
+                        "surface-variant": "#e0e3e2",
+                        "inverse-on-surface": "#eef1f0",
+                        "tertiary-fixed": "#ffdbd0",
+                        "inverse-primary": "#bdc2ff",
+                        "secondary-fixed": "#dbe1ff",
+                        "outline": "#767683",
+                        "tertiary": "#380b00",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#f7faf9",
+                        "on-surface-variant": "#454652",
+                        "primary-fixed-dim": "#bdc2ff",
+                        "on-tertiary-container": "#e17c5a",
+                        "text-muted": "#6C757D",
+                        "on-secondary-fixed": "#00174b",
+                        "on-primary-fixed-variant": "#343d96",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#ebeeed",
+                        "on-primary-fixed": "#000767",
+                        "background": "#f7faf9",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "surface-container-low": "#f1f4f3",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#2d3131",
+                        "surface-tint": "#4c56af",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#00266e",
+                        "primary": "#000666",
+                        "surface-container-high": "#e6e9e8",
+                        "outline-variant": "#c6c5d4",
+                        "tertiary-container": "#5c1800",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#e0e0ff",
+                        "on-primary": "#ffffff",
+                        "border-subtle": "#DEE2E6",
+                        "surface": "#f7faf9",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#181c1c",
+                        "surface-container-highest": "#e0e3e2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "stack-md": "16px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "baseline": "4px",
+                        "container-max": "1440px",
+                        "stack-sm": "8px",
+                        "stack-lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7faf9;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .ethos-gradient {
+            background: linear-gradient(135deg, #1a237e 0%, #343d96 100%);
+        }
+        .bento-card {
+            background: white;
+            border: 1px solid #DEE2E6;
+            border-radius: 4px;
+            box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bento-card:hover {
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body class="text-text-main">
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col py-stack-lg border-r border-outline/20 bg-primary-container text-on-primary z-50">
+<div class="px-6 mb-10">
+<h1 class="text-headline-sm font-bold text-white tracking-tight">Ethos</h1>
+<p class="text-label-sm text-on-primary-container/70 uppercase tracking-widest mt-1">Academic Character</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-stack-md bg-secondary-container text-on-secondary-container rounded-lg px-4 py-3 mx-2 scale-95 duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md">Student Directory</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">pending_actions</span>
+<span class="font-label-md text-label-md">Work Queue</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">request_quote</span>
+<span class="font-label-md text-label-md">My Requests</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-label-md text-label-md">Org Structure</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-md text-label-md">History</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-on-primary/10 pt-4 space-y-1">
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:bg-on-primary/10 hover:text-on-primary px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen bg-background">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full px-margin-desktop sticky top-0 z-40 h-16 bg-surface-white border-b border-border-subtle shadow-sm">
+<div class="flex items-center gap-6">
+<h2 class="text-title-md font-title-md text-primary">Student Performance Dashboard</h2>
+<div class="h-6 w-px bg-border-subtle"></div>
+<div class="flex items-center gap-2 text-text-muted">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="text-label-md font-label-md">Academic Year 2023-24</span>
+</div>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="flex items-center gap-3 ml-2 pl-4 border-l border-border-subtle">
+<div class="text-right">
+<p class="text-label-md font-bold text-text-main">Aditya K. Rao</p>
+<p class="text-[10px] text-text-muted uppercase tracking-tighter">B.Tech Mechanical</p>
+</div>
+<img class="w-10 h-10 rounded-full border-2 border-primary-container object-cover" data-alt="A professional headshot of a young university student in a clean, brightly lit modern studio setting. The student has a confident expression and is wearing a dark blue blazer over a crisp white shirt. The background is a soft, out-of-focus academic hall with high-key lighting, maintaining a clean light-mode aesthetic consistent with the Ethos brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-2IQ7PQw7ajTVNAnQhr_zKdD7tQI9Pn4x6f9n8awWM_oMoeDUegr7ULCqajb6q6N7AnWI38MUE0wDkSBe_Fs87TTWLIaHTBHqFbBl7OYtccdfWjpdtr6imdOwkSc-6uq5al-vtw7tKADywkRhV7UrvEeaYehQ8_k5p5mR_w3ET60TCwKvgbmQ2z065sXCs47RUghst39y3XF1mF8Wgh89I4iHp7YwgMegOKCdsb9ZeAmB10veJP-3QxxiSUrsO2COY9Y50ilebRU">
+</div>
+</div>
+</header>
+<!-- Dashboard Grid Container -->
+<div class="max-w-container-max mx-auto p-margin-desktop">
+<!-- Hero Stats Row -->
+<div class="grid grid-cols-12 gap-gutter mb-stack-lg">
+<!-- Main Ethos Score Card -->
+<div class="col-span-12 lg:col-span-5 bento-card p-stack-lg bg-surface-white flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-4 -top-4 opacity-10 text-primary">
+<span class="material-symbols-outlined text-[160px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-widest text-text-muted">Overall Ethos Standing</span>
+<div class="mt-stack-sm flex items-baseline gap-2"><span class="text-[64px] font-bold leading-none text-primary">8.2/10</span></div>
+</div>
+<div class="mt-8">
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[82%]"></div>
+</div>
+<div class="flex justify-between mt-2 text-label-md text-text-main">
+<span class="font-medium">Percentile: 94th</span>
+<span class="font-medium">Target: 9.0</span>
+</div>
+</div>
+</div>
+<!-- Achievements Counter -->
+<div class="col-span-6 lg:col-span-3 bento-card p-stack-lg flex flex-col justify-between">
+<div>
+<div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 mb-stack-sm border border-green-100">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">military_tech</span>
+</div>
+<p class="text-text-muted text-label-md font-label-md">Positive Achievements</p>
+</div>
+<div class="flex items-end justify-between">
+<span class="text-headline-lg font-headline-lg text-primary">24</span>
+<span class="text-green-600 text-label-sm font-bold flex items-center">
+<span class="material-symbols-outlined text-sm">trending_up</span> +3 this month
+                        </span>
+</div>
+</div>
+<!-- Conduct Points -->
+<div class="col-span-6 lg:col-span-4 bento-card p-stack-lg flex flex-col justify-between">
+<div>
+<div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 mb-stack-sm border border-blue-100">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">gavel</span>
+</div>
+<p class="text-text-muted text-label-md font-label-md">Conduct &amp; Integrity Points</p>
+</div>
+<div class="flex items-end justify-between">
+<span class="text-headline-lg font-headline-lg text-primary">890</span>
+<div class="text-right">
+<p class="text-label-sm font-bold text-primary-container">Exemplary Grade</p>
+<p class="text-[10px] text-text-muted">Ranked #12 in Division</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Content Row 2: Recent Activity & Conduct Standing -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Recent Activity Table -->
+<div class="col-span-12 lg:col-span-8 bento-card">
+<div class="p-stack-lg border-b border-border-subtle flex justify-between items-center">
+<h3 class="text-title-md font-title-md text-primary">Recent Activity Log</h3>
+<button class="text-label-md font-label-md text-secondary hover:underline">Download Report</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-bright text-text-muted text-label-sm uppercase tracking-wider">
+<tr>
+<th class="px-stack-lg py-3 font-semibold">Activity Date</th>
+<th class="px-stack-lg py-3 font-semibold">Category</th>
+<th class="px-stack-lg py-3 font-semibold">Event Description</th>
+<th class="px-stack-lg py-3 font-semibold text-center">Score Delta</th>
+<th class="px-stack-lg py-3 font-semibold">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<tr class="hover:bg-surface-container transition-colors group" style="opacity: 1; transform: translateY(0px); transition: 0.4s;">
+<td class="px-stack-lg py-4 text-body-md text-text-muted">Oct 12, 2023</td>
+<td class="px-stack-lg py-4">
+<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Community</span>
+</td>
+<td class="px-stack-lg py-4 text-body-md font-medium text-text-main">Coordinated Blood Donation Drive</td>
+<td class="px-stack-lg py-4 text-center">
+<span class="text-green-600 font-bold">+0.15</span>
+</td>
+<td class="px-stack-lg py-4">
+<div class="flex items-center gap-1 text-green-600">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">check_circle</span>
+<span class="text-label-sm">Verified</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group" style="opacity: 1; transform: translateY(0px); transition: 0.4s;">
+<td class="px-stack-lg py-4 text-body-md text-text-muted">Oct 08, 2023</td>
+<td class="px-stack-lg py-4">
+<span class="bg-purple-50 text-purple-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Academic</span>
+</td>
+<td class="px-stack-lg py-4 text-body-md font-medium text-text-main">Peer Tutoring - Advanced Dynamics</td>
+<td class="px-stack-lg py-4 text-center">
+<span class="text-green-600 font-bold">+0.05</span>
+</td>
+<td class="px-stack-lg py-4">
+<div class="flex items-center gap-1 text-green-600">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">check_circle</span>
+<span class="text-label-sm">Verified</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group" style="opacity: 1; transform: translateY(0px); transition: 0.4s;">
+<td class="px-stack-lg py-4 text-body-md text-text-muted">Sep 28, 2023</td>
+<td class="px-stack-lg py-4">
+<span class="bg-orange-50 text-orange-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Conduct</span>
+</td>
+<td class="px-stack-lg py-4 text-body-md font-medium text-text-main">Late Submission Penalty (Humanities)</td>
+<td class="px-stack-lg py-4 text-center">
+<span class="text-error font-bold">-0.02</span>
+</td>
+<td class="px-stack-lg py-4">
+<div class="flex items-center gap-1 text-text-muted">
+<span class="material-symbols-outlined text-sm">history</span>
+<span class="text-label-sm">Processed</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group" style="opacity: 1; transform: translateY(0px); transition: 0.4s;">
+<td class="px-stack-lg py-4 text-body-md text-text-muted">Sep 15, 2023</td>
+<td class="px-stack-lg py-4">
+<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-bold uppercase">Research</span>
+</td>
+<td class="px-stack-lg py-4 text-body-md font-medium text-text-main">IEEE Conference Paper Publication</td>
+<td class="px-stack-lg py-4 text-center">
+<span class="text-green-600 font-bold">+0.20</span>
+</td>
+<td class="px-stack-lg py-4">
+<div class="flex items-center gap-1 text-green-600">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">check_circle</span>
+<span class="text-label-sm">Verified</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Right Column: Conduct Standing & Insights -->
+<div class="col-span-12 lg:col-span-4 space-y-gutter">
+<!-- Conduct Standing Card -->
+<div class="bento-card p-stack-lg">
+<h3 class="text-title-md font-title-md text-primary mb-stack-md flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">verified</span>
+                            Conduct Standing
+                        </h3>
+<div class="space-y-stack-md">
+<div class="p-3 bg-green-50 rounded border border-green-100">
+<div class="flex items-center justify-between mb-1">
+<p class="text-label-sm font-bold text-green-700">CURRENT STATUS</p>
+<span class="material-symbols-outlined text-green-600 text-lg">workspace_premium</span>
+</div>
+<p class="text-headline-sm font-bold text-green-800">Clear / Outstanding</p>
+<p class="text-[11px] text-green-600 mt-1">No disciplinary actions recorded in the last 2 semesters.</p>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center text-body-md">
+<span class="text-text-muted">Integrity Index</span>
+<span class="font-semibold text-primary">9.8/10</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full">
+<div class="bg-primary h-full w-[98%]"></div>
+</div>
+<div class="flex justify-between items-center text-body-md">
+<span class="text-text-muted">Attendance Factor</span>
+<span class="font-semibold text-primary">92%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full">
+<div class="bg-secondary h-full w-[92%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Visual Breakdown / Ad Space -->
+<div class="bento-card overflow-hidden relative group cursor-pointer h-48">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="A modern, abstract digital visualization of connectivity and data points. Shimmering navy and sapphire blue nodes are interconnected by thin glowing lines, symbolizing an academic network or an institutional structure. The lighting is crisp and cool, giving it a high-end corporate dashboard background feel that aligns with the Deep Navy Primary Color theme of Ethos." style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuCuDLS2sdGygrvRJuxL5ibtef14UtwbEGkEl_dCeBbuHThJ2f_lg6Wnz7Z6PiN-7wMmENl2juvRFp56jYWA1W32Uqxb3BWv5teBSEwzU3r1L8e6PIfXGZMww2nSeRDc7CX5u9WGL6mlB-nwn_sIdutI2N6dm1ZFduOuwIO8344YoIsA7Y8nI9sSvX3DIfj6f39zOXU4D0CuYrNf5qtbpw24QzgE6hvrOAli-CL4C7LBGIKlZLtYWxjE3dPYNaYaQQSXsN8UQYlFn9A&quot;);"></div>
+<div class="absolute inset-0 bg-primary/60 flex flex-col justify-end p-stack-lg text-white">
+<p class="text-label-sm font-bold opacity-80 mb-1">FACULTY RECOMMENDATION</p>
+<h4 class="text-title-md font-bold">Apply for the 'Dean's Merit List'</h4>
+<p class="text-label-md opacity-90 mt-1">Your ethos score qualifies you for the 2024 merit fellowship.</p>
+</div>
+</div>
+<!-- Mini CTA Card -->
+<div class="bento-card p-stack-lg bg-surface-bright border-dashed border-2 border-border-subtle flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-primary-container text-4xl mb-stack-sm">add_task</span>
+<h4 class="text-body-lg font-bold text-primary">Submit for Verification</h4>
+<p class="text-label-md text-text-muted mt-2">Have a new achievement or volunteer work to report? Submit details for faculty review.</p>
+<button class="mt-4 w-full py-2 bg-primary text-white rounded font-label-md hover:bg-primary/90 transition-colors">Start Submission</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB (Only for Dashboard Action) -->
+<button class="fixed bottom-margin-desktop right-margin-desktop w-14 h-14 bg-secondary-container text-on-secondary-container rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<script>
+        // Simple micro-interaction for active nav state and hover effects
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                if (!link.classList.contains('bg-secondary-container')) {
+                    link.style.transform = 'translateX(4px)';
+                }
+            });
+            link.addEventListener('mouseleave', () => {
+                link.style.transform = '';
+            });
+        });
+
+        // Initialize table row fading entry
+        window.addEventListener('DOMContentLoaded', () => {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach((row, i) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(10px)';
+                row.style.transition = 'all 0.4s ease';
+                setTimeout(() => {
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, 100 * i);
+            });
+        });
+    </script>
+
+
+
+
+</body></html>

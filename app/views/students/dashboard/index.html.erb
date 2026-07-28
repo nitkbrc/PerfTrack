@@ -9,9 +9,9 @@
   </div>
 
   <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-    <div class="rounded-3xl bg-[#1B4332] p-6 text-center shadow-md">
-      <p class="text-sm font-medium text-indigo-100">Overall score</p>
-      <p class="mt-1 text-4xl font-bold text-white"><%= current_student.overall_score %><span class="text-lg font-medium text-indigo-200"> / 10</span></p>
+    <div class="rounded-lg bg-[#000666] p-6 text-center shadow-sm">
+      <p class="text-sm font-medium text-[#8690ee]">Overall score</p>
+      <p class="mt-1 text-4xl font-bold text-white"><%= current_student.overall_score %><span class="text-lg font-medium text-white/70"> / 10</span></p>
     </div>
     <div class="clay-card p-6 text-center">
       <p class="text-sm font-medium text-slate-500">Positive points</p>
@@ -40,37 +40,50 @@
         </thead>
         <% @requests.each do |request| %>
           <tbody data-controller="history-toggle">
-            <tr class="scats-row">
-              <td class="min-w-0 truncate px-4 py-3 font-medium">
-                <%= link_to request.title, student_achievement_request_path(request),
-                      class: "text-indigo-600 hover:text-indigo-500" %>
-                <% if request.supervisor_reverted? %>
-                  <%= attention_dot("Reverted — waiting for your resubmission") %>
+            <tr class="scats-row relative cursor-pointer">
+              <td class="min-w-0 truncate px-4 py-3 font-medium text-slate-900">
+                <%= link_to student_achievement_request_path(request),
+                      class: "absolute inset-0 z-0",
+                      aria: { label: "Open #{request.title}" } do %>
                 <% end %>
+                <span class="pointer-events-none relative z-10 inline-flex items-center gap-1.5">
+                  <%= request.title %>
+                  <% if request.supervisor_reverted? %>
+                    <%= attention_dot("Reverted — waiting for your resubmission") %>
+                  <% end %>
+                </span>
               </td>
-              <td class="hidden min-w-0 truncate px-4 py-3 text-slate-600 md:table-cell"><%= request.category.name %></td>
-              <td class="min-w-0 px-4 py-3">
-                <%= status_badge(request) %>
+              <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-4 py-3 text-slate-600 md:table-cell">
+                <%= request.category.name %>
+              </td>
+              <td class="relative z-10 min-w-0 px-4 py-3">
+                <span class="pointer-events-none"><%= status_badge(request) %></span>
                 <% if request.supervisor_reverted? %>
                   <%= link_to "Edit & resubmit", edit_student_achievement_request_path(request),
-                        class: "ml-2 text-xs font-medium text-indigo-600 hover:text-indigo-500" %>
+                        class: "relative z-20 ml-2 text-xs font-medium text-[#000666] hover:text-[#1a237e]" %>
                 <% end %>
               </td>
-              <td class="hidden whitespace-nowrap px-4 py-3 font-semibold text-slate-700 sm:table-cell"><%= request.points_awarded || "—" %></td>
-              <td class="hidden whitespace-nowrap px-4 py-3 text-slate-500 lg:table-cell"><%= request.created_at.strftime("%d %b %Y") %></td>
-              <td class="whitespace-nowrap px-4 py-3">
+              <td class="pointer-events-none relative z-10 hidden whitespace-nowrap px-4 py-3 font-semibold text-slate-700 sm:table-cell">
+                <%= request.points_awarded || "—" %>
+              </td>
+              <td class="pointer-events-none relative z-10 hidden whitespace-nowrap px-4 py-3 text-slate-500 lg:table-cell">
+                <%= request.created_at.strftime("%d %b %Y") %>
+              </td>
+              <td class="relative z-20 cursor-default whitespace-nowrap px-4 py-3">
                 <button type="button"
                         data-history-toggle-target="button"
-                        data-action="history-toggle#toggle"
-                        class="text-xs font-medium text-indigo-600 hover:text-indigo-500">
+                        data-action="click->history-toggle#toggle"
+                        class="relative z-20 cursor-pointer text-xs font-medium text-[#000666] hover:text-[#1a237e]">
                   View history
                 </button>
               </td>
             </tr>
             <tr class="hidden bg-slate-50" data-history-toggle-target="panel">
               <td colspan="6" class="px-4 py-4">
-                <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Request history</h3>
-                <%= render "shared/request_history", histories: request.req_histories %>
+                <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Review history</h3>
+                <%= render "shared/request_timeline",
+                      versions: request.request_versions.sort_by(&:version_number),
+                      history_only: true %>
               </td>
             </tr>
           </tbody>

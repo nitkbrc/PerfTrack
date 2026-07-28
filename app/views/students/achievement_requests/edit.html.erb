@@ -1,5 +1,5 @@
 <div class="mx-auto w-full max-w-lg">
-  <h1 class="mb-2 text-2xl font-bold text-[#1B4332]">Edit & resubmit</h1>
+  <h1 class="mb-2 text-2xl font-bold text-[#000666]">Edit & resubmit</h1>
   <p class="mb-6 text-sm text-slate-600">
     Address your supervisor's feedback, then resubmit for review.
     The category (<%= @achievement_request.category.name %>) cannot be changed.
@@ -20,19 +20,16 @@
         <%= f.text_area :description, rows: 4, class: admin_input_classes %>
       </div>
 
-      <div>
-        <p class="<%= admin_label_classes %>">Current proofs</p>
-        <div class="mt-2 flex flex-wrap gap-3">
-          <% @achievement_request.proofs.each do |proof| %>
-            <%= image_tag proof, class: "h-20 w-20 rounded-xl border border-[#1B4332]/15 object-cover shadow-sm" %>
-          <% end %>
-        </div>
-      </div>
+      <%= render "shared/editable_proofs",
+            proofs: @achievement_request.proofs,
+            remove_path: ->(proof) { proof_student_achievement_request_path(@achievement_request, proof.signed_id) },
+            label_class: admin_label_classes,
+            image_class: "h-20 w-20 rounded-xl border border-[#000666]/15 object-cover shadow-sm" %>
 
       <div data-controller="proof-preview">
         <%= f.label :proofs, "Add more proofs (PNG, max 5MB each)", class: admin_label_classes %>
         <%= f.file_field :proofs, multiple: true, accept: "image/png",
-              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-xl file:border-0 file:bg-[#D8F3DC] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#1B4332] hover:file:bg-[#B7E4C7]",
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-xl file:border-0 file:bg-[#e0e0ff] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#000666] hover:file:bg-[#dbe1ff]",
               data: { proof_preview_target: "input", action: "change->proof-preview#preview" } %>
         <div data-proof-preview-target="list" class="mt-3 flex flex-wrap gap-3"></div>
       </div>

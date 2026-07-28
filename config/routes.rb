@@ -27,17 +27,23 @@ Rails.application.routes.draw do
   # colliding with the Student model constant.
   namespace :student, module: "students" do
     root "dashboard#index"
-    resources :achievement_requests, only: [ :new, :create, :show, :edit, :update ]
+    resources :achievement_requests, only: [ :new, :create, :show, :edit, :update ] do
+      member do
+        delete "proofs/:signed_id", action: :remove_proof, as: :proof
+      end
+    end
   end
 
   # Same module-vs-model collision avoidance as the student namespace.
   namespace :supervisor, module: "supervisors" do
     root "queue#index"
+    resources :review_histories, only: [ :index ]
     resources :achievement_requests, only: [ :show, :new, :create, :edit, :update ] do
       member do
         patch :approve
         patch :revert
         patch :reject
+        delete "proofs/:signed_id", action: :remove_proof, as: :proof
       end
     end
   end
@@ -50,6 +56,7 @@ Rails.application.routes.draw do
 
   namespace :dean, module: "deans" do
     root "queue#index"
+    resources :review_histories, only: [ :index ]
     resources :achievement_requests, only: [ :show ] do
       member do
         patch :approve

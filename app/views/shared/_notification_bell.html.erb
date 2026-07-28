@@ -1,6 +1,6 @@
 <%# Eager bell chrome in the initial HTML so the icon never flashes empty.
     Mark-read still refreshes this same frame via notifications#index.
-    Desktop sidebar and mobile bottom nav use distinct frame ids. %>
+    Sidebar (desktop) and top bar (mobile) use distinct frame ids. %>
 <%
   notifications = local_assigns.fetch(:notifications) {
     current_user.notifications.includes(:achievement_request).order(created_at: :desc).limit(20)
@@ -10,16 +10,21 @@
   }
   open = local_assigns.fetch(:open, false)
   frame_id = local_assigns.fetch(:frame_id, "notifications")
-  mobile_dock = frame_id == "notifications_mobile"
+  variant = local_assigns.fetch(:variant, :sidebar).to_sym
+  summary_classes = case variant
+                    when :topbar
+                      "relative flex cursor-pointer items-center justify-center rounded-md p-2 text-[#1a237e] transition hover:bg-[#f1f4f3]"
+                    else
+                      "relative flex cursor-pointer items-center gap-1 rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
+                    end
+  icon_classes = variant == :topbar ? "text-[#1a237e]" : "text-white/80"
 %>
 <%= turbo_frame_tag frame_id do %>
   <details class="relative" data-controller="notifications-panel" <%= "open" if open %>>
-    <summary class="list-none [&::-webkit-details-marker]:hidden <%= mobile_dock ? "scats-bottom-nav-link relative" : "relative flex cursor-pointer items-center gap-1 rounded-lg p-1.5 transition hover:bg-white/10" %>"
+    <summary class="list-none [&::-webkit-details-marker]:hidden <%= summary_classes %>"
              aria-label="Notifications"
              title="Notifications">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="<%= mobile_dock ? "h-5 w-5" : "h-6 w-6" %> text-white/80">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-      </svg>
+      <span class="material-symbols-outlined <%= icon_classes %>" aria-hidden="true">notifications</span>
       <% if unread_count.positive? %>
         <span class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-bold text-white">
           <%= unread_count %>
@@ -39,18 +44,16 @@
            aria-modal="true"
            aria-labelledby="notifications-title-<%= frame_id %>">
         <div class="mb-3 flex items-center justify-between gap-3">
-          <h3 id="notifications-title-<%= frame_id %>" class="text-base font-semibold text-slate-900">Notifications</h3>
+          <h3 id="notifications-title-<%= frame_id %>" class="text-base font-semibold text-[#212529]">Notifications</h3>
           <div class="flex items-center gap-3">
             <% if unread_count.positive? %>
               <%= button_to "Mark all read", mark_all_read_notifications_path, method: :patch,
                     form: { data: { turbo_frame: frame_id } },
-                    class: "cursor-pointer text-xs font-medium text-[#1B4332] hover:text-[#2D6A4F]" %>
+                    class: "cursor-pointer text-xs font-medium text-[#000666] hover:text-[#1a237e]" %>
             <% end %>
             <button type="button" data-notifications-panel-close aria-label="Close notifications"
-                    class="cursor-pointer rounded-lg p-1 text-slate-400 transition hover:bg-[#1B4332]/10 hover:text-[#1B4332]">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-4 w-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
+                    class="cursor-pointer rounded-md p-1 text-[#6C757D] transition hover:bg-[#e0e0ff] hover:text-[#000666]">
+              <span class="material-symbols-outlined text-base" aria-hidden="true">close</span>
             </button>
           </div>
         </div>
@@ -58,21 +61,23 @@
         <% if notifications.any? %>
           <ul class="max-h-[min(24rem,60vh)] space-y-2 overflow-y-auto overscroll-contain pr-0.5">
             <% notifications.each do |notification| %>
-              <li class="rounded-xl border p-2.5 text-sm <%= notification.read? ? "border-slate-100/80 bg-white/60 text-slate-500" : "border-[#74C69D]/40 bg-[#74C69D]/15 text-slate-800" %>">
+              <li class="rounded-md border p-2.5 text-sm <%= notification.read? ? "border-[#DEE2E6] bg-[#f1f4f3] text-[#6C757D]" : "border-[#668efe]/40 bg-[#e0e0ff] text-[#000666]" %>">
                 <p><%= notification.message %></p>
                 <div class="mt-1.5 flex items-center justify-between gap-2">
-                  <span class="text-xs text-slate-400"><%= notification.created_at.strftime("%d %b, %H:%M") %></span>
+                  <span class="text-xs <%= notification.read? ? "text-[#6C757D]" : "text-[#2857c4]" %>">
+                    <%= notification.created_at.strftime("%d %b, %H:%M") %>
+                  </span>
                   <% unless notification.read? %>
                     <%= button_to "Mark read", mark_read_notification_path(notification), method: :patch,
                           form: { data: { turbo_frame: frame_id } },
-                          class: "cursor-pointer text-xs font-medium text-[#1B4332] hover:text-[#2D6A4F]" %>
+                          class: "cursor-pointer text-xs font-medium text-[#000666] hover:text-[#1a237e]" %>
                   <% end %>
                 </div>
               </li>
             <% end %>
           </ul>
         <% else %>
-          <p class="py-6 text-center text-sm text-slate-500">No notifications yet.</p>
+          <p class="py-6 text-center text-sm text-[#6C757D]">No notifications yet.</p>
         <% end %>
       </div>
     </div>

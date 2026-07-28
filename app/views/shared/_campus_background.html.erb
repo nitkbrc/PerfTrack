@@ -1,5 +1,5 @@
 <% full = intensity.to_sym == :full %>
-<div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#1B4332]"
+<div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#1a237e]"
      data-controller="campus-rotator"
      data-campus-rotator-full-value="<%= full %>">
   <% campus_image_paths.each_with_index do |path, index| %>
@@ -8,10 +8,9 @@
           alt: "" %>
   <% end %>
   <% if full %>
-    <div class="absolute inset-0 bg-[#1B4332]/55"></div>
+    <div class="absolute inset-0 bg-[#000666]/55"></div>
   <% else %>
-    <%# Forest wash first, then soft cream — green reads through without crushing the photo. %>
-    <div class="absolute inset-0 bg-[#1B4332]/28"></div>
-    <div class="absolute inset-0 bg-[#F7FAF7]/68"></div>
+    <div class="absolute inset-0 bg-[#000666]/28"></div>
+    <div class="absolute inset-0 bg-[#f7faf9]/68"></div>
   <% end %>
 </div>

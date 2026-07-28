@@ -1,6 +1,6 @@
 module Supervisors
   class AchievementRequestsController < BaseController
-    before_action :set_request, only: [ :show, :approve, :revert, :reject, :edit, :update ]
+    before_action :set_request, only: [ :show, :approve, :revert, :reject, :edit, :update, :remove_proof ]
     # Approve also re-forwards dean_reverted requests. Revert applies to fresh
     # submissions, or to dean-reverted requests the student originally raised
     # (so the student can address the dean's feedback themselves). Reject only
@@ -8,10 +8,15 @@ module Supervisors
     before_action :require_approvable_status, only: [ :approve ]
     before_action :require_revertable_status, only: [ :revert ]
     before_action :require_submitted_status, only: [ :reject ]
-    before_action :require_dean_reverted_status, only: [ :edit, :update ]
+    before_action :require_dean_reverted_status, only: [ :edit, :update, :remove_proof ]
 
     def show
       authorize @achievement_request
+      @achievement_request = AchievementRequest
+        .includes(request_versions: [ :proofs_attachments, { req_histories: :actor } ],
+                  category: { sub_division: :division },
+                  student: {})
+        .find(@achievement_request.id)
       @histories = @achievement_request.req_histories.includes(:actor).order(:created_at)
       @reason_templates = ReasonTemplate.order(:created_at)
     end
@@ -35,16 +40,24 @@ module Supervisors
       authorize @achievement_request, :review?
     end
 
+    def remove_proof
+      authorize @achievement_request, :review?
+      @achievement_request.remove_saved_proof!(actor: current_user, signed_id: params[:signed_id],
+                                               draft_action: "supervisor_revise")
+      render json: { ok: true }
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { ok: false, error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_content
+    end
+
     def update
       authorize @achievement_request, :review?
 
-      ApplicationRecord.transaction do
-        @achievement_request.proofs.attach(update_params[:proofs]) if update_params[:proofs].present?
-        @achievement_request.update!(update_params.except(:proofs))
-      end
+      @achievement_request.revise!(actor: current_user, attrs: update_params)
       redirect_to supervisor_achievement_request_path(@achievement_request),
-                  notice: "Changes saved — re-forward when ready."
-    rescue ActiveRecord::RecordInvalid
+                  notice: "Draft version updated — re-forward when ready."
+    rescue ActiveRecord::RecordInvalid => e
+      @achievement_request.assign_attributes(update_params.except(:proofs, :remove_proof_ids))
+      copy_record_errors(@achievement_request, e.record) unless e.record.is_a?(AchievementRequest)
       render :edit, status: :unprocessable_content
     end
 
@@ -70,7 +83,7 @@ module Supervisors
       # A category outside the supervisor's sub-divisions is rejected up front;
       # blank student/category/title fall through to model validations below.
       if request_params[:category_id].present? && !supervised_categories.exists?(id: request_params[:category_id])
-        @achievement_request = AchievementRequest.new(request_params)
+        @achievement_request = AchievementRequest.new(request_params.except(:proofs))
         @achievement_request.errors.add(:category, "must be under one of your sub-divisions")
         return render :new, status: :unprocessable_content
       end
@@ -82,7 +95,7 @@ module Supervisors
       )
       redirect_to supervisor_root_path, notice: "Request raised on behalf of #{request.student.usn}."
     rescue ActiveRecord::RecordInvalid => e
-      @achievement_request = e.record.is_a?(AchievementRequest) ? e.record : AchievementRequest.new
+      @achievement_request = form_request_from_invalid(e, attrs: request_params)
       render :new, status: :unprocessable_content
     end
 
@@ -90,6 +103,23 @@ module Supervisors
 
     def set_request
       @achievement_request = AchievementRequest.find(params[:id])
+    end
+
+    # When RequestVersion validations fail inside the create/revise transaction,
+    # rebuild a form-friendly AchievementRequest that keeps submitted fields
+    # (including student_id) and surfaces version errors such as blank proofs.
+    def form_request_from_invalid(error, attrs:)
+      return error.record if error.record.is_a?(AchievementRequest)
+
+      request = AchievementRequest.new(attrs.except(:proofs))
+      copy_record_errors(request, error.record)
+      request
+    end
+
+    def copy_record_errors(target, source)
+      source.errors.each do |err|
+        target.errors.add(err.attribute, err.message)
+      end
     end
 
     def require_submitted_status
@@ -142,7 +172,8 @@ module Supervisors
     end
 
     def update_params
-      @update_params ||= params.expect(achievement_request: [ :title, :description, { proofs: [] } ])
+      @update_params ||= params.expect(achievement_request: [ :title, :description,
+                                                              { proofs: [], remove_proof_ids: [] } ])
     end
   end
 end

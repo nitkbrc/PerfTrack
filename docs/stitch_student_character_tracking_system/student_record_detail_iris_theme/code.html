@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ethos - Student Record Detail</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#ffb59d",
+                    "on-background": "#181c1c",
+                    "secondary-container": "#668efe",
+                    "text-main": "#212529",
+                    "error": "#ba1a1a",
+                    "on-tertiary-fixed-variant": "#7b2e12",
+                    "secondary": "#2857c4",
+                    "surface-dim": "#d7dbda",
+                    "on-secondary-fixed-variant": "#003ea7",
+                    "on-tertiary-fixed": "#390c00",
+                    "surface-white": "#FFFFFF",
+                    "primary-container": "#1a237e",
+                    "on-primary-container": "#8690ee",
+                    "surface-variant": "#e0e3e2",
+                    "inverse-on-surface": "#eef1f0",
+                    "tertiary-fixed": "#ffdbd0",
+                    "inverse-primary": "#bdc2ff",
+                    "secondary-fixed": "#dbe1ff",
+                    "outline": "#767683",
+                    "tertiary": "#380b00",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#f7faf9",
+                    "on-surface-variant": "#454652",
+                    "primary-fixed-dim": "#bdc2ff",
+                    "on-tertiary-container": "#e17c5a",
+                    "text-muted": "#6C757D",
+                    "on-secondary-fixed": "#00174b",
+                    "on-primary-fixed-variant": "#343d96",
+                    "error-container": "#ffdad6",
+                    "surface-container": "#ebeeed",
+                    "on-primary-fixed": "#000767",
+                    "background": "#f7faf9",
+                    "secondary-fixed-dim": "#b4c5ff",
+                    "surface-container-low": "#f1f4f3",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#2d3131",
+                    "surface-tint": "#4c56af",
+                    "on-error": "#ffffff",
+                    "on-secondary-container": "#00266e",
+                    "primary": "#000666",
+                    "surface-container-high": "#e6e9e8",
+                    "outline-variant": "#c6c5d4",
+                    "tertiary-container": "#5c1800",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#e0e0ff",
+                    "on-primary": "#ffffff",
+                    "border-subtle": "#DEE2E6",
+                    "surface": "#f7faf9",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#181c1c",
+                    "surface-container-highest": "#e0e3e2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "stack-md": "16px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "baseline": "4px",
+                    "container-max": "1440px",
+                    "stack-sm": "8px",
+                    "stack-lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "title-md": ["Inter"],
+                    "label-sm": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #F4F7F6;
+            font-family: 'Inter', sans-serif;
+            color: #212529;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #DEE2E6;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface">
+<!-- Sidebar Navigation Shell -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col py-stack-lg border-r border-outline/20 bg-primary dark:bg-primary-container shadow-md z-50">
+<div class="px-6 mb-8">
+<h1 class="text-headline-sm font-headline-sm font-bold text-on-primary">Ethos Admin</h1>
+<p class="text-label-md font-label-md text-on-primary/60 uppercase tracking-wider mt-1">Academic Character Tracker</p>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 px-4 py-3 mx-2 rounded-lg transition-all group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md font-label-md">Dashboard</span>
+</a>
+<!-- Student Directory (Active) -->
+<a class="flex items-center gap-stack-md bg-secondary-container text-on-secondary-container rounded-lg px-4 py-3 mx-2 scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="text-label-md font-label-md">Student Directory</span>
+</a>
+<!-- Work Queue -->
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 px-4 py-3 mx-2 rounded-lg transition-all group" href="#">
+<span class="material-symbols-outlined">pending_actions</span>
+<span class="text-label-md font-label-md">Work Queue</span>
+</a>
+<!-- My Requests -->
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 px-4 py-3 mx-2 rounded-lg transition-all group" href="#">
+<span class="material-symbols-outlined">request_quote</span>
+<span class="text-label-md font-label-md">My Requests</span>
+</a>
+<!-- Org Structure -->
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 px-4 py-3 mx-2 rounded-lg transition-all group" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="text-label-md font-label-md">Org Structure</span>
+</a>
+<!-- History -->
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 px-4 py-3 mx-2 rounded-lg transition-all group" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-label-md font-label-md">History</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-on-primary/10 pt-4">
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-md font-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-stack-md text-on-primary/80 hover:text-on-primary hover:bg-on-primary/10 px-4 py-3 mx-2 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-label-md font-label-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen bg-surface-bright pb-12">
+<!-- Top Bar Shell -->
+<header class="flex justify-between items-center w-full px-margin-desktop sticky top-0 z-40 h-16 bg-surface-white dark:bg-inverse-surface border-b border-border-subtle dark:border-outline shadow-sm dark:shadow-none">
+<div class="flex items-center gap-4">
+<div class="bg-surface-container flex items-center px-3 py-1.5 rounded-lg border border-border-subtle">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] mr-2">search</span>
+<input class="bg-transparent border-none outline-none text-body-md font-body-md w-64 placeholder:text-muted" placeholder="Search student records..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container p-2 rounded-full cursor-pointer transition-colors">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container p-2 rounded-full cursor-pointer transition-colors">swap_horiz</span>
+</div>
+<div class="h-8 w-[1px] bg-border-subtle"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden lg:block">
+<p class="text-label-md font-label-md font-bold text-primary">Dr. Arun Varma</p>
+<p class="text-[10px] text-muted uppercase">Dean of Students</p>
+</div>
+<img class="h-10 w-10 rounded-full border border-border-subtle object-cover" data-alt="A professional headshot of a middle-aged male university dean with a welcoming smile, wearing a tailored navy blue suit and glasses. The lighting is soft and studio-quality, reflecting a high-end corporate academic environment. The background is a blurred office with wooden shelves and books, maintaining a clean and professional light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvFogfxM31vygYah-xWwPKFbMT6X-bRm5hZYO6PbOUIsA2BbjqEv12o5p4efBXxHZtskAXHaA4wBfEtXSAeSpJDl_7OYRrvMoO-QR1llQyEETA1NN1yHt9eivy9sRrPy-JispWM0m2_rQgJpXVDCarrdeDGHifKOuZM6ugw4gKrHRM-6zt7NNz0or6cH9qGzr0tnqD0-Vm0pZYYzrGBLPr8mlYtzfStNQ7dDKVyQTPNvbrm7576PhymjcfecCew_CszKi1l-ZH-Uk"/>
+</div>
+</div>
+</header>
+<!-- Page Header -->
+<div class="px-margin-desktop py-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="flex items-start gap-6">
+<div class="relative group">
+<img class="h-32 w-32 rounded-lg object-cover shadow-sm border-2 border-surface-white ring-1 ring-border-subtle" data-alt="A studio portrait of a young Indian male student in his early twenties, looking confident and professional. He is wearing a clean white shirt. The background is a soft, solid light grey that matches the minimalist UI. The image is crisp, high-resolution, and perfectly centered, suitable for an official academic record profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkzj3RL9sHw_w27pFG19Mecx-jwbPZVlbIG-ajEBZiWwdAGK-W9I2MciSZrFUSflrNYApn-aNnjugNd9vA06KzBs0uS9CROa6Mfs38TU1_NFztQaz_y3HPer7Y6byV6iFrrazbmOtkgOWgR4ZBll3aKh47TFkJK3mok7HKPBrvPnALeMf0uzS5MSWwRGWziWsEKEQ8paM4VKF0kgjs21P2Is7jYo9uCuptO0alGYHCyxlXbjDCirZrC_nfd-dOz4hcCAvpI2Zoweg"/>
+<button class="absolute -bottom-2 -right-2 bg-primary text-on-primary h-8 w-8 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h2 class="text-headline-md font-headline-md text-text-main">Siddharth Malhotra</h2>
+<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold uppercase rounded border border-green-200">Active</span>
+</div>
+<p class="text-body-md text-muted mb-4">Roll No: 21BCE0452 • Computer Science Engineering • Batch 2021-25</p>
+<div class="flex gap-stack-md">
+<button class="px-4 py-2 bg-primary text-on-primary text-label-md font-label-md rounded hover:bg-primary/90 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-base">download</span> Generate Transcript
+                        </button>
+<button class="px-4 py-2 bg-surface-white border border-border-subtle text-text-main text-label-md font-label-md rounded hover:bg-surface-container transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-base">flag</span> Add Disciplinary Note
+                        </button>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<div class="text-right">
+<p class="text-label-sm font-label-sm text-muted uppercase tracking-widest">Aggregate Ethos Score</p>
+<div class="flex items-center gap-2">
+<span class="text-[48px] font-extrabold text-primary leading-none tracking-tighter">9.42</span>
+<span class="text-green-600 flex items-center text-sm font-bold">
+<span class="material-symbols-outlined">trending_up</span> +0.12
+                        </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bento Layout Grid -->
+<div class="px-margin-desktop bento-grid">
+<!-- Information Tabs / Score Breakdown -->
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<!-- Score Breakdown Card -->
+<div class="bg-surface-white rounded-lg border border-border-subtle shadow-[0px_2px_4px_rgba(0,0,0,0.05)] p-stack-lg">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-title-md font-title-md text-text-main">Academic &amp; Conduct Metrics</h3>
+<span class="material-symbols-outlined text-muted cursor-pointer hover:text-primary">info</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="p-4 bg-surface-bright rounded-lg border border-border-subtle">
+<p class="text-label-sm font-label-sm text-muted uppercase mb-1">GPA Equivalent</p>
+<p class="text-headline-sm font-headline-sm text-primary">9.18</p>
+<div class="w-full bg-border-subtle h-1 mt-3 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[91.8%]"></div>
+</div>
+</div>
+<div class="p-4 bg-surface-bright rounded-lg border border-border-subtle">
+<p class="text-label-sm font-label-sm text-muted uppercase mb-1">Character Index</p>
+<p class="text-headline-sm font-headline-sm text-secondary">9.80</p>
+<div class="w-full bg-border-subtle h-1 mt-3 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[98%]"></div>
+</div>
+</div>
+<div class="p-4 bg-surface-bright rounded-lg border border-border-subtle">
+<p class="text-label-sm font-label-sm text-muted uppercase mb-1">Attendance Record</p>
+<p class="text-headline-sm font-headline-sm text-green-700">96.5%</p>
+<div class="w-full bg-border-subtle h-1 mt-3 rounded-full overflow-hidden">
+<div class="bg-green-600 h-full w-[96.5%]"></div>
+</div>
+</div>
+</div>
+<div class="mt-8">
+<div class="flex items-center justify-between mb-4">
+<h4 class="text-label-md font-label-md font-bold text-text-main uppercase">Sectional Analysis</h4>
+<a class="text-primary text-label-sm font-label-sm hover:underline" href="#">Detailed Audit</a>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between py-2 border-b border-border-subtle">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-xl">menu_book</span>
+<div>
+<p class="text-body-md font-medium">Academic Integrity</p>
+<p class="text-label-sm text-muted">No plagiarism flags detected</p>
+</div>
+</div>
+<span class="text-body-md font-bold">100/100</span>
+</div>
+<div class="flex items-center justify-between py-2 border-b border-border-subtle">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-xl">volunteer_activism</span>
+<div>
+<p class="text-body-md font-medium">Social Responsibility</p>
+<p class="text-label-sm text-muted">24 hours of campus volunteering</p>
+</div>
+</div>
+<span class="text-body-md font-bold">88/100</span>
+</div>
+<div class="flex items-center justify-between py-2">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-xl" style="color:#d97706">gavel</span>
+<div>
+<p class="text-body-md font-medium">Institutional Compliance</p>
+<p class="text-label-sm text-muted">Minor hostel curfew warning (2022)</p>
+</div>
+</div>
+<span class="text-body-md font-bold text-amber-600">92/100</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Record History Audit Log -->
+<div class="bg-surface-white rounded-lg border border-border-subtle shadow-[0px_2px_4px_rgba(0,0,0,0.05)] flex flex-col h-[500px]">
+<div class="p-6 border-b border-border-subtle flex items-center justify-between">
+<h3 class="text-title-md font-title-md text-text-main">Record Audit Logs</h3>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container rounded transition-colors">
+<span class="material-symbols-outlined text-lg">filter_list</span>
+</button>
+<button class="p-2 hover:bg-surface-container rounded transition-colors">
+<span class="material-symbols-outlined text-lg">search</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-6">
+<div class="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-border-subtle">
+<!-- Audit Item 1 -->
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-6 h-6 bg-green-100 border-2 border-green-500 rounded-full flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-green-700 text-[12px] font-bold">check</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-1">
+<h4 class="text-body-md font-bold text-text-main">Ethos Score Recalculated</h4>
+<span class="text-label-sm text-muted">Today, 10:45 AM</span>
+</div>
+<p class="text-body-md text-on-surface-variant">System automatically updated aggregate score following Semester 5 result publication.</p>
+<p class="text-label-sm text-muted mt-2">Triggered by: <span class="text-primary underline">Academic System Hook</span></p>
+</div>
+<!-- Audit Item 2 -->
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-6 h-6 bg-primary-container border-2 border-primary rounded-full flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-on-primary-container text-[12px]">edit_note</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-1">
+<h4 class="text-body-md font-bold text-text-main">New Certificate Uploaded</h4>
+<span class="text-label-sm text-muted">Oct 12, 2023</span>
+</div>
+<p class="text-body-md text-on-surface-variant">"Google Cloud Practitioner" certification added to professional development ledger.</p>
+<p class="text-label-sm text-muted mt-2">Action by: <span class="text-primary">Self (Siddharth M.)</span></p>
+</div>
+<!-- Audit Item 3 -->
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-6 h-6 bg-amber-50 border-2 border-amber-500 rounded-full flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-amber-700 text-[12px]">warning</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-1">
+<h4 class="text-body-md font-bold text-text-main">Policy Warning Issued</h4>
+<span class="text-label-sm text-muted">Sep 28, 2023</span>
+</div>
+<p class="text-body-md text-on-surface-variant">Late return to campus hostel (Gate Entry Log: 22:45). First offense recorded.</p>
+<p class="text-label-sm text-muted mt-2">Action by: <span class="text-primary">Chief Warden Office</span></p>
+</div>
+<!-- Audit Item 4 -->
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-6 h-6 bg-surface-container border-2 border-outline rounded-full flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-muted text-[12px]">info</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-1">
+<h4 class="text-body-md font-bold text-text-main">Personal Info Update</h4>
+<span class="text-label-sm text-muted">Aug 15, 2023</span>
+</div>
+<p class="text-body-md text-on-surface-variant">Phone number updated from +91 98XXX XXX01 to +91 70XXX XXX42.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Cards: Approval Timeline & Contact Info -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<!-- Approval Timeline Card -->
+<div class="bg-surface-white rounded-lg border border-border-subtle shadow-[0px_2px_4px_rgba(0,0,0,0.05)] p-stack-lg">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">timeline</span>
+<h3 class="text-title-md font-title-md text-text-main">Approval Timeline</h3>
+</div>
+<div class="bg-surface-bright rounded p-4 mb-6 border-l-4 border-primary">
+<p class="text-label-sm font-label-sm text-muted uppercase">Current Request</p>
+<p class="text-body-md font-bold mt-1">Inter-Disciplinary Credit Transfer</p>
+<p class="text-label-sm text-primary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span> In Review (3 days)
+                        </p>
+</div>
+<div class="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-border-subtle">
+<div class="relative pl-8">
+<div class="absolute left-0 top-0.5 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<p class="text-label-md font-bold">Submission Received</p>
+<p class="text-label-sm text-muted">Nov 14 • 09:12 AM</p>
+<p class="text-label-sm mt-1">Verified by Academic Portal</p>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-0 top-0.5 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</div>
+<p class="text-label-md font-bold">Department HOD Review</p>
+<p class="text-label-sm text-muted">Nov 15 • 02:45 PM</p>
+<p class="text-label-sm mt-1 italic">"Credits aligned with syllabus."</p>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-0 top-0.5 w-6 h-6 bg-surface-white border-2 border-primary rounded-full flex items-center justify-center z-10">
+<div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+</div>
+<p class="text-label-md font-bold text-primary">Dean's Final Authorization</p>
+<p class="text-label-sm text-muted">Pending Action</p>
+<div class="mt-4 flex gap-2">
+<button class="flex-1 py-2 bg-primary text-on-primary text-label-sm font-bold rounded">Approve</button>
+<button class="flex-1 py-2 bg-surface-white border border-error text-error text-label-sm font-bold rounded hover:bg-error-container">Reject</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Contact & Logistics Info -->
+<div class="bg-surface-white rounded-lg border border-border-subtle shadow-[0px_2px_4px_rgba(0,0,0,0.05)] p-stack-lg">
+<h3 class="text-title-md font-title-md text-text-main mb-4">Contact Details</h3>
+<div class="space-y-4">
+<div>
+<p class="text-label-sm font-label-sm text-muted uppercase">Institutional Email</p>
+<p class="text-body-md font-medium flex items-center gap-2">
+                                s.malhotra21@nitk.edu.in
+                                <span class="material-symbols-outlined text-sm text-primary cursor-pointer">content_copy</span>
+</p>
+</div>
+<div>
+<p class="text-label-sm font-label-sm text-muted uppercase">Phone Number</p>
+<p class="text-body-md font-medium">+91 70123 45678</p>
+</div>
+<div>
+<p class="text-label-sm font-label-sm text-muted uppercase">Hostel Block</p>
+<p class="text-body-md font-medium">Mega Tower 2, Room 402B</p>
+</div>
+</div>
+<hr class="my-6 border-border-subtle"/>
+<h3 class="text-title-md font-title-md text-text-main mb-4">Emergency Contact</h3>
+<div class="p-3 bg-surface-bright rounded border border-border-subtle">
+<p class="text-body-md font-bold">Mr. R.K. Malhotra</p>
+<p class="text-label-sm text-muted">Relation: Father</p>
+<p class="text-body-md font-medium mt-1">+91 98989 00011</p>
+</div>
+</div>
+<!-- Tags / Skills Card -->
+<div class="bg-surface-white rounded-lg border border-border-subtle shadow-[0px_2px_4px_rgba(0,0,0,0.05)] p-stack-lg">
+<h3 class="text-title-md font-title-md text-text-main mb-4">Special Recognitions</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant text-[11px] font-bold rounded-full">KVPY Scholar</span>
+<span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-[11px] font-bold rounded-full">Dean's List 2022</span>
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant text-[11px] font-bold rounded-full">Hackathon Winner</span>
+<span class="px-3 py-1 bg-surface-container text-on-surface-variant text-[11px] font-bold rounded-full">Linux Mentor</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB (Only relevant for core actions) -->
+<button class="fixed bottom-8 right-8 h-14 px-6 bg-primary text-on-primary rounded-full shadow-2xl flex items-center gap-3 hover:scale-105 transition-transform z-50">
+<span class="material-symbols-outlined">add_comment</span>
+<span class="font-bold text-label-md">Add Activity Log</span>
+</button>
+<script>
+        // Simple Interaction logic for Micro-animations
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('mousedown', () => {
+                link.classList.add('scale-95');
+            });
+            link.addEventListener('mouseup', () => {
+                link.classList.remove('scale-95');
+            });
+        });
+
+        // Hover effect for audit log items
+        const auditItems = document.querySelectorAll('.relative.pl-8');
+        auditItems.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.backgroundColor = '#F8F9FA';
+                item.style.borderRadius = '4px';
+                item.style.transition = 'background-color 0.2s';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.backgroundColor = 'transparent';
+            });
+        });
+    </script>
+</body></html>

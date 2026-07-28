@@ -49,7 +49,8 @@ module Admin
       # An admin password reset also forces the user to pick their own (except on self-edits).
       @user.password_change_required = true if user_params[:password].present? && @user != current_user
       if @user.update(user_update_params)
-        redirect_to admin_users_path, notice: "User updated."
+        label = @user.name.presence || @user.email
+        redirect_to admin_users_path, notice: "#{label} user updated"
       else
         render :edit, status: :unprocessable_entity
       end

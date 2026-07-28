@@ -1,116 +1,67 @@
 import { Controller } from "@hotwired/stimulus"
-import { beginPageNavigation, restoreOptimisticNav } from "page_nav_helpers"
+import { restoreOptimisticNav } from "page_nav_helpers"
 
-const STORAGE_KEY = "scats-sidebar-expanded"
-// Let width/label transitions play before Turbo replaces the sidebar DOM.
-const EXPAND_BEFORE_VISIT_MS = 220
+const OPEN_CLASS = "sidebar-open"
 
-// Collapsed-by-default desktop sidebar: expand via toggle, nav click, or focus.
+// Mobile off-canvas drawer: open/close via html.sidebar-open (desktop sidebar always visible).
 export default class extends Controller {
-  static targets = [ "toggle" ]
+  static targets = [ "toggle", "scrim", "panel" ]
 
   connect() {
-    this.setExpanded(sessionStorage.getItem(STORAGE_KEY) === "true")
     restoreOptimisticNav()
+    this.syncUi()
+    this._onKeydown = this.onKeydown.bind(this)
+    this._onNavigate = () => this.setOpen(false)
+    document.addEventListener("keydown", this._onKeydown)
+    document.addEventListener("turbo:before-visit", this._onNavigate)
   }
 
   disconnect() {
-    this.clearScheduledVisit()
+    document.removeEventListener("keydown", this._onKeydown)
+    document.removeEventListener("turbo:before-visit", this._onNavigate)
   }
 
   toggle(event) {
     event.preventDefault()
-    this.clearScheduledVisit()
-    this.setExpanded(!this.isExpanded())
+    this.setOpen(!this.isOpen())
   }
 
-  // mousedown runs before focus. When collapsed, expand + navigate here so the
-  // focus handler cannot expand first (making click think we were already open)
-  // and so the width transition cannot cancel the browser's default click nav.
-  prepareVisit(event) {
-    if (event.button !== 0) return
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-
-    const link = event.currentTarget
-    if (!(link instanceof HTMLAnchorElement)) return
-
-    const href = link.getAttribute("href")
-    if (!href || href.startsWith("#")) return
-
-    // Jump active highlight + thin loader immediately (before expand delay).
-    beginPageNavigation(link)
-
-    if (this.isExpanded()) return
-
-    this.setExpanded(true)
-    event.preventDefault()
-    this._navigatedFromCollapsed = true
-    this.scheduleVisit(link.href)
+  open(event) {
+    event?.preventDefault()
+    this.setOpen(true)
   }
 
-  // focus: expand for keyboard users.
-  // click: keep expanded; if prepareVisit already navigated, swallow the click.
-  expand(event) {
-    this.setExpanded(true)
+  // Used by scrim button and nav link actions. Never preventDefault — nav links must navigate,
+  // and turbo:before-visit must not be cancelled.
+  close() {
+    this.setOpen(false)
+  }
 
-    if (event.type === "focus") return
-
-    if (this._navigatedFromCollapsed) {
-      event.preventDefault()
-      this._navigatedFromCollapsed = false
+  onKeydown(event) {
+    if (event.key === "Escape" && this.isOpen()) {
+      this.setOpen(false)
     }
   }
 
-  scheduleVisit(url) {
-    this.clearScheduledVisit()
+  isOpen() {
+    return document.documentElement.classList.contains(OPEN_CLASS)
+  }
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      this.visit(url)
-      return
-    }
+  setOpen(open) {
+    document.documentElement.classList.toggle(OPEN_CLASS, open)
+    document.body.classList.toggle("scats-scroll-locked", open && this.isMobile())
+    this.syncUi()
+  }
 
-    // Double rAF ensures the expanded class is painted so width transition starts
-    // before we navigate (Turbo Drive replaces the sidebar and would kill it).
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this._visitTimer = window.setTimeout(() => {
-          this._visitTimer = null
-          this.visit(url)
-        }, EXPAND_BEFORE_VISIT_MS)
-      })
+  isMobile() {
+    return window.matchMedia("(max-width: 767px)").matches
+  }
+
+  syncUi() {
+    const open = this.isOpen()
+    this.toggleTargets.forEach((toggle) => {
+      toggle.setAttribute("aria-expanded", String(open))
+      toggle.setAttribute("aria-label", open ? "Close navigation" : "Open navigation")
     })
-  }
-
-  clearScheduledVisit() {
-    if (this._visitTimer != null) {
-      window.clearTimeout(this._visitTimer)
-      this._visitTimer = null
-    }
-  }
-
-  visit(url) {
-    if (typeof Turbo !== "undefined" && Turbo.visit) {
-      Turbo.visit(url)
-    } else {
-      window.location.assign(url)
-    }
-  }
-
-  isExpanded() {
-    return document.documentElement.classList.contains("sidebar-expanded")
-  }
-
-  setExpanded(expanded) {
-    document.documentElement.classList.toggle("sidebar-expanded", expanded)
-    this.element.classList.toggle("scats-sidebar--expanded", expanded)
-    sessionStorage.setItem(STORAGE_KEY, String(expanded))
-
-    if (this.hasToggleTarget) {
-      this.toggleTarget.setAttribute("aria-expanded", String(expanded))
-      this.toggleTarget.setAttribute(
-        "aria-label",
-        expanded ? "Collapse sidebar" : "Expand sidebar"
-      )
-    }
   }
 }

@@ -11,12 +11,23 @@ module Students
       AchievementRequest.submit!(student: current_student, actor: current_user, attrs: request_params)
       redirect_to student_root_path, notice: "Your request has been submitted."
     rescue ActiveRecord::RecordInvalid => e
-      @achievement_request = e.record.is_a?(AchievementRequest) ? e.record : AchievementRequest.new(request_params)
+      @achievement_request = if e.record.is_a?(AchievementRequest)
+        e.record
+      else
+        request = AchievementRequest.new(request_params.except(:proofs))
+        e.record.errors.each { |err| request.errors.add(err.attribute, err.message) }
+        request
+      end
       render :new, status: :unprocessable_content
     end
 
     def show
-      @achievement_request = authorize AchievementRequest.find(params[:id])
+      @achievement_request = AchievementRequest
+        .includes(request_versions: [ :proofs_attachments, { req_histories: :actor } ],
+                  category: { sub_division: :division },
+                  student: {})
+        .find(params[:id])
+      authorize @achievement_request
       @histories = @achievement_request.req_histories.includes(:actor).order(:created_at)
     end
 
@@ -27,18 +38,25 @@ module Students
       @achievement_request = authorize AchievementRequest.find(params[:id]), :resubmit?
     end
 
+    def remove_proof
+      @achievement_request = authorize AchievementRequest.find(params[:id]), :resubmit?
+      @achievement_request.remove_saved_proof!(actor: current_user, signed_id: params[:signed_id])
+      render json: { ok: true }
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { ok: false, error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_content
+    end
+
     def update
       @achievement_request = authorize AchievementRequest.find(params[:id]), :resubmit?
 
-      ApplicationRecord.transaction do
-        # attach (rather than assign) so new files add to the existing proofs
-        @achievement_request.proofs.attach(update_params[:proofs]) if update_params[:proofs].present?
-        @achievement_request.update!(update_params.except(:proofs))
-        @achievement_request.transition!(to: :submitted, actor: current_user, action: "resubmit")
-      end
+      @achievement_request.resubmit!(actor: current_user, attrs: update_params)
       redirect_to student_achievement_request_path(@achievement_request),
                   notice: "Your request has been resubmitted."
-    rescue ActiveRecord::RecordInvalid
+    rescue ActiveRecord::RecordInvalid => e
+      @achievement_request.assign_attributes(update_params.except(:proofs, :remove_proof_ids))
+      unless e.record.is_a?(AchievementRequest)
+        e.record.errors.each { |err| @achievement_request.errors.add(err.attribute, err.message) }
+      end
       render :edit, status: :unprocessable_content
     end
 
@@ -49,7 +67,8 @@ module Students
     end
 
     def update_params
-      @update_params ||= params.expect(achievement_request: [ :title, :description, { proofs: [] } ])
+      @update_params ||= params.expect(achievement_request: [ :title, :description,
+                                                              { proofs: [], remove_proof_ids: [] } ])
     end
 
     # Serialized once into the form so the cascading selects work without

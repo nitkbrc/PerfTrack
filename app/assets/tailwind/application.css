@@ -1,133 +1,119 @@
 @import "tailwindcss";
 
 @theme {
-  --color-forest: #1B4332;
-  --color-mint: #74C69D;
-  --color-cream: #F7FAF7;
+  --color-primary: #000666;
+  --color-primary-container: #1a237e;
+  --color-secondary: #2857c4;
+  --color-secondary-container: #668efe;
+  --color-background: #f7faf9;
+  --color-surface: #f7faf9;
+  --color-surface-white: #ffffff;
+  --color-border-subtle: #dee2e6;
+  --color-text-main: #212529;
+  --color-text-muted: #6c757d;
+  --color-on-primary-container: #8690ee;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --scats-forest: #1B4332;
-  --scats-mint: #74C69D;
-  --scats-cream: #F7FAF7;
-  --scats-clay-shadow: 6px 6px 14px rgba(27, 67, 50, .07), -4px -4px 10px rgba(255, 255, 255, .55);
-  --scats-sidebar-duration: 250ms;
-  --scats-sidebar-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --scats-primary: #000666;
+  --scats-primary-container: #1a237e;
+  --scats-secondary: #2857c4;
+  --scats-secondary-container: #668efe;
+  --scats-background: #f7faf9;
+  --scats-surface-white: #ffffff;
+  --scats-border: #dee2e6;
+  --scats-text: #212529;
+  --scats-text-muted: #6c757d;
+  --scats-card-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
+  --scats-drawer-duration: 250ms;
+  --scats-drawer-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  vertical-align: middle;
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .clay-card {
-  @apply rounded-3xl border border-white/70 bg-white/85;
-  box-shadow: var(--scats-clay-shadow);
+  @apply rounded-lg border border-[#DEE2E6] bg-white;
+  box-shadow: var(--scats-card-shadow);
 }
 
 .glass-panel {
-  @apply rounded-3xl border border-white/40 bg-white/75 backdrop-blur-xl;
-  box-shadow: 0 8px 22px rgba(27, 67, 50, .10);
+  @apply rounded-lg border border-[#DEE2E6] bg-white;
+  box-shadow: 0 4px 16px rgba(0, 6, 102, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* Notifications: full-viewport scrim + glass panel (layer is portaled to body) */
+/* Notifications: full-viewport scrim + elevated panel (layer is portaled to body) */
 .scats-notifications-scrim {
-  background: rgba(27, 67, 50, 0.42);
+  background: rgba(0, 6, 102, 0.42);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
 .scats-notifications-panel {
-  @apply rounded-3xl border border-white/50 bg-white/90 p-4 sm:p-5;
-  box-shadow: 0 10px 28px rgba(27, 67, 50, 0.12), -4px -4px 14px rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  @apply rounded-lg border border-[#DEE2E6] bg-white p-4 sm:p-5;
+  box-shadow: 0 12px 32px rgba(0, 6, 102, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* Desktop sidebar: collapsed (~80px) by default; expands with html.sidebar-expanded */
+/* Fixed wide navy sidebar (desktop always visible; mobile off-canvas drawer) */
 .scats-sidebar {
-  @apply fixed inset-y-4 left-4 z-30 hidden w-20 flex-col items-stretch rounded-[2rem] bg-[#1B4332] p-3 text-white shadow-2xl md:flex;
-  transition:
-    width var(--scats-sidebar-duration) var(--scats-sidebar-ease),
-    padding var(--scats-sidebar-duration) var(--scats-sidebar-ease);
+  @apply fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-white/10 bg-[#1a237e] py-6 text-white;
+  transition: transform var(--scats-drawer-duration) var(--scats-drawer-ease);
 }
 
-html.sidebar-expanded .scats-sidebar {
-  @apply w-64 p-4;
+@media (max-width: 767px) {
+  .scats-sidebar {
+    transform: translateX(-100%);
+  }
+
+  html.sidebar-open .scats-sidebar {
+    transform: translateX(0);
+  }
+}
+
+.scats-sidebar-scrim {
+  @apply fixed inset-0 z-40 bg-[#000666]/40 backdrop-blur-[2px] md:hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--scats-drawer-duration) var(--scats-drawer-ease);
+}
+
+html.sidebar-open .scats-sidebar-scrim {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .scats-sidebar-header {
-  @apply mb-3 flex shrink-0 items-center justify-center gap-1.5 border-b border-white/15 px-0.5 pb-3;
-}
-
-html.sidebar-expanded .scats-sidebar-header {
-  @apply justify-start;
+  @apply mb-8 shrink-0 px-6;
 }
 
 .scats-sidebar-mark {
-  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-bold tracking-wide;
+  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/15 text-sm font-bold tracking-wide;
 }
 
 .scats-sidebar-brand {
-  @apply text-base font-semibold tracking-wide;
+  @apply text-xl font-bold tracking-tight text-white;
 }
 
-.scats-sidebar-toggle {
-  @apply flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-white/20 hover:text-white;
-}
-
-html.sidebar-expanded .scats-sidebar-toggle {
-  @apply ml-auto;
-}
-
-html:not(.sidebar-expanded) .scats-sidebar-header {
-  @apply flex-col gap-1.5;
-}
-
-html:not(.sidebar-expanded) .scats-nav-link .animate-pulse {
-  @apply absolute right-0.5 top-0.5;
+.scats-sidebar-tagline {
+  @apply mt-1 text-[11px] font-semibold uppercase tracking-widest text-[#8690ee]/70;
 }
 
 .scats-sidebar-footer {
-  @apply mt-4 flex shrink-0 flex-col items-center gap-2 border-t border-white/15 pt-4;
-}
-
-html.sidebar-expanded .scats-sidebar-footer {
-  @apply items-stretch;
+  @apply mt-auto shrink-0 space-y-1 border-t border-white/10 pt-4;
 }
 
 .scats-sidebar-notify {
-  @apply flex w-full justify-center;
+  @apply px-2;
 }
 
-html.sidebar-expanded .scats-sidebar-notify {
-  @apply justify-start px-2;
-}
-
-.scats-sidebar-profile {
-  @apply justify-center;
-}
-
-html.sidebar-expanded .scats-sidebar-profile {
-  @apply justify-start;
-}
-
-/* Labels stay in DOM (a11y / specs); fade/slide in as width grows */
-.scats-nav-label {
-  @apply max-w-0 overflow-hidden whitespace-nowrap opacity-0;
-  transform: translateX(-0.35rem);
-  transition:
-    opacity calc(var(--scats-sidebar-duration) - 40ms) var(--scats-sidebar-ease),
-    max-width var(--scats-sidebar-duration) var(--scats-sidebar-ease),
-    transform var(--scats-sidebar-duration) var(--scats-sidebar-ease);
-}
-
-html.sidebar-expanded .scats-nav-label {
-  @apply max-w-[12rem] opacity-100;
-  transform: translateX(0);
-}
-
-.scats-nav-icon {
-  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/90;
-}
-
-/* Hide scrollbar; keep overflow scroll for long nav lists (collapsed + expanded) */
+/* Hide scrollbar; keep overflow scroll for long nav lists */
 .scats-sidebar-nav {
+  @apply flex-1 space-y-1 overflow-y-auto px-2;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -136,41 +122,59 @@ html.sidebar-expanded .scats-nav-label {
   display: none;
 }
 
-.scats-nav-link {
-  @apply relative flex items-center justify-center gap-0 rounded-2xl px-1.5 py-2 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white;
-  transition:
-    gap var(--scats-sidebar-duration) var(--scats-sidebar-ease),
-    padding var(--scats-sidebar-duration) var(--scats-sidebar-ease);
+.scats-nav-icon {
+  @apply flex h-6 w-6 shrink-0 items-center justify-center text-current;
 }
 
-html.sidebar-expanded .scats-nav-link {
-  @apply justify-start gap-3 px-3 py-2.5;
+.scats-nav-label {
+  @apply whitespace-nowrap text-sm font-medium;
+}
+
+.scats-nav-link {
+  @apply relative mx-0 flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white;
 }
 
 .scats-nav-link-active {
-  @apply bg-[#74C69D]/25 text-white shadow-[0_0_18px_rgba(116,198,157,0.55)] hover:bg-[#74C69D]/35 hover:text-white;
-  transition: none;
+  @apply bg-[#668efe] text-[#00266e] shadow-sm hover:bg-[#668efe] hover:text-[#00266e];
 }
 
-html.sidebar-expanded .scats-nav-link-active {
-  @apply bg-[#74C69D] text-[#1B4332] shadow-lg hover:bg-[#95D5B2] hover:text-[#1B4332];
+.scats-nav-link-active .scats-nav-icon {
+  @apply text-[#00266e];
 }
 
-html.sidebar-expanded .scats-nav-link-active .scats-nav-icon {
-  @apply bg-[#1B4332]/15 text-[#1B4332];
+/* Sticky top bar sits over main content */
+.scats-topbar {
+  @apply sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-[#DEE2E6] bg-white px-4 shadow-sm sm:px-6 lg:px-8;
 }
 
-/* Main content margin follows sidebar width */
+.scats-topbar-menu {
+  @apply inline-flex h-10 w-10 items-center justify-center rounded-md text-[#1a237e] transition hover:bg-[#f1f4f3] md:hidden;
+}
+
+.scats-topbar-title {
+  @apply truncate text-base font-semibold text-[#000666];
+}
+
+.scats-topbar-user {
+  @apply flex items-center gap-3 rounded-md pl-3 transition hover:bg-[#f1f4f3];
+}
+
+/* Main content: offset by sidebar on desktop */
+.scats-shell {
+  @apply min-h-screen bg-[#f7faf9];
+}
+
 .scats-main {
-  @apply relative mx-auto w-full max-w-6xl px-5 py-8 pb-24 md:ml-24 md:mr-8 md:w-auto;
-  transition: margin-left var(--scats-sidebar-duration) var(--scats-sidebar-ease);
+  @apply relative mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8;
 }
 
-html.sidebar-expanded .scats-main {
-  @apply md:ml-[18rem];
+@media (min-width: 768px) {
+  .scats-shell {
+    @apply ml-64;
+  }
 }
 
-/* Instant nav: thin top progress only (no sheet / spinner overlay) */
+/* Instant nav: thin top progress only */
 html.scats-page-loading::before {
   content: "";
   position: fixed;
@@ -180,7 +184,7 @@ html.scats-page-loading::before {
   z-index: 9999;
   height: 3px;
   pointer-events: none;
-  background: linear-gradient(90deg, #1B4332, #74C69D, #1B4332);
+  background: linear-gradient(90deg, #000666, #668efe, #000666);
   background-size: 200% 100%;
   animation: scats-thin-progress 0.9s linear infinite;
 }
@@ -197,35 +201,24 @@ html.scats-page-loading::before {
 @media (prefers-reduced-motion: reduce) {
   html.scats-page-loading::before {
     animation: none;
-    background: #74C69D;
+    background: #668efe;
   }
 }
 
 .turbo-progress-bar {
   height: 3px;
-  background: linear-gradient(90deg, #1B4332, #74C69D);
-}
-
-.scats-bottom-nav-link {
-  @apply flex h-11 w-12 cursor-pointer items-center justify-center rounded-xl text-white/80 transition;
-}
-
-.scats-bottom-nav-link-active {
-  @apply bg-[#74C69D] text-[#1B4332];
+  background: linear-gradient(90deg, #000666, #668efe);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .scats-sidebar,
-  .scats-sidebar-header,
-  .scats-nav-label,
-  .scats-nav-link,
-  .scats-main {
+  .scats-sidebar-scrim {
     transition: none !important;
   }
 }
 
 .scats-primary-button {
-  @apply cursor-pointer rounded-xl bg-[#1B4332] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#2D6A4F] focus:outline-none focus:ring-2 focus:ring-[#74C69D] focus:ring-offset-2;
+  @apply cursor-pointer rounded-md bg-[#000666] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1a237e] focus:outline-none focus:ring-2 focus:ring-[#668efe] focus:ring-offset-2;
 }
 
 /* Sliding segmented switch (import mode, role, etc.) */
@@ -240,7 +233,7 @@ html.scats-page-loading::before {
   gap: 0;
   padding: 0.2rem;
   border-radius: 9999px;
-  background: rgba(27, 67, 50, 0.08);
+  background: rgba(0, 6, 102, 0.08);
 }
 
 .scats-switch__pill {
@@ -251,8 +244,8 @@ html.scats-page-loading::before {
   z-index: 0;
   width: calc((100% - 0.4rem) / var(--scats-switch-count));
   border-radius: 9999px;
-  background: #1B4332;
-  box-shadow: 0 1px 2px rgba(27, 67, 50, 0.18);
+  background: #000666;
+  box-shadow: 0 1px 2px rgba(0, 6, 102, 0.18);
   pointer-events: none;
   transform: translateX(calc(var(--scats-switch-index) * 100%));
   transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
@@ -269,7 +262,7 @@ html.scats-page-loading::before {
   border: 0;
   border-radius: 9999px;
   background: transparent;
-  color: rgba(27, 67, 50, 0.7);
+  color: rgba(0, 6, 102, 0.7);
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25;
@@ -279,7 +272,7 @@ html.scats-page-loading::before {
 }
 
 .scats-switch__option:hover {
-  color: #1B4332;
+  color: #000666;
 }
 
 .scats-switch__option--active {
@@ -295,23 +288,20 @@ html.scats-page-loading::before {
 }
 
 .scats-switch__option:focus-visible {
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #74C69D;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #668efe;
 }
 
-/* Status chips — rounded-md so multi-line labels (e.g. "Rejected by …")
-   don't become tall capsules; short labels still read as compact pills. */
+/* Status chips — rounded-md so multi-line labels don't become tall capsules */
 .scats-status-badge {
   @apply inline-flex max-w-[14rem] items-center px-2.5 py-1 text-left text-xs font-semibold leading-snug;
-  border-radius: 0.375rem; /* rounded-md — avoids capsule look when wrapped */
+  border-radius: 0.375rem;
 }
 
-/* Interactive list/table rows — Apple-like floating rounded cards (forest/mint)
-   Rule: no sideways scroll on desktop; full hover scale visible.
-   Sideways scroll only on narrow/mobile when columns cannot fit. */
+/* Interactive list/table rows — subtle hover lift (Stitch SaaS) */
 .scats-list-shell {
   overflow: visible;
   padding-block: 0.75rem;
-  padding-inline: 1rem; /* room for scale(1.03) + soft shadow */
+  padding-inline: 1rem;
 }
 
 @media (max-width: 767px) {
@@ -329,7 +319,6 @@ table:has(tr.scats-row) {
   width: 100%;
 }
 
-/* Desktop: share viewport width — never force horizontal scroll */
 @media (min-width: 768px) {
   .scats-list-shell table {
     table-layout: fixed;
@@ -349,7 +338,6 @@ tbody.scats-list > tr {
   transition: transform 0.45s cubic-bezier(0.34, 1.45, 0.64, 1);
 }
 
-/* Radius + fill live on cells — tr backgrounds ignore border-radius and look boxy */
 .scats-row > *,
 tbody.scats-list > tr > * {
   transition:
@@ -359,44 +347,54 @@ tbody.scats-list > tr > * {
 
 .scats-row > *:first-child,
 tbody.scats-list > tr > *:first-child {
-  border-top-left-radius: 1.25rem;
-  border-bottom-left-radius: 1.25rem;
-  /* Keep circular avatars unclipped when the row scales on hover */
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
   overflow: visible;
 }
 
 .scats-row > *:last-child,
 tbody.scats-list > tr > *:last-child {
-  border-top-right-radius: 1.25rem;
-  border-bottom-right-radius: 1.25rem;
+  border-top-right-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
   overflow: visible;
 }
 
-/* Photo / leading cell: room for scale(1.03) past padding + corner radius */
 .scats-list-photo {
   overflow: visible;
 }
 
-/* Real pointer hover only — complete unclipped animation on desktop */
 @media (hover: hover) and (pointer: fine) {
   .scats-row:hover,
   tbody.scats-list > tr:hover {
-    transform: scale(1.03);
+    transform: scale(1.01);
   }
 
   .scats-row:hover > *,
   tbody.scats-list > tr:hover > * {
-    background-color: #e6f4ec;
+    background-color: #f8f9fa;
     box-shadow: none;
   }
 
   .scats-row:hover > *:first-child,
   tbody.scats-list > tr:hover > *:first-child {
-    box-shadow: -2px 4px 12px rgba(27, 67, 50, 0.07);
+    box-shadow: -2px 4px 12px rgba(0, 6, 102, 0.08);
   }
 
   .scats-row:hover > *:last-child,
   tbody.scats-list > tr:hover > *:last-child {
-    box-shadow: 2px 4px 12px rgba(27, 67, 50, 0.07);
+    box-shadow: 2px 4px 12px rgba(0, 6, 102, 0.08);
   }
+}
+
+/* Auth landing: campus column */
+.scats-auth-campus {
+  @apply relative min-h-[40vh] overflow-hidden bg-[#1a237e] lg:min-h-screen;
+}
+
+.scats-auth-form-panel {
+  @apply flex min-h-[60vh] flex-col justify-center bg-[#f7faf9] px-6 py-10 sm:px-10 lg:min-h-screen lg:px-16 xl:px-20;
+}
+
+body.scats-scroll-locked {
+  overflow: hidden;
 }

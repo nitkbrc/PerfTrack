@@ -19,8 +19,8 @@ export default class extends Controller {
 
   static baseBorderClasses = [
     "border-slate-300",
-    "focus:border-[#74C69D]",
-    "focus:ring-[#74C69D]/40"
+    "focus:border-[#000666]",
+    "focus:ring-[#668efe]/40"
   ]
 
   connect() {

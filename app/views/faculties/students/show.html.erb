@@ -8,11 +8,11 @@
       <div class="flex min-w-0 flex-1 items-start gap-4">
         <%= user_photo_tag(@student.user, size: 80) %>
         <div class="min-w-0 flex-1">
-          <h1 class="text-2xl font-bold tracking-tight text-[#1B4332]">
+          <h1 class="text-2xl font-bold tracking-tight text-[#000666]">
             <%= @student.user.name.presence || @student.user.email %>
           </h1>
           <p class="mt-1 text-sm font-medium text-slate-600">
-            <span class="font-mono text-[#1B4332]"><%= @student.usn %></span>
+            <span class="font-mono text-[#000666]"><%= @student.usn %></span>
             <span class="mx-1.5 text-slate-300">·</span>
             <%= @student.department.name %>
             <% if @student.sem.present? %>
@@ -21,7 +21,7 @@
             <% end %>
           </p>
 
-          <dl class="mt-5 grid gap-4 border-t border-[#1B4332]/10 pt-4 sm:grid-cols-2">
+          <dl class="mt-5 grid gap-4 border-t border-[#000666]/10 pt-4 sm:grid-cols-2">
             <div>
               <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</dt>
               <dd class="mt-1 text-sm text-slate-800"><%= @student.user.phone.presence || "—" %></dd>

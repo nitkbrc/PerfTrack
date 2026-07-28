@@ -10,7 +10,8 @@ RSpec.describe DeanApprovalNotificationJob, type: :job do
 
   def path_a_request(title: "State-level hackathon")
     create(:achievement_request, student: student, category: category, title: title).tap do |r|
-      r.req_histories.create!(actor: student.user, action: "submit", to_status: "submitted")
+      r.req_histories.create!(actor: student.user, action: "submit", to_status: "submitted",
+                              request_version: r.current_version)
       r.update!(status: :supervisor_approved)
     end
   end
@@ -19,7 +20,8 @@ RSpec.describe DeanApprovalNotificationJob, type: :job do
     create(:achievement_request, student: student, category: category, title: title,
                                  status: :supervisor_approved).tap do |r|
       r.req_histories.create!(actor: supervisor, action: "supervisor_initiate",
-                              to_status: "supervisor_approved")
+                              to_status: "supervisor_approved",
+                              request_version: r.current_version)
     end
   end
 

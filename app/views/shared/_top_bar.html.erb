@@ -1,0 +1,35 @@
+<header class="scats-topbar">
+  <div class="flex min-w-0 items-center gap-3">
+    <button type="button"
+            class="scats-topbar-menu"
+            data-sidebar-target="toggle"
+            data-action="sidebar#toggle"
+            aria-expanded="false"
+            aria-controls="main-navigation"
+            aria-label="Open navigation">
+      <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+    </button>
+    <h1 class="scats-topbar-title">
+      <%= content_for?(:page_title) ? yield(:page_title) : (content_for?(:title) ? yield(:title) : "SCATS") %>
+    </h1>
+  </div>
+
+  <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+    <% if current_user.student? %>
+      <div class="md:hidden">
+        <%= render "shared/notification_bell", frame_id: "notifications_mobile", variant: :topbar %>
+      </div>
+    <% end %>
+    <%= link_to profile_path,
+          class: "scats-topbar-user py-1 pr-1",
+          title: "Profile",
+          "aria-label": "Profile",
+          data: { action: "mousedown->page-nav#activate" } do %>
+      <div class="hidden text-right sm:block">
+        <p class="text-sm font-semibold leading-tight text-[#212529]"><%= current_user.name.presence || current_user.email %></p>
+        <p class="text-[10px] font-medium uppercase tracking-wide text-[#6C757D]"><%= current_user.role.to_s.humanize %></p>
+      </div>
+      <%= user_photo_tag(current_user, size: 40) %>
+    <% end %>
+  </div>
+</header>
