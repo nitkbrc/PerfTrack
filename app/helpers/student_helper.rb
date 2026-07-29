@@ -35,19 +35,20 @@ module StudentHelper
     return request.status.humanize unless latest
 
     actor_name = latest.actor.name.presence || latest.actor.email
+    actor = history_actor_with_role(latest.action, actor_name)
 
     case latest.action
     when "submit" then "Submitted"
     when "resubmit" then "Resubmitted"
-    when "supervisor_initiate" then "Raised by #{actor_name}"
-    when "supervisor_revise" then "Revised by #{actor_name}"
-    when "supervisor_approve" then "Approved by #{actor_name}"
-    when "supervisor_reforward" then "Re-forwarded by #{actor_name}"
-    when "supervisor_revert" then "Reverted by #{actor_name}"
-    when "supervisor_reject" then "Rejected by #{actor_name}"
-    when "dean_approve" then "Approved by #{actor_name}"
-    when "dean_revert" then "Sent back by #{actor_name}"
-    when "dean_reject" then "Rejected by #{actor_name}"
+    when "supervisor_initiate" then "Raised by #{actor}"
+    when "supervisor_revise" then "Revised by #{actor}"
+    when "supervisor_approve" then "Approved by #{actor}"
+    when "supervisor_reforward" then "Re-forwarded by #{actor}"
+    when "supervisor_revert" then "Reverted by #{actor}"
+    when "supervisor_reject" then "Rejected by #{actor}"
+    when "dean_approve" then "Approved by #{actor}"
+    when "dean_revert" then "Sent back by #{actor}"
+    when "dean_reject" then "Rejected by #{actor}"
     else request.status.humanize
     end
   end
@@ -69,5 +70,16 @@ module StudentHelper
       "dean_revert" => "sent back",
       "dean_reject" => "rejected"
     }.fetch(action, action.to_s.tr("_", " "))
+  end
+
+  private
+
+  def history_actor_with_role(action, actor_name)
+    role = case action.to_s
+    when /\Adean_/ then "Dean"
+    when /\Asupervisor_/ then "Supervisor"
+    when "submit", "resubmit" then "Student"
+    end
+    role ? "#{actor_name} (#{role})" : actor_name
   end
 end

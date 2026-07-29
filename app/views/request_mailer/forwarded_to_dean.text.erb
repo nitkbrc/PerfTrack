@@ -1,0 +1,10 @@
+<%= @is_reforward ? "Request re-forwarded" : "Request forwarded" %>
+<%= "=" * (@is_reforward ? 21 : 18) %>
+
+<% if @is_reforward %>
+The supervisor clarified this request after your earlier feedback and re-forwarded it for your review.
+<% else %>
+The supervisor approved this request and forwarded it for your review.
+<% end %>
+
+<%= render "details" %>

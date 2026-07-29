@@ -11,6 +11,7 @@ RSpec.describe "Profile", type: :request do
     expect(response.body).to include("Prof. Rao")
     expect(response.body).to include("Change password")
     expect(response.body).to include("Sign out")
+    expect(response.body).to include("Are you sure you want to sign out?")
   end
 
   it "lists divisions a dean is responsible for" do

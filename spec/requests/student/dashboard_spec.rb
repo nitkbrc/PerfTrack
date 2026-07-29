@@ -55,7 +55,7 @@ RSpec.describe "Student dashboard", type: :request do
     get student_root_path
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Approved by Prof. Kavya Shetty")
+    expect(response.body).to include("Approved by Prof. Kavya Shetty (Supervisor)")
     expect(response.body).to include("View history")
     expect(response.body).to include("Submitted by student")
     expect(response.body).to include("Approved &amp; forwarded to dean by supervisor")

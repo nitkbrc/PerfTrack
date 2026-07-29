@@ -78,6 +78,8 @@ RSpec.describe AchievementRequest, type: :model do
     let(:student) { create(:student) }
     let(:request_record) do
       create(:achievement_request, student: student, title: "Original").tap do |r|
+        r.req_histories.create!(actor: student.user, action: "submit", to_status: "submitted",
+                                request_version: r.current_version)
         r.update!(status: :supervisor_reverted)
       end
     end
@@ -95,8 +97,7 @@ RSpec.describe AchievementRequest, type: :model do
       expect(request_record.title).to eq("Revised title")
       expect(request_record.status).to eq("submitted")
 
-      history = request_record.req_histories.sole
-      expect(history.action).to eq("resubmit")
+      history = request_record.req_histories.find_by!(action: "resubmit")
       expect(history.request_version).to eq(request_record.current_version)
     end
   end

@@ -5,7 +5,8 @@ RSpec.describe "Supervisor sidebar navigation", type: :request do
   let!(:sub_division) { create(:sub_division, supervisor: supervisor) }
 
   def sidebar_labels(body)
-    body.scan(/scats-nav-label[^>]*>([^<]+)</).flatten.reject { |t| t == "SCATS" || t == "Profile" }
+    body.scan(/scats-nav-label[^>]*>([^<]+)</).flatten
+        .reject { |t| %w[SCATS Profile].include?(t) || t == "Sign out" }
   end
 
   def first_link_tag(body, path)
@@ -17,12 +18,14 @@ RSpec.describe "Supervisor sidebar navigation", type: :request do
   it "keeps Students above Review queue on both supervisor and faculty pages" do
     get supervisor_root_path
     expect(response).to have_http_status(:ok)
-    expect(sidebar_labels(response.body)).to eq([ "Students", "Review queue" ])
+    expect(sidebar_labels(response.body)).to eq([ "Students", "Review queue", "Review history" ])
     expect(response.body).not_to include("Raise a req")
+    expect(response.body).to include("Sign out")
+    expect(response.body).to include("Are you sure you want to sign out?")
 
     get faculty_students_path
     expect(response).to have_http_status(:ok)
-    expect(sidebar_labels(response.body)).to eq([ "Students", "Review queue" ])
+    expect(sidebar_labels(response.body)).to eq([ "Students", "Review queue", "Review history" ])
     expect(response.body).not_to include("Raise a req")
   end
 

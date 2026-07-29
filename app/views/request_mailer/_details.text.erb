@@ -1,0 +1,12 @@
+Request: <%= @request.title %>
+Student: <%= @student.user.name.presence || @student.user.email %> · <%= @student.usn %> · <%= @student.department.name %>
+Category: <%= @request.category.name %> → <%= @request.category.sub_division.name %> → <%= @request.category.sub_division.division.name %>
+Version: <%= @version&.version_number || 1 %> (<%= (@version&.version_number.to_i || 1) <= 1 ? "fresh submission" : "resubmission" %>)
+Action by: <%= @actor.name.presence || @actor.email %> · <%= @actor.email %><% if @actor.phone.present? %> · <%= @actor.phone %><% end %>
+<% if @comment.present? %>
+
+Comment:
+<%= @comment %>
+<% end %>
+
+View request timeline: <%= @timeline_url %>

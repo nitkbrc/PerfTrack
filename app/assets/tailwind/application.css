@@ -142,6 +142,14 @@ html.sidebar-open .scats-sidebar-scrim {
   @apply text-[#00266e];
 }
 
+.scats-nav-link-signout {
+  @apply text-white/65 hover:bg-white/10 hover:text-white;
+}
+
+.scats-nav-link-signout .scats-nav-icon {
+  @apply text-current;
+}
+
 /* Sticky top bar sits over main content */
 .scats-topbar {
   @apply sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-[#DEE2E6] bg-white px-4 shadow-sm sm:px-6 lg:px-8;

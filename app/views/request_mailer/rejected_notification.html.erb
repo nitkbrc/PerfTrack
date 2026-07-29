@@ -1,0 +1,11 @@
+<h1>Request rejected</h1>
+<p>
+  <% if @recipient.id == @student.user_id %>
+    Your SCATS request has been rejected. See the comment below for details.
+  <% else %>
+    A SCATS request you were involved with for
+    <%= @student.user.name.presence || @student.usn %>
+    has been rejected.
+  <% end %>
+</p>
+<%= render "details" %>

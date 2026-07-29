@@ -46,13 +46,15 @@ class AchievementRequest < ApplicationRecord
   # created in one transaction so none can exist without the others.
   def self.submit!(student:, actor:, attrs:)
     attrs, proofs = split_proofs(attrs)
-    transaction do
-      request = create!(attrs.merge(student: student, status: :submitted))
-      version = request.create_version!(version_number: 1, proofs: proofs)
-      request.req_histories.create!(actor: actor, action: "submit", to_status: "submitted",
+    request = transaction do
+      created = create!(attrs.merge(student: student, status: :submitted))
+      version = created.create_version!(version_number: 1, proofs: proofs)
+      created.req_histories.create!(actor: actor, action: "submit", to_status: "submitted",
                                     request_version: version)
-      request
+      created
     end
+    RequestMailer.submitted_to_supervisor(request, actor: actor).deliver_later
+    request
   end
 
   # Path A vs Path B origin — the first history row is the source of truth.
@@ -64,14 +66,16 @@ class AchievementRequest < ApplicationRecord
   # skips submitted; the first history row records the supervisor as originator.
   def self.supervisor_initiate!(student:, actor:, attrs:)
     attrs, proofs = split_proofs(attrs)
-    transaction do
-      request = create!(attrs.merge(student: student, status: :supervisor_approved))
-      version = request.create_version!(version_number: 1, proofs: proofs)
-      request.req_histories.create!(actor: actor, action: "supervisor_initiate",
+    request = transaction do
+      created = create!(attrs.merge(student: student, status: :supervisor_approved))
+      version = created.create_version!(version_number: 1, proofs: proofs)
+      created.req_histories.create!(actor: actor, action: "supervisor_initiate",
                                     to_status: "supervisor_approved",
                                     request_version: version)
-      request
+      created
     end
+    RequestMailer.raised_on_behalf(request, actor: actor).deliver_later
+    request
   end
 
   # Student edit-and-resubmit after supervisor_reverted: new version + history.
@@ -91,6 +95,8 @@ class AchievementRequest < ApplicationRecord
                             from_status: from, to_status: "submitted",
                             request_version: version)
     end
+    RequestMailer.submitted_to_supervisor(self, actor: actor).deliver_later
+    self
   end
 
   # Path B supervisor fix-up after dean_reverted.
@@ -140,6 +146,8 @@ class AchievementRequest < ApplicationRecord
                             from_status: from, to_status: to.to_s,
                             request_version: current_version)
     end
+    enqueue_transition_mail!(actor: actor, action: action, comment: comment)
+    self
   end
 
   # Dean approval snapshots the signed point value in the same transaction as
@@ -157,6 +165,8 @@ class AchievementRequest < ApplicationRecord
     # Enqueued after the transaction commits so the job never sees a rolled-back
     # approval (PRD section 8 — notify on verification).
     DeanApprovalNotificationJob.perform_later(id)
+    enqueue_final_decision_mails!(:approved_notification, actor: actor)
+    self
   end
 
   def create_version!(version_number:, proofs:, title: self.title, description: self.description)
@@ -228,6 +238,49 @@ class AchievementRequest < ApplicationRecord
   end
 
   private
+
+  def enqueue_transition_mail!(actor:, action:, comment:)
+    case action.to_s
+    when "supervisor_approve"
+      RequestMailer.forwarded_to_dean(self, actor: actor, is_reforward: false).deliver_later
+    when "supervisor_reforward"
+      RequestMailer.forwarded_to_dean(self, actor: actor, is_reforward: true).deliver_later
+    when "dean_revert"
+      RequestMailer.reverted_to_supervisor(self, actor: actor, comment: comment).deliver_later
+    when "supervisor_revert"
+      RequestMailer.reverted_to_student(self, actor: actor, comment: comment).deliver_later
+    when "supervisor_reject"
+      # Submitted → Rejected is always student-originated; student only.
+      RequestMailer.rejected_notification(self, actor: actor, recipient: student.user,
+                                          comment: comment).deliver_later
+    when "dean_reject"
+      enqueue_final_decision_mails!(:rejected_notification, actor: actor, comment: comment)
+    end
+  end
+
+  # Path B origin: first ReqHistory actor is the supervisor who raised on behalf
+  # of the student (not the student themselves).
+  def originating_supervisor
+    first = req_histories.order(:created_at).first
+    return nil if first.nil? || first.actor_id == student.user_id
+
+    first.actor
+  end
+
+  # Dean final decision (approve or reject): always the student; Path B also the
+  # originating supervisor from the first history row.
+  def enqueue_final_decision_mails!(mailer_method, actor:, comment: nil)
+    student_args = { actor: actor, recipient: student.user }
+    student_args[:comment] = comment if comment
+    RequestMailer.public_send(mailer_method, self, **student_args).deliver_later
+
+    supervisor = originating_supervisor
+    return unless supervisor
+
+    supervisor_args = { actor: actor, recipient: supervisor }
+    supervisor_args[:comment] = comment if comment
+    RequestMailer.public_send(mailer_method, self, **supervisor_args).deliver_later
+  end
 
   def category_is_not_archived
     if category&.archived?

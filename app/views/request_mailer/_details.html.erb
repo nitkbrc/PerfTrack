@@ -1,0 +1,40 @@
+<%# Shared request context for HTML emails %>
+<div class="meta">
+  <p><strong>Request:</strong> <%= @request.title %></p>
+  <p>
+    <strong>Student:</strong>
+    <%= @student.user.name.presence || @student.user.email %>
+    · <%= @student.usn %>
+    · <%= @student.department.name %>
+  </p>
+  <p>
+    <strong>Category:</strong>
+    <%= @request.category.name %>
+    → <%= @request.category.sub_division.name %>
+    → <%= @request.category.sub_division.division.name %>
+  </p>
+  <p>
+    <strong>Version:</strong>
+    <%= @version&.version_number || 1 %>
+    (<%= (@version&.version_number.to_i || 1) <= 1 ? "fresh submission" : "resubmission" %>)
+  </p>
+  <p>
+    <strong>Action by:</strong>
+    <%= @actor.name.presence || @actor.email %>
+    · <%= @actor.email %>
+    <% if @actor.phone.present? %>
+      · <%= @actor.phone %>
+    <% end %>
+  </p>
+</div>
+
+<% if @comment.present? %>
+  <div class="comment">
+    <strong>Comment:</strong><br>
+    <%= simple_format(@comment) %>
+  </div>
+<% end %>
+
+<p>
+  <a class="button" href="<%= @timeline_url %>">View request timeline</a>
+</p>

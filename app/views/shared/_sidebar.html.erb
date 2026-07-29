@@ -45,6 +45,19 @@
       <%= user_photo_tag(current_user, size: 28) %>
       <span class="scats-nav-label">Profile</span>
     <% end %>
+    <%= button_to destroy_user_session_path,
+          method: :delete,
+          form: { class: "w-full" },
+          class: "scats-nav-link scats-nav-link-signout w-full cursor-pointer border-0 bg-transparent text-left",
+          title: "Sign out",
+          "aria-label": "Sign out",
+          data: {
+            turbo_confirm: "Are you sure you want to sign out?\n\nYou will need to sign in again to continue.",
+            action: "click->sidebar#close"
+          } do %>
+      <span class="scats-nav-icon" aria-hidden="true"><%= material_icon("logout") %></span>
+      <span class="scats-nav-label">Sign out</span>
+    <% end %>
   </div>
 </aside>
 

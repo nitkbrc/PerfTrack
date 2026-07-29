@@ -1,0 +1,10 @@
+Request awaiting your review
+============================
+
+<% if (@version&.version_number.to_i || 1) <= 1 %>
+A student submitted a new achievement request that needs your review.
+<% else %>
+A student resubmitted an achievement request after your feedback. Please review the updated version.
+<% end %>
+
+<%= render "details" %>
