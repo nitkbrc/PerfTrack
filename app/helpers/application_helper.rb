@@ -26,6 +26,24 @@ module ApplicationHelper
     tier.merge(styles)
   end
 
+  # Compact score chip for faculty students list — uses ethos tier soft colors.
+  # Separate from status_badge (frozen for student-dashboard status pills).
+  SCORE_BADGE_CLASSES = {
+    "gold"   => "bg-yellow-100 text-yellow-800",
+    "silver" => "bg-slate-200 text-slate-700",
+    "bronze" => "bg-orange-100 text-orange-800",
+    "orange" => "bg-orange-50 text-orange-700",
+    "red"    => "bg-red-100 text-red-700",
+    "black"  => "bg-slate-800 text-white"
+  }.freeze
+
+  def score_badge(score)
+    tier = ethos_tier(score.to_f)
+    tag.span format("%.1f", score.to_f),
+             class: "scats-badge tabular-nums #{SCORE_BADGE_CLASSES.fetch(tier[:key], 'scats-badge-neutral')}",
+             title: "#{tier[:name]} tier"
+  end
+
   # ---------------------------------------------------------------------------
   # Integrity Index: ratio of positive to total approved points (0–100).
   # 100 on a clean slate (no approved requests yet).
@@ -183,11 +201,39 @@ module ApplicationHelper
     tag.span name.to_s, class: classes, "aria-hidden": true
   end
 
+  # Top-bar / chrome role chip. Faculty with assignments show Dean or
+  # Supervisor (Dean wins if both); plain faculty stay Faculty.
+  # Separate from status_badge (frozen for dashboard).
+  def role_badge(user)
+    label = chrome_role_label(user)
+    tag.span label.upcase, class: chrome_role_badge_classes(label)
+  end
+
+  def chrome_role_label(user)
+    return user.role.to_s.titleize unless user.faculty?
+
+    return "Dean" if user.deaned_divisions.exists?
+    return "Supervisor" if user.supervised_sub_divisions.exists?
+
+    "Faculty"
+  end
+
+  def chrome_role_badge_classes(label)
+    case label.to_s.downcase
+    when "student" then "scats-badge scats-badge-info"
+    when "dean" then "scats-badge scats-badge-dean"
+    when "supervisor" then "scats-badge scats-badge-warning"
+    when "admin" then "scats-badge scats-badge-admin"
+    when "faculty" then "scats-badge scats-badge-neutral"
+    else "scats-badge scats-badge-neutral"
+    end
+  end
+
   # Circular profile photo (or initial placeholder) used in admin tables,
   # profile, sidebar, and top bar.
   def user_photo_tag(user, size: 40)
     style = "width: #{size}px; height: #{size}px;"
-    frame = "overflow-hidden rounded-full ring-1 ring-slate-200 align-middle"
+    frame = "overflow-hidden rounded-full ring-1 ring-primary/15 align-middle"
 
     if user.photo.attached?
       # Use the original blob so pages render without a Vips/ImageMagick variant step.
@@ -195,9 +241,20 @@ module ApplicationHelper
         image_tag user.photo, class: "block h-full w-full object-cover", alt: ""
       end
     else
-      tag.span user.name.to_s.first&.upcase || "?",
-               class: "inline-flex items-center justify-center bg-slate-200 text-xs font-semibold text-slate-600 #{frame}",
+      tag.span user_initials(user),
+               class: "inline-flex items-center justify-center bg-primary/10 text-[11px] font-semibold text-primary #{frame}",
                style: style
+    end
+  end
+
+  def user_initials(user)
+    parts = user.name.to_s.split.reject(&:blank?)
+    return "?" if parts.empty?
+
+    if parts.length == 1
+      parts.first.first(2).upcase
+    else
+      "#{parts.first[0]}#{parts.last[0]}".upcase
     end
   end
 

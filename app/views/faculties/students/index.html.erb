@@ -1,8 +1,8 @@
 <div class="mx-auto w-full max-w-4xl">
-  <h1 class="mb-1 text-2xl font-bold text-slate-900">Students</h1>
-  <p class="mb-6 text-sm text-slate-500">All students with their current overall score. Select a student for the full breakdown.</p>
+  <h1 class="mb-1 text-2xl font-bold text-text-main">Students</h1>
+  <p class="mb-6 text-sm text-text-muted">All students with their current overall score. Select a student for the full breakdown.</p>
 
-  <%= form_with url: faculty_students_path, method: :get, class: "clay-card mb-6 flex flex-col gap-4 p-4" do |f| %>
+  <%= form_with url: faculty_students_path, method: :get, class: "clay-card mb-6 flex flex-col gap-3 p-4 sm:p-5" do |f| %>
     <div class="w-full">
       <%= f.search_field :q, value: params[:q], placeholder: "Search name, email, or USN", class: "#{admin_input_classes} mt-0 w-full" %>
     </div>
@@ -14,9 +14,8 @@
         <%= f.select :sem, [["All semesters", ""]] + (1..8).map { |sem| ["Semester #{sem}", sem] }, { selected: params[:sem] }, class: "#{admin_input_classes} mt-0 w-full" %>
       </div>
       <div class="flex w-full min-w-0 gap-2">
-        <%= f.submit "Filter", class: "#{admin_primary_button_classes} flex-1" %>
-        <%= link_to "Clear", faculty_students_path,
-              class: "inline-flex flex-1 items-center justify-center rounded-xl border border-[#000666]/25 bg-white px-4 py-2 text-sm font-semibold text-[#000666] shadow-sm transition hover:border-[#000666]/40 hover:bg-[#000666]/5 focus:outline-none focus:ring-2 focus:ring-[#668efe] focus:ring-offset-2" %>
+        <%= f.submit "Filter", class: "#{admin_primary_button_classes} h-10 flex-1" %>
+        <%= link_to "Clear", faculty_students_path, class: "scats-ghost-button h-10 flex-1" %>
       </div>
     </div>
   <% end %>
@@ -24,7 +23,7 @@
   <% if @students.any? %>
     <div class="clay-card scats-list-shell">
       <table class="w-full text-left text-sm">
-        <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
           <tr>
             <th class="w-16 px-3 py-3 sm:px-4">Photo</th>
             <th class="px-3 py-3 sm:px-4">Name</th>
@@ -33,9 +32,9 @@
             <th class="w-28 whitespace-nowrap px-3 py-3 text-right sm:px-4">Score</th>
           </tr>
         </thead>
-        <tbody class="scats-list divide-y divide-slate-100">
+        <tbody class="scats-list">
           <% @students.each do |student| %>
-            <tr class="relative cursor-pointer">
+            <tr class="scats-row relative cursor-pointer">
               <td class="scats-list-photo px-3 py-3 sm:px-4">
                 <%= link_to "", faculty_student_path(student),
                       class: "absolute inset-0 z-0",
@@ -44,13 +43,13 @@
                   <%= user_photo_tag(student.user, size: 36) %>
                 </div>
               </td>
-              <td class="pointer-events-none relative z-10 min-w-0 truncate px-3 py-3 font-medium text-slate-900 sm:px-4">
+              <td class="pointer-events-none relative z-10 min-w-0 truncate px-3 py-3 font-medium text-text-main sm:px-4">
                 <%= student.user.name.presence || student.user.email %>
               </td>
-              <td class="pointer-events-none relative z-10 truncate px-3 py-3 text-slate-600 sm:px-4"><%= student.usn %></td>
-              <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-3 py-3 text-slate-600 sm:table-cell sm:px-4"><%= student.department.name %></td>
+              <td class="pointer-events-none relative z-10 truncate px-3 py-3 text-text-muted sm:px-4"><%= student.usn %></td>
+              <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-3 py-3 text-text-muted sm:table-cell sm:px-4"><%= student.department.name %></td>
               <td class="pointer-events-none relative z-10 whitespace-nowrap px-3 py-3 text-right sm:px-4">
-                <span class="font-bold text-[#000666]"><%= @scores[student.id] %></span>
+                <%= score_badge(@scores[student.id]) %>
               </td>
             </tr>
           <% end %>
@@ -58,8 +57,8 @@
       </table>
     </div>
   <% else %>
-    <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
+    <div class="clay-card p-8 text-center text-sm text-text-muted">
       No students found.
-    </p>
+    </div>
   <% end %>
 </div>

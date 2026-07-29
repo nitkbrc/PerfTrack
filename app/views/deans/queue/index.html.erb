@@ -1,10 +1,10 @@
 <div class="mx-auto w-full max-w-4xl">
-  <h1 class="mb-6 text-2xl font-bold text-slate-900">Decision queue</h1>
+  <h1 class="mb-6 text-2xl font-bold text-text-main">Decision queue</h1>
 
   <% if @requests.any? %>
     <div class="clay-card scats-list-shell">
       <table class="w-full text-left text-sm">
-        <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
           <tr>
             <th class="w-28 px-4 py-3">Student</th>
             <th class="px-4 py-3">Title</th>
@@ -13,18 +13,19 @@
             <th class="w-24 whitespace-nowrap px-4 py-3 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody class="scats-list divide-y divide-slate-100">
+        <tbody class="scats-list">
           <% @requests.each do |request| %>
-            <tr>
-              <td class="truncate px-4 py-3 font-medium text-slate-900"><%= request.student.usn %></td>
-              <td class="min-w-0 truncate px-4 py-3 text-slate-700"><%= request.title %></td>
-              <td class="hidden min-w-0 truncate px-4 py-3 text-slate-600 md:table-cell">
-                <%= request.category.sub_division.name %> / <%= request.category.name %>
+            <tr class="scats-row">
+              <td class="truncate px-4 py-3 font-medium text-text-main"><%= request.student.usn %></td>
+              <td class="min-w-0 truncate px-4 py-3 text-text-main"><%= request.title %></td>
+              <td class="hidden min-w-0 px-4 py-3 md:table-cell">
+                <p class="truncate text-xs text-text-muted"><%= request.category.sub_division.name %></p>
+                <span class="scats-badge scats-badge-neutral mt-1"><%= request.category.name %></span>
               </td>
-              <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700"><%= request.category.points %></td>
+              <td class="whitespace-nowrap px-4 py-3 font-semibold text-text-main"><%= request.category.points %></td>
               <td class="whitespace-nowrap px-4 py-3 text-right">
                 <%= link_to "Decide", dean_achievement_request_path(request),
-                      class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+                      class: "scats-primary-button px-2.5 py-1 text-xs" %>
               </td>
             </tr>
           <% end %>
@@ -32,8 +33,8 @@
       </table>
     </div>
   <% else %>
-    <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
+    <div class="clay-card p-8 text-center text-sm text-text-muted">
       No requests awaiting your decision.
-    </p>
+    </div>
   <% end %>
 </div>

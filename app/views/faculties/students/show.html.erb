@@ -8,27 +8,27 @@
       <div class="flex min-w-0 flex-1 items-start gap-4">
         <%= user_photo_tag(@student.user, size: 80) %>
         <div class="min-w-0 flex-1">
-          <h1 class="text-2xl font-bold tracking-tight text-[#000666]">
+          <h1 class="text-2xl font-bold tracking-tight text-primary">
             <%= @student.user.name.presence || @student.user.email %>
           </h1>
-          <p class="mt-1 text-sm font-medium text-slate-600">
-            <span class="font-mono text-[#000666]"><%= @student.usn %></span>
-            <span class="mx-1.5 text-slate-300">·</span>
+          <p class="mt-1 text-sm font-medium text-text-muted">
+            <span class="font-mono text-primary"><%= @student.usn %></span>
+            <span class="mx-1.5 text-border-subtle">·</span>
             <%= @student.department.name %>
             <% if @student.sem.present? %>
-              <span class="mx-1.5 text-slate-300">·</span>
+              <span class="mx-1.5 text-border-subtle">·</span>
               Sem <%= @student.sem %>
             <% end %>
           </p>
 
-          <dl class="mt-5 grid gap-4 border-t border-[#000666]/10 pt-4 sm:grid-cols-2">
+          <dl class="mt-5 grid gap-4 border-t border-border-subtle pt-4 sm:grid-cols-2">
             <div>
-              <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</dt>
-              <dd class="mt-1 text-sm text-slate-800"><%= @student.user.phone.presence || "—" %></dd>
+              <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Phone</dt>
+              <dd class="mt-1 text-sm text-text-main"><%= @student.user.phone.presence || "—" %></dd>
             </div>
             <div>
-              <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</dt>
-              <dd class="mt-1 text-sm leading-relaxed text-slate-800"><%= @student.user.address.presence || "—" %></dd>
+              <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Address</dt>
+              <dd class="mt-1 text-sm leading-relaxed text-text-main"><%= @student.user.address.presence || "—" %></dd>
             </div>
           </dl>
         </div>
@@ -45,29 +45,29 @@
   </section>
 
   <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-    <div class="rounded-xl bg-indigo-600 p-6 text-center shadow-md">
-      <p class="text-sm font-medium text-indigo-100">Overall score</p>
-      <p class="mt-1 text-4xl font-bold text-white"><%= @student.overall_score %><span class="text-lg font-medium text-indigo-200"> / 10</span></p>
+    <div class="clay-card bg-primary p-6 text-center text-white shadow-md">
+      <p class="text-sm font-medium text-white/80">Overall score</p>
+      <p class="mt-1 text-4xl font-bold"><%= @student.overall_score %><span class="text-lg font-medium text-white/70"> / 10</span></p>
     </div>
-    <div class="rounded-xl bg-white p-6 text-center shadow-md ring-1 ring-slate-200">
-      <p class="text-sm font-medium text-slate-500">Positive points</p>
-      <p class="mt-1 text-4xl font-bold text-green-600"><%= @positive_total %></p>
+    <div class="clay-card p-6 text-center">
+      <p class="text-sm font-medium text-text-muted">Positive points</p>
+      <p class="mt-1 text-4xl font-bold text-success"><%= @positive_total %></p>
     </div>
-    <div class="rounded-xl bg-white p-6 text-center shadow-md ring-1 ring-slate-200">
-      <p class="text-sm font-medium text-slate-500">Negative points</p>
-      <p class="mt-1 text-4xl font-bold text-red-600"><%= @negative_total %></p>
+    <div class="clay-card p-6 text-center">
+      <p class="text-sm font-medium text-text-muted">Negative points</p>
+      <p class="mt-1 text-4xl font-bold text-danger"><%= @negative_total %></p>
     </div>
   </div>
 
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     <div>
-      <h2 class="mb-3 text-lg font-semibold text-green-700">Positive achievements</h2>
+      <h2 class="mb-3 text-lg font-semibold text-success">Positive achievements</h2>
       <%= render "faculties/students/approved_requests", requests: @positive_requests,
             empty_message: "No approved positive achievements yet." %>
     </div>
 
     <div>
-      <h2 class="mb-3 text-lg font-semibold text-red-700">Negative records</h2>
+      <h2 class="mb-3 text-lg font-semibold text-danger">Negative records</h2>
       <%= render "faculties/students/approved_requests", requests: @negative_requests,
             empty_message: "No approved negative records." %>
     </div>

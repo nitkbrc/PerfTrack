@@ -1,5 +1,8 @@
 <div class="mb-6 flex items-center justify-between">
-  <div><%= link_to "? Back to divisions", admin_divisions_path, class: admin_back_link_classes %><h1 class="mt-2 text-2xl font-bold text-slate-900"><%= @division.name %></h1></div>
+  <div>
+    <%= link_to "← Back to divisions", admin_divisions_path, class: admin_back_link_classes %>
+    <h1 class="mt-3 text-2xl font-bold text-text-main"><%= @division.name %></h1>
+  </div>
   <div class="flex items-center gap-4">
     <%= render "admin/shared/archived_toggle", show_archived: @show_archived, archived_count: @archived_count, active_path: admin_division_path(@division), archived_path: admin_division_path(@division, archived: 1) %>
   </div>
@@ -14,8 +17,8 @@
         <% end %>
       <% end %>
       <div class="<%= "pointer-events-none relative z-10" unless sub_division.archived? %>">
-        <h2 class="text-lg font-bold text-[#000666]"><%= sub_division.name %></h2>
-        <p class="mt-1 text-sm text-slate-600">Supervisor: <%= sub_division.supervisor.name.presence || sub_division.supervisor.email %></p>
+        <h2 class="text-lg font-bold text-primary"><%= sub_division.name %></h2>
+        <p class="mt-1 text-sm text-text-muted">Supervisor: <%= sub_division.supervisor.name.presence || sub_division.supervisor.email %></p>
         <%= archived_badge(sub_division) if sub_division.archived? %>
       </div>
       <div class="relative z-10 mt-5 flex flex-wrap items-center gap-2">
@@ -32,7 +35,8 @@
   <% end %>
   <% unless @show_archived %>
     <%= link_to "+", new_admin_sub_division_path(division_id: @division.id),
-          class: "flex min-h-44 items-center justify-center rounded-3xl border-2 border-dashed border-[#000666]/25 text-4xl text-[#000666]",
+          class: "scats-dashed-card min-h-44",
+          aria: { label: "Create sub-division" },
           data: admin_modal_frame_data %>
   <% end %>
 </div>

@@ -72,6 +72,27 @@ module StudentHelper
     }.fetch(action, action.to_s.tr("_", " "))
   end
 
+  # Net-new: icon + soft colors for supervisor/dean Review history rows.
+  # Does not touch STATUS_BADGES / status_badge / .scats-status-badge.
+  def review_history_style(action)
+    case action.to_s
+    when /\A.+_approve\z/
+      { icon: "check_circle", wrap: "bg-success-soft text-success", label: "Approved" }
+    when "supervisor_reforward"
+      { icon: "forward", wrap: "bg-info-soft text-info", label: "Forwarded" }
+    when "supervisor_revise"
+      { icon: "edit", wrap: "bg-warning-soft text-warning", label: "Revised" }
+    when "supervisor_initiate"
+      { icon: "flag", wrap: "bg-violet-100 text-violet-800", label: "Raised" }
+    when /\A.+_revert\z/
+      { icon: "undo", wrap: "bg-orange-100 text-orange-700", label: "Reverted" }
+    when /\A.+_reject\z/
+      { icon: "cancel", wrap: "bg-danger-soft text-danger", label: "Rejected" }
+    else
+      { icon: "history", wrap: "bg-slate-100 text-slate-600", label: action.to_s.humanize }
+    end
+  end
+
   private
 
   def history_actor_with_role(action, actor_name)

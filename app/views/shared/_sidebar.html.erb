@@ -1,8 +1,8 @@
 <aside id="main-navigation" class="scats-sidebar" data-sidebar-target="panel" aria-label="Main navigation">
   <div class="scats-sidebar-header">
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2.5">
       <span class="scats-sidebar-mark" aria-hidden="true">S</span>
-      <div>
+      <div class="min-w-0 leading-tight">
         <p class="scats-sidebar-brand">SCATS</p>
         <p class="scats-sidebar-tagline">Character tracking</p>
       </div>
@@ -42,7 +42,7 @@
           data: {
             action: "mousedown->page-nav#activate click->sidebar#close"
           } do %>
-      <%= user_photo_tag(current_user, size: 28) %>
+      <span class="scats-nav-icon" aria-hidden="true"><%= user_photo_tag(current_user, size: 24) %></span>
       <span class="scats-nav-label">Profile</span>
     <% end %>
     <%= button_to destroy_user_session_path,

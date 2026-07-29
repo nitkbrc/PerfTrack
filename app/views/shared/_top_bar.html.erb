@@ -26,8 +26,10 @@
           "aria-label": "Profile",
           data: { action: "mousedown->page-nav#activate" } do %>
       <div class="hidden text-right sm:block">
-        <p class="text-sm font-semibold leading-tight text-[#212529]"><%= current_user.name.presence || current_user.email %></p>
-        <p class="text-[10px] font-medium uppercase tracking-wide text-[#6C757D]"><%= current_user.role.to_s.humanize %></p>
+        <p class="text-sm font-semibold leading-tight text-text-main"><%= current_user.name.presence || current_user.email %></p>
+        <div class="mt-0.5 flex justify-end">
+          <%= role_badge(current_user) %>
+        </div>
       </div>
       <%= user_photo_tag(current_user, size: 40) %>
     <% end %>

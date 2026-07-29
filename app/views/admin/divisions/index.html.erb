@@ -1,5 +1,5 @@
 <div class="mb-6 flex items-center justify-between">
-  <h1 class="text-2xl font-bold text-slate-900"><%= @show_archived ? "Archived divisions" : "Divisions" %></h1>
+  <h1 class="text-2xl font-bold text-text-main"><%= @show_archived ? "Archived divisions" : "Divisions" %></h1>
   <div class="flex items-center gap-4">
     <%= render "admin/shared/archived_toggle", show_archived: @show_archived,
           archived_count: @archived_count, active_path: admin_divisions_path,
@@ -17,9 +17,9 @@
         <% end %>
       <% end %>
       <div class="<%= "pointer-events-none relative z-10" unless division.archived? %>">
-        <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= division.positive? ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' %>"><%= division.div_type %></span>
-        <h2 class="mt-3 text-lg font-bold text-[#000666]"><%= division.name %></h2>
-        <p class="mt-1 text-sm text-slate-600">Dean: <%= division.dean.name.presence || division.dean.email %></p>
+        <%= division_type_badge(division) %>
+        <h2 class="mt-3 text-lg font-bold text-primary"><%= division.name %></h2>
+        <p class="mt-1 text-sm text-text-muted">Dean: <%= division.dean.name.presence || division.dean.email %></p>
         <%= archived_badge(division) if division.archived? %>
       </div>
       <div class="relative z-10 mt-5 flex flex-wrap items-center gap-2">
@@ -38,7 +38,7 @@
   <% end %>
   <% unless @show_archived %>
     <%= link_to new_admin_division_path,
-          class: "flex min-h-48 items-center justify-center rounded-3xl border-2 border-dashed border-[#000666]/25 p-5 text-4xl font-light text-[#000666] transition hover:bg-white/60",
+          class: "scats-dashed-card",
           aria: { label: "Create division" },
           data: admin_modal_frame_data do %>+<% end %>
   <% end %>
