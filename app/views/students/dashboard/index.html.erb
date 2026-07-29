@@ -1,98 +1,300 @@
-<div class="mx-auto w-full max-w-4xl">
-  <div class="mb-8 flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900">My dashboard</h1>
-      <p class="text-sm text-slate-500"><%= current_student.usn %> · <%= current_student.department.name %></p>
+<%
+  tier          = ethos_tier(@score)
+  integrity     = integrity_index(current_student)
+  risk          = integrity_risk(integrity)
+  gauge_color   = integrity >= 85 ? "#10b981" : integrity >= 60 ? "#f59e0b" : "#ef4444"
+  conduct_pct   = 100 - integrity
+
+  # Score ring (r=54, cx=cy=65)
+  score_circ    = (2 * Math::PI * 54).round(2)   # 339.29
+  score_offset  = (score_circ - (@score / 10.0 * score_circ)).round(2)
+
+  # Tier ring colour (all white-card tiers remapped to visible colours for dark bg)
+  tier_stroke   = { "gold"   => "#fbbf24", "silver" => "#e2e8f0",
+                    "bronze" => "#fb923c", "orange" => "#fdba74",
+                    "red"    => "#fca5a5", "black"  => "#94a3b8" }[tier[:key]] || "#c7d2fe"
+%>
+
+<div class="mx-auto w-full max-w-6xl px-4 py-6 space-y-6">
+
+  <%# ══════════════════════════════════════════════════════════════
+      Hero row — dark Ethos card + white Integrity card side-by-side
+      ══════════════════════════════════════════════════════════════ %>
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+    <%# ── Left: Ethos Score card (spans 2 cols) ── %>
+    <div class="relative overflow-hidden rounded-3xl p-8 shadow-xl lg:col-span-2"
+         style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%); min-height: 200px;">
+
+      <%# Soft radial glow top-right %>
+      <div class="pointer-events-none absolute right-0 top-0 h-64 w-64 opacity-20 rounded-full"
+           style="background: radial-gradient(circle at top right, #93c5fd, transparent 65%)"></div>
+
+      <div class="relative flex h-full items-center justify-between gap-6">
+
+        <%# ── Left text block ── %>
+        <div class="flex-1 min-w-0">
+          <p class="text-base font-bold text-white">Institutional Ethos Score</p>
+          <p class="mt-1.5 text-sm leading-relaxed text-white/70 max-w-[260px]">
+            Your overall rating based on academic integrity, campus conduct, and professional development activity.
+          </p>
+
+          <%# Big score number — inline font-size: arbitrary text-[5.5rem] is not emitted by Tailwind build %>
+          <div class="mt-6 flex items-baseline gap-2">
+            <span class="font-extrabold leading-none text-white tracking-tight" style="font-size: 5.5rem;"><%= @score %></span>
+            <span class="font-semibold text-white/60" style="font-size: 2rem;">/ 10</span>
+          </div>
+
+          <%# Tier pill — ghost style %>
+          <div class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5
+                      text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+            <span class="h-2 w-2 rounded-full flex-shrink-0" style="background:<%= tier_stroke %>"></span>
+            Tier: <%= tier[:name] %>
+          </div>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <div class="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1
+                        text-[11px] font-semibold text-white backdrop-blur-sm tracking-wide">
+              <%= current_student.usn %>
+            </div>
+            <div class="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1
+                        text-[11px] font-semibold text-white backdrop-blur-sm tracking-wide">
+              <%= current_student.department.name %>
+            </div>
+            <div class="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1
+                        text-[11px] font-semibold text-white backdrop-blur-sm tracking-wide">
+              Sem <%= current_student.sem || "—" %>
+            </div>
+          </div>
+        </div>
+
+        <%# ── Right: score ring ── %>
+        <div class="flex flex-shrink-0 flex-col items-center gap-3">
+          <div class="relative">
+            <svg width="138" height="138" viewBox="0 0 130 130" style="transform: rotate(-90deg)">
+              <circle cx="65" cy="65" r="54" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="9"/>
+              <circle cx="65" cy="65" r="54" fill="none"
+                      stroke="white"
+                      stroke-width="9"
+                      stroke-linecap="round"
+                      stroke-dasharray="<%= score_circ %>"
+                      stroke-dashoffset="<%= score_offset %>"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="material-symbols-outlined text-3xl" style="color:<%= tier_stroke %>; font-variation-settings:'FILL' 1">grade</span>
+              <span class="mt-0.5 text-[11px] font-bold uppercase tracking-widest" style="color:<%= tier_stroke %>">Tier: <%= tier[:name] %></span>
+            </div>
+          </div>
+
+          <%= link_to new_student_achievement_request_path,
+                class: "inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/10
+                        px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition" do %>
+            <span class="material-symbols-outlined text-base leading-none">add_circle</span>
+            Raise a Request
+          <% end %>
+        </div>
+
+      </div>
     </div>
-    <%= link_to "Submit a request", new_student_achievement_request_path,
-          class: "scats-primary-button" %>
+
+    <%# ── Right: Integrity Index card — animated filled pie ── %>
+    <div class="clay-card flex flex-col gap-4 rounded-3xl p-5"
+         data-controller="integrity-donut"
+         data-integrity-donut-integrity-value="<%= integrity %>"
+         data-integrity-donut-conduct-value="<%= conduct_pct %>"
+         data-integrity-donut-achieve-color-value="<%= gauge_color %>"
+         data-integrity-donut-conduct-color-value="#fca5a5">
+
+      <%# Header %>
+      <div class="flex items-center justify-between">
+        <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Integrity Index</p>
+        <span class="material-symbols-outlined text-lg" style="color:<%= gauge_color %>; font-variation-settings:'FILL' 1">verified_user</span>
+      </div>
+
+      <%# Pie + legend %>
+      <div class="flex items-center gap-5">
+
+        <%# SVG filled pie — slices drawn by Stimulus controller %>
+        <div class="relative flex-shrink-0" style="width:120px; height:120px;">
+          <svg width="120" height="120" viewBox="0 0 120 120"
+               data-integrity-donut-target="svg"
+               style="overflow:visible">
+          </svg>
+          <%# Floating tooltip — positioned by JS %>
+          <div data-integrity-donut-target="tooltip"
+               class="pointer-events-none fixed z-50 whitespace-nowrap rounded-lg
+                      bg-slate-800 px-3 py-1.5 text-[12px] font-semibold text-white shadow-lg
+                      opacity-0 transition-opacity duration-150">
+          </div>
+        </div>
+
+        <%# Legend + big % + risk %>
+        <div class="flex-1 min-w-0 space-y-2.5">
+          <div>
+            <p class="text-3xl font-extrabold leading-none text-slate-800"><%= integrity %>%</p>
+            <p class="mt-0.5 text-[11px] text-slate-400">Integrity score</p>
+          </div>
+
+          <div class="space-y-1.5 pt-1">
+            <div class="flex items-center gap-2">
+              <span class="h-2.5 w-2.5 flex-shrink-0 rounded-full" style="background:<%= gauge_color %>"></span>
+              <span class="text-xs text-slate-600">Achievement — <%= integrity %>%</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-red-300"></span>
+              <span class="text-xs text-slate-600">Conduct — <%= conduct_pct %>%</span>
+            </div>
+          </div>
+
+          <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold <%= risk[:classes] %>">
+            <span class="h-1.5 w-1.5 rounded-full" style="background:<%= gauge_color %>"></span>
+            <%= risk[:label] %>
+          </span>
+        </div>
+      </div>
+
+    </div>
   </div>
 
-  <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-    <div class="rounded-lg bg-[#000666] p-6 text-center shadow-sm">
-      <p class="text-sm font-medium text-[#8690ee]">Overall score</p>
-      <p class="mt-1 text-4xl font-bold text-white"><%= current_student.overall_score %><span class="text-lg font-medium text-white/70"> / 10</span></p>
+  <%# ══════════════════════════════════
+      Metric row
+      ══════════════════════════════════ %>
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+    <div class="clay-card flex items-center gap-3 rounded-xl p-4">
+      <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+        <span class="material-symbols-outlined text-xl text-emerald-600" style="font-variation-settings:'FILL' 1">emoji_events</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-2xl font-bold text-slate-800"><%= @achievement_count %></p>
+        <p class="text-xs text-slate-500">Achievements Approved</p>
+      </div>
     </div>
-    <div class="clay-card p-6 text-center">
-      <p class="text-sm font-medium text-slate-500">Positive points</p>
-      <p class="mt-1 text-4xl font-bold text-green-600">+<%= current_student.positive_total %></p>
+
+    <div class="clay-card flex items-center gap-3 rounded-xl p-4">
+      <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+        <span class="material-symbols-outlined text-xl text-indigo-600" style="font-variation-settings:'FILL' 1">trending_up</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-2xl font-bold text-slate-800"><%= @achievement_points %></p>
+        <p class="text-xs text-slate-500">Achievement Points</p>
+      </div>
     </div>
-    <div class="clay-card p-6 text-center">
-      <p class="text-sm font-medium text-slate-500">Negative points</p>
-      <p class="mt-1 text-4xl font-bold text-red-600"><%= current_student.negative_total %></p>
+
+    <div class="clay-card flex items-center gap-3 rounded-xl p-4">
+      <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-red-50">
+        <span class="material-symbols-outlined text-xl text-red-500" style="font-variation-settings:'FILL' 1">report</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-2xl font-bold text-slate-800"><%= @conduct_points %></p>
+        <p class="text-xs text-slate-500">Conduct Points Deducted</p>
+      </div>
     </div>
+
+    <div class="clay-card flex items-center gap-3 rounded-xl p-4">
+      <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50">
+        <span class="material-symbols-outlined text-xl text-amber-500" style="font-variation-settings:'FILL' 1">warning</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-2xl font-bold text-slate-800"><%= @critical_warnings %></p>
+        <p class="text-xs text-slate-500">Action Required</p>
+      </div>
+    </div>
+
   </div>
 
-  <h2 class="mb-4 text-lg font-semibold text-slate-900">My requests</h2>
-
-  <% if @requests.any? %>
-    <div class="clay-card scats-list-shell">
-      <table class="w-full text-left text-sm">
-        <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-          <tr>
-            <th class="px-4 py-3">Title</th>
-            <th class="hidden px-4 py-3 md:table-cell">Category</th>
-            <th class="px-4 py-3">Status</th>
-            <th class="hidden w-20 px-4 py-3 sm:table-cell">Points</th>
-            <th class="hidden w-28 px-4 py-3 lg:table-cell">Submitted</th>
-            <th class="w-28 whitespace-nowrap px-4 py-3">Actions</th>
-          </tr>
-        </thead>
-        <% @requests.each do |request| %>
-          <tbody data-controller="history-toggle">
-            <tr class="scats-row relative cursor-pointer">
-              <td class="min-w-0 truncate px-4 py-3 font-medium text-slate-900">
-                <%= link_to student_achievement_request_path(request),
-                      class: "absolute inset-0 z-0",
-                      aria: { label: "Open #{request.title}" } do %>
-                <% end %>
-                <span class="pointer-events-none relative z-10 inline-flex items-center gap-1.5">
-                  <%= request.title %>
-                  <% if request.supervisor_reverted? %>
-                    <%= attention_dot("Reverted — waiting for your resubmission") %>
-                  <% end %>
-                </span>
-              </td>
-              <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-4 py-3 text-slate-600 md:table-cell">
-                <%= request.category.name %>
-              </td>
-              <td class="relative z-10 min-w-0 px-4 py-3">
-                <span class="pointer-events-none"><%= status_badge(request) %></span>
-                <% if request.supervisor_reverted? %>
-                  <%= link_to "Edit & resubmit", edit_student_achievement_request_path(request),
-                        class: "relative z-20 ml-2 text-xs font-medium text-[#000666] hover:text-[#1a237e]" %>
-                <% end %>
-              </td>
-              <td class="pointer-events-none relative z-10 hidden whitespace-nowrap px-4 py-3 font-semibold text-slate-700 sm:table-cell">
-                <%= request.points_awarded || "—" %>
-              </td>
-              <td class="pointer-events-none relative z-10 hidden whitespace-nowrap px-4 py-3 text-slate-500 lg:table-cell">
-                <%= request.created_at.strftime("%d %b %Y") %>
-              </td>
-              <td class="relative z-20 cursor-default whitespace-nowrap px-4 py-3">
-                <button type="button"
-                        data-history-toggle-target="button"
-                        data-action="click->history-toggle#toggle"
-                        class="relative z-20 cursor-pointer text-xs font-medium text-[#000666] hover:text-[#1a237e]">
-                  View history
-                </button>
-              </td>
-            </tr>
-            <tr class="hidden bg-slate-50" data-history-toggle-target="panel">
-              <td colspan="6" class="px-4 py-4">
-                <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Review history</h3>
-                <%= render "shared/request_timeline",
-                      versions: request.request_versions.sort_by(&:version_number),
-                      history_only: true %>
-              </td>
-            </tr>
-          </tbody>
-        <% end %>
-      </table>
+  <%# ══════════════════════════════════
+      Performance Activity Log
+      ══════════════════════════════════ %>
+  <div>
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-base font-semibold text-slate-800">Performance Activity Log</h2>
+      <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500">
+        <%= @requests.size %> request<%= @requests.size == 1 ? "" : "s" %>
+      </span>
     </div>
-  <% else %>
-    <p class="rounded-xl bg-white p-8 text-center text-sm text-slate-500 shadow-md ring-1 ring-slate-200">
-      You haven't submitted any requests yet.
-    </p>
-  <% end %>
+
+    <% if @requests.any? %>
+      <div class="clay-card scats-list-shell">
+        <table class="w-full min-w-[32rem] text-left text-sm md:min-w-0">
+          <thead class="border-b border-slate-100 bg-slate-50/80 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <tr>
+              <th class="px-4 py-3 sm:px-5">Title</th>
+              <th class="hidden px-4 py-3 md:table-cell">Category</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="hidden w-20 px-4 py-3 sm:table-cell">Points</th>
+              <th class="hidden w-28 px-4 py-3 lg:table-cell">Submitted</th>
+              <th class="w-24 whitespace-nowrap px-4 py-3 sm:w-28">History</th>
+            </tr>
+          </thead>
+          <% @requests.each do |request| %>
+            <tbody data-controller="history-toggle">
+              <tr class="scats-row relative cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors">
+                <td class="min-w-0 px-4 py-3.5 font-medium text-slate-800 sm:px-5">
+                  <%= link_to student_achievement_request_path(request),
+                        class: "absolute inset-0 z-0",
+                        aria: { label: "Open #{request.title}" } do %><% end %>
+                  <span class="pointer-events-none relative z-10 inline-flex min-w-0 items-center gap-1.5">
+                    <span class="block truncate"><%= request.title %></span>
+                    <% if request.supervisor_reverted? %>
+                      <%= attention_dot("Reverted — resubmission needed") %>
+                    <% end %>
+                  </span>
+                  <div class="pointer-events-none relative z-10 mt-1 space-y-0.5 md:hidden">
+                    <p class="truncate text-xs text-slate-500"><%= request.category.name %></p>
+                    <p class="text-xs text-slate-400">
+                      <%= request.points_awarded.present? ? "#{request.points_awarded} pts" : "—" %>
+                      <span class="text-slate-300">&middot;</span>
+                      <%= request.created_at.strftime("%d %b %Y") %>
+                    </p>
+                  </div>
+                </td>
+                <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-4 py-3.5 text-slate-500 md:table-cell">
+                  <%= request.category.name %>
+                </td>
+                <td class="relative z-10 min-w-0 px-4 py-3.5">
+                  <div class="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:items-center">
+                    <span class="pointer-events-none"><%= status_badge(request) %></span>
+                    <% if request.supervisor_reverted? %>
+                      <%= link_to "Edit & resubmit", edit_student_achievement_request_path(request),
+                            class: "relative z-20 shrink-0 text-xs font-medium text-[#000666] hover:underline" %>
+                    <% end %>
+                  </div>
+                </td>
+                <td class="pointer-events-none relative z-10 hidden whitespace-nowrap px-4 py-3.5 font-semibold text-slate-700 sm:table-cell">
+                  <%= request.points_awarded.present? ? "#{request.points_awarded} pts" : "—" %>
+                </td>
+                <td class="pointer-events-none relative z-10 hidden whitespace-nowrap px-4 py-3.5 text-slate-400 lg:table-cell">
+                  <%= request.created_at.strftime("%d %b %Y") %>
+                </td>
+                <td class="relative z-20 cursor-default whitespace-nowrap px-4 py-3.5">
+                  <button type="button"
+                          data-history-toggle-target="button"
+                          data-action="click->history-toggle#toggle"
+                          class="relative z-20 cursor-pointer text-xs font-medium text-[#000666] hover:text-[#1a237e]">
+                    View history
+                  </button>
+                </td>
+              </tr>
+              <tr class="hidden bg-slate-50/70" data-history-toggle-target="panel">
+                <td colspan="6" class="px-4 py-5 sm:px-5">
+                  <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Review Timeline</h3>
+                  <%= render "shared/request_timeline",
+                        versions: request.request_versions.sort_by(&:version_number),
+                        history_only: true %>
+                </td>
+              </tr>
+            </tbody>
+          <% end %>
+        </table>
+      </div>
+    <% else %>
+      <div class="clay-card flex flex-col items-center gap-3 rounded-2xl py-14 text-center">
+        <span class="material-symbols-outlined text-4xl text-slate-300">inbox</span>
+        <p class="text-sm text-slate-500">No requests yet. Raise your first achievement to start building your record.</p>
+        <%= link_to "Raise a Request", new_student_achievement_request_path, class: "scats-primary-button mt-1" %>
+      </div>
+    <% end %>
+  </div>
+
 </div>

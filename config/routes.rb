@@ -31,6 +31,9 @@ Rails.application.routes.draw do
       member do
         delete "proofs/:signed_id", action: :remove_proof, as: :proof
       end
+      collection do
+        get :submitted
+      end
     end
   end
 

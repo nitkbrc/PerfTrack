@@ -6,10 +6,15 @@ module Students
       @achievement_request = authorize AchievementRequest.new
     end
 
+    def submitted
+      authorize AchievementRequest, :index?
+      @last_request = policy_scope(AchievementRequest).order(created_at: :desc).first
+    end
+
     def create
       authorize AchievementRequest
       AchievementRequest.submit!(student: current_student, actor: current_user, attrs: request_params)
-      redirect_to student_root_path, notice: "Your request has been submitted."
+      redirect_to submitted_student_achievement_requests_path, notice: "Your request has been submitted."
     rescue ActiveRecord::RecordInvalid => e
       @achievement_request = if e.record.is_a?(AchievementRequest)
         e.record

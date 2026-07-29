@@ -23,7 +23,7 @@ RSpec.describe "Student achievement requests", type: :request do
         post student_achievement_requests_path, params: valid_params
       }.to change(AchievementRequest, :count).by(1).and change(ReqHistory, :count).by(1)
 
-      expect(response).to redirect_to(student_root_path)
+      expect(response).to redirect_to(submitted_student_achievement_requests_path)
 
       request = AchievementRequest.last
       expect(request.status).to eq("submitted")
@@ -55,6 +55,17 @@ RSpec.describe "Student achievement requests", type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("Category must exist")
+    end
+
+    it "re-renders at the details step with category preserved on validation failure" do
+      invalid = valid_params.deep_merge(achievement_request: { proofs: [] })
+
+      post student_achievement_requests_path, params: invalid
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include('data-raise-wizard-step-value="3"')
+      expect(response.body).to include("Details &amp; Proof")
+      expect(response.body).to include(%(value="#{category.id}"))
     end
 
     it "denies faculty" do
@@ -101,6 +112,38 @@ RSpec.describe "Student achievement requests", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Sports")
+    end
+
+    it "renders the 3-step raise request wizard" do
+      get new_student_achievement_request_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("What are you submitting?")
+      expect(response.body).to include("Achievement submission")
+      expect(response.body).to include("Conduct")
+      expect(response.body).to include("Request Type")
+      expect(response.body).to include("Choose Category")
+      expect(response.body).to include("Details &amp; Proof")
+      expect(response.body).to include('data-controller="raise-wizard"')
+      expect(response.body).to include("pickerCards")
+      expect(response.body).to include('data-raise-wizard-step-value="1"')
+    end
+  end
+
+  describe "GET /student/achievement_requests/submitted" do
+    it "renders the confirmation page" do
+      get submitted_student_achievement_requests_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Request Submitted")
+    end
+
+    it "shows the most recent request on the confirmation page" do
+      req = create(:achievement_request, student: profile, title: "My chess title")
+
+      get submitted_student_achievement_requests_path
+
+      expect(response.body).to include("My chess title")
     end
   end
 end

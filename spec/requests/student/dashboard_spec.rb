@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Student dashboard", type: :request do
   let(:profile) { create(:student) }
 
-  it "renders score and the student's own requests" do
+  it "renders score, tier, integrity index and the student's own requests" do
     create(:achievement_request, student: profile, title: "My own request")
     create(:achievement_request, title: "Someone else's request")
 
@@ -12,6 +12,11 @@ RSpec.describe "Student dashboard", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("5.0")
+    # Tier is Bronze at 5.0
+    expect(response.body).to include("Bronze")
+    # Integrity index label present
+    expect(response.body).to include("Integrity Index")
+    expect(response.body).to include("Achievement Points")
     expect(response.body).to include("My own request")
     expect(response.body).not_to include("Someone else&#39;s request")
   end

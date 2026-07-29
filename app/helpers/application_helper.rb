@@ -1,4 +1,53 @@
 module ApplicationHelper
+  # ---------------------------------------------------------------------------
+  # Ethos Score tiers (plan: six bands over 0–10 sigmoid scale)
+  # ---------------------------------------------------------------------------
+  ETHOS_TIERS = [
+    { key: "gold",   name: "Gold",   min: 8.5,  max: 10.0 },
+    { key: "silver", name: "Silver", min: 6.5,  max: 8.5  },
+    { key: "bronze", name: "Bronze", min: 5.0,  max: 6.5  },
+    { key: "orange", name: "Orange", min: 3.5,  max: 5.0  },
+    { key: "red",    name: "Red",    min: 1.5,  max: 3.5  },
+    { key: "black",  name: "Black",  min: 0.0,  max: 1.5  }
+  ].freeze
+
+  TIER_STYLES = {
+    "gold"   => { badge: "bg-yellow-400/20 text-yellow-700 ring-yellow-400",   ring: "ring-yellow-400",   dot: "bg-yellow-400"   },
+    "silver" => { badge: "bg-slate-300/30 text-slate-600 ring-slate-400",      ring: "ring-slate-400",    dot: "bg-slate-400"    },
+    "bronze" => { badge: "bg-orange-300/20 text-orange-700 ring-orange-400",   ring: "ring-orange-400",   dot: "bg-orange-400"   },
+    "orange" => { badge: "bg-orange-200/30 text-orange-600 ring-orange-300",   ring: "ring-orange-300",   dot: "bg-orange-400"   },
+    "red"    => { badge: "bg-red-100 text-red-700 ring-red-400",               ring: "ring-red-400",      dot: "bg-red-500"      },
+    "black"  => { badge: "bg-slate-900/10 text-slate-800 ring-slate-700",      ring: "ring-slate-700",    dot: "bg-slate-900"    }
+  }.freeze
+
+  def ethos_tier(score)
+    tier = ETHOS_TIERS.find { |t| score >= t[:min] } || ETHOS_TIERS.last
+    styles = TIER_STYLES[tier[:key]]
+    tier.merge(styles)
+  end
+
+  # ---------------------------------------------------------------------------
+  # Integrity Index: ratio of positive to total approved points (0–100).
+  # 100 on a clean slate (no approved requests yet).
+  # ---------------------------------------------------------------------------
+  def integrity_index(student)
+    pos = student.positive_total
+    neg = student.negative_total.abs
+    return 100 if pos == 0 && neg == 0
+
+    ((100.0 * pos) / (pos + neg)).round
+  end
+
+  def integrity_risk(index)
+    if index >= 85
+      { label: "Minimal Risk", classes: "bg-emerald-100 text-emerald-700" }
+    elsif index >= 60
+      { label: "Moderate Risk", classes: "bg-yellow-100 text-yellow-700" }
+    else
+      { label: "Elevated Risk", classes: "bg-red-100 text-red-700" }
+    end
+  end
+
   # Rotating auth/dashboard backgrounds — every jpg/jpeg/png/webp under
   # app/assets/images (including campus/). Drop new files there to use them.
   def campus_image_paths

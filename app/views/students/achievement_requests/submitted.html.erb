@@ -1,0 +1,51 @@
+<div class="mx-auto w-full max-w-xl px-4 py-12 sm:py-16 text-center">
+  <div class="clay-card flex flex-col items-center gap-8 rounded-3xl px-8 py-12 sm:px-12 sm:py-14">
+
+    <%# Success icon — inline font-size: arbitrary text-5xl is not emitted by Tailwind build %>
+    <div class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full ring-4 ring-emerald-100/90 shadow-sm"
+         style="background: linear-gradient(135deg, #ecfdf5 0%, #a7f3d0 55%, #6ee7b7 100%);">
+      <span class="material-symbols-outlined leading-none text-emerald-600" style="font-size: 4rem;" aria-hidden="true">check_circle</span>
+    </div>
+
+    <%# Title & description %>
+    <div class="max-w-md space-y-3">
+      <h1 class="text-3xl font-extrabold tracking-tight text-[#000666] sm:text-4xl">
+        <span class="relative inline-block px-1">
+          Request Submitted!
+          <span class="pointer-events-none absolute -bottom-0.5 left-0 right-0 -z-10 h-3 rounded-full bg-[#668efe]/20" aria-hidden="true"></span>
+        </span>
+      </h1>
+      <p class="text-base leading-relaxed text-slate-500">
+        Your request has been submitted and is now pending supervisor review.
+        You'll receive an email update at each stage of the review process.
+      </p>
+    </div>
+
+    <%# Request summary %>
+    <% if @last_request %>
+      <div class="w-full rounded-xl border border-[#000666]/10 bg-[#000666]/5 p-5 text-left">
+        <p class="mb-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Your submission</p>
+        <p class="text-base font-bold leading-snug text-[#000666]"><%= @last_request.title %></p>
+        <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+          <span class="inline-flex items-center rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium text-[#000666] ring-1 ring-[#000666]/10">
+            <%= @last_request.category.name %>
+          </span>
+          <span class="text-slate-300" aria-hidden="true">&middot;</span>
+          <span><%= @last_request.created_at.strftime("%d %b %Y") %></span>
+        </div>
+      </div>
+    <% end %>
+
+    <%# CTAs %>
+    <div class="flex w-full flex-col gap-3 pt-1 sm:flex-row sm:justify-center">
+      <%= link_to student_root_path,
+            class: "inline-flex flex-1 items-center justify-center rounded-md border border-[#000666]/15 bg-white px-4 py-2.5 text-sm font-semibold text-[#000666] shadow-sm transition hover:bg-[#000666]/5 focus:outline-none focus:ring-2 focus:ring-[#668efe] focus:ring-offset-2" do %>
+        View Dashboard
+      <% end %>
+      <%= link_to new_student_achievement_request_path,
+            class: "inline-flex flex-1 items-center justify-center scats-primary-button px-4 py-2.5 text-center" do %>
+        Submit Another
+      <% end %>
+    </div>
+  </div>
+</div>
