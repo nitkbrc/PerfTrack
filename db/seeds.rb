@@ -2,6 +2,16 @@
 # crashes — structure uses find_or_create_by and requests are only created
 # for seeded students who don't have any yet.
 
+# Run Active Storage analyze jobs inline for this seed only so Solid Queue
+# enqueue failures cannot abort seeding on a fresh deploy. Disable real SMTP
+# for the same window so inline mailer jobs do not require a live mail server.
+_original_active_job_adapter = ActiveJob::Base.queue_adapter
+_original_mailer_perform = ActionMailer::Base.perform_deliveries
+ActiveJob::Base.queue_adapter = :inline
+ActionMailer::Base.perform_deliveries = false
+
+begin
+
 # 1x1 PNG so seeded requests pass the "at least one PNG proof" validation.
 PROOF_PNG = Base64.decode64(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
@@ -212,3 +222,8 @@ puts <<~DONE
     Supervisor:         kavya.shetty@scats.edu
     Student:            asha.kumar@scats.edu
 DONE
+
+ensure
+  ActiveJob::Base.queue_adapter = _original_active_job_adapter
+  ActionMailer::Base.perform_deliveries = _original_mailer_perform
+end
