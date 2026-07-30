@@ -17,7 +17,7 @@ module Deans
     def approve
       authorize @achievement_request, :dean_decide?
       @achievement_request.dean_approve!(actor: current_user)
-      redirect_to dean_root_path,
+      redirect_to dean_queue_path,
                   notice: "Request approved — #{@achievement_request.points_awarded} points awarded."
     end
 
@@ -42,7 +42,7 @@ module Deans
     def require_supervisor_approved_status
       return if @achievement_request.supervisor_approved?
 
-      redirect_to dean_root_path, alert: "This request is no longer awaiting your decision."
+      redirect_to dean_queue_path, alert: "This request is no longer awaiting your decision."
     end
 
     def decide_with_comment(to:, action:, notice:)
@@ -56,7 +56,7 @@ module Deans
       reason_template = ReasonTemplate.find_by(id: params[:reason_template_id])
       @achievement_request.transition!(to: to, actor: current_user, action: action,
                                        comment: comment, reason_template: reason_template)
-      redirect_to dean_root_path, notice: notice
+      redirect_to dean_queue_path, notice: notice
     end
   end
 end

@@ -1,14 +1,14 @@
 <div class="mx-auto w-full max-w-4xl">
   <div class="mb-6">
     <h1 class="text-2xl font-bold text-text-main">Review history</h1>
-    <p class="mt-1 text-sm text-text-muted">Requests you have already decided on.</p>
+    <p class="mt-1 text-sm text-text-muted">Log of your past review actions (read-only).</p>
   </div>
 
   <% if @histories.any? %>
     <div class="clay-card scats-list-shell !py-2">
       <ul class="divide-y divide-border-subtle">
         <% @histories.each do |history| %>
-          <% request_record = history.achievement_request %>
+          <% version = history.request_version %>
           <% style = review_history_style(history.action) %>
           <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-background">
             <div class="flex min-w-0 items-start gap-3">
@@ -19,13 +19,19 @@
               <div class="min-w-0">
                 <p class="text-sm text-text-main">
                   You <span class="font-semibold"><%= review_history_verb(history.action) %></span>
-                  <span class="font-semibold"><%= history.request_version.title.presence || request_record.title %></span>
+                  <span class="font-semibold"><%= version.title %></span>
+                </p>
+                <p class="mt-0.5 text-xs text-text-muted">
+                  <%= version.category.sub_division.name %> · <%= version.category.name %>
                 </p>
                 <p class="mt-0.5 text-xs text-text-muted"><%= history.created_at.strftime("%d %b %Y") %></p>
-                <p class="mt-0.5 text-xs text-text-muted">Student <%= request_record.student.usn %></p>
+                <p class="mt-0.5 text-xs text-text-muted">Student <%= history.achievement_request.student.usn %></p>
+                <% if history.to_status.present? %>
+                  <span class="scats-badge scats-badge-neutral mt-1.5"><%= history.to_status.humanize %></span>
+                <% end %>
               </div>
             </div>
-            <%= link_to dean_achievement_request_path(request_record),
+            <%= link_to dean_review_history_path(history),
                   class: "scats-ghost-button inline-flex shrink-0 items-center gap-0.5 px-2.5 py-1.5 text-xs" do %>
               View timeline
               <span class="material-symbols-outlined text-base leading-none" aria-hidden="true">chevron_right</span>

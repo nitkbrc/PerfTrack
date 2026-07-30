@@ -38,15 +38,19 @@
           <%= render "shared/flash", width_classes: "" %>
           <%= yield %>
         </main>
+        <%= render "shared/app_footer" %>
       </div>
     <% else %>
       <main class="relative min-h-screen">
-        <div class="pointer-events-none absolute inset-x-0 top-0 z-20">
-          <div class="pointer-events-auto mx-auto w-full max-w-md px-5 pt-6">
-            <%= render "shared/flash", width_classes: "" %>
-          </div>
-        </div>
         <%= yield %>
+        <%# Landing embeds flash above the sign-in form; other auth pages keep a centered banner. %>
+        <% unless content_for?(:inline_auth_flash) %>
+          <div class="pointer-events-none absolute inset-x-0 top-0 z-20">
+            <div class="device-events-auto mx-auto w-full max-w-md px-5 pt-6">
+              <%= render "shared/flash", width_classes: "" %>
+            </div>
+          </div>
+        <% end %>
       </main>
     <% end %>
   </body>

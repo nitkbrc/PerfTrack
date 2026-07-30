@@ -1,0 +1,29 @@
+<%# locals: sub_divisions — supervisor-scoped SubDivision records with categories preloaded. %>
+<%= render "shared/hierarchy_tree",
+      title: "Your organization",
+      empty: sub_divisions.empty?,
+      empty_message: "No sub-divisions assigned" do %>
+  <% sub_divisions.each do |sub_division| %>
+    <% categories = sub_division.categories.reject(&:archived?).sort_by(&:name) %>
+    <%= render "shared/hierarchy_tree_branch",
+          label: sub_division.name,
+          icon: "folder",
+          meta: "#{categories.size} #{"category".pluralize(categories.size)}",
+          boxed: true do %>
+      <% if categories.empty? %>
+        <%= render "shared/hierarchy_tree_leaf",
+              label: "No active categories",
+              icon: "info",
+              tone: :slate %>
+      <% else %>
+        <% categories.each do |category| %>
+          <%= render "shared/hierarchy_tree_leaf",
+                label: category.name,
+                icon: "label",
+                meta: "#{category.points} pts",
+                tone: :emerald %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

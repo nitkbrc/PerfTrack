@@ -1,0 +1,25 @@
+<%# Locals: version, student (optional), to_status (optional), points_awarded (optional) %>
+<div class="mb-4 flex items-start justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900"><%= version.title %></h1>
+    <p class="mt-1 text-sm text-slate-500">
+      <%= version.category.sub_division.division.name %> /
+      <%= version.category.sub_division.name %> /
+      <%= version.category.name %>
+    </p>
+    <% if local_assigns[:student] %>
+      <p class="mt-1 text-sm text-slate-500">
+        Student: <span class="font-medium text-slate-700"><%= student.usn %></span>
+      </p>
+    <% end %>
+  </div>
+  <% if local_assigns[:to_status].present? %>
+    <span class="scats-badge scats-badge-neutral shrink-0"><%= to_status.to_s.humanize %></span>
+  <% end %>
+</div>
+
+<% if local_assigns[:points_awarded].present? %>
+  <p class="mb-4 text-sm font-semibold <%= points_awarded.positive? ? 'text-green-700' : 'text-red-700' %>">
+    Points awarded: <%= points_awarded %>
+  </p>
+<% end %>

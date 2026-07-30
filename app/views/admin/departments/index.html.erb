@@ -12,7 +12,7 @@
       <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
         <tr>
           <th class="px-4 py-3">Name</th>
-          <th class="w-20 whitespace-nowrap px-4 py-3 text-right">Actions</th>
+          <th class="w-28 whitespace-nowrap px-4 py-3 text-right">Actions</th>
         </tr>
       </thead>
       <tbody class="scats-list">
@@ -20,12 +20,12 @@
           <tr class="scats-row relative cursor-pointer">
             <td class="min-w-0 px-4 py-3 font-medium text-text-main">
               <%= link_to edit_admin_department_path(department),
-                    class: "absolute inset-0 z-0",
+                    class: "scats-row-hit",
                     aria: { label: "Edit #{department.name}" } do %>
               <% end %>
               <span class="pointer-events-none relative z-10 block truncate"><%= department.name %></span>
             </td>
-            <td class="relative z-10 whitespace-nowrap px-4 py-3 text-right">
+            <td class="scats-row-actions px-4 py-3 text-right">
               <%= button_to "Delete", admin_department_path(department), method: :delete,
                     data: { turbo_confirm: "Delete #{department.name}?" },
                     form: { class: "inline", onclick: "event.stopPropagation()" },

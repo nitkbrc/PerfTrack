@@ -1,0 +1,35 @@
+<%# locals: title (required), empty (optional boolean), empty_message (optional). Yields tree body. %>
+<%
+  empty = local_assigns.fetch(:empty, false)
+  empty_message = local_assigns.fetch(:empty_message, "Nothing assigned yet")
+%>
+
+<section data-controller="tree">
+  <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <h2 class="text-sm font-semibold text-text-main"><%= title %></h2>
+    <% unless empty %>
+      <div class="flex items-center gap-2">
+        <button type="button"
+                class="scats-ghost-button !px-3 !py-1.5 text-xs"
+                data-action="tree#expandAll">
+          Expand all
+        </button>
+        <button type="button"
+                class="scats-ghost-button !px-3 !py-1.5 text-xs"
+                data-action="tree#collapseAll">
+          Collapse all
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="clay-card rounded-2xl p-4 sm:p-5">
+    <% if empty %>
+      <p class="py-4 text-center text-sm text-text-muted"><%= empty_message %></p>
+    <% else %>
+      <ul class="space-y-3" role="tree">
+        <%= yield %>
+      </ul>
+    <% end %>
+  </div>
+</section>

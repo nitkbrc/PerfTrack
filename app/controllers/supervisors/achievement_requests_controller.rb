@@ -26,7 +26,7 @@ module Supervisors
       action = @achievement_request.dean_reverted? ? "supervisor_reforward" : "supervisor_approve"
       @achievement_request.transition!(to: :supervisor_approved, actor: current_user,
                                        action: action)
-      redirect_to supervisor_root_path, notice: "Request approved and forwarded to the dean."
+      redirect_to supervisor_queue_path, notice: "Request approved and forwarded to the dean."
     end
 
     def revert
@@ -93,7 +93,7 @@ module Supervisors
         actor: current_user,
         attrs: request_params.except(:student_id)
       )
-      redirect_to supervisor_root_path, notice: "Request raised on behalf of #{request.student.usn}."
+      redirect_to supervisor_queue_path, notice: "Request raised on behalf of #{request.student.usn}."
     rescue ActiveRecord::RecordInvalid => e
       @achievement_request = form_request_from_invalid(e, attrs: request_params)
       render :new, status: :unprocessable_content
@@ -125,20 +125,20 @@ module Supervisors
     def require_submitted_status
       return if @achievement_request.submitted?
 
-      redirect_to supervisor_root_path, alert: "This request is no longer awaiting your review."
+      redirect_to supervisor_queue_path, alert: "This request is no longer awaiting your review."
     end
 
     def require_approvable_status
       return if @achievement_request.submitted? || @achievement_request.dean_reverted?
 
-      redirect_to supervisor_root_path, alert: "This request is no longer awaiting your review."
+      redirect_to supervisor_queue_path, alert: "This request is no longer awaiting your review."
     end
 
     def require_revertable_status
       return if @achievement_request.submitted?
       return if @achievement_request.dean_reverted? && @achievement_request.student_initiated?
 
-      redirect_to supervisor_root_path, alert: "This request cannot be reverted to the student."
+      redirect_to supervisor_queue_path, alert: "This request cannot be reverted to the student."
     end
 
     # Editing is only for Path B requests the supervisor raised himself; a
@@ -146,7 +146,7 @@ module Supervisors
     def require_dean_reverted_status
       return if @achievement_request.dean_reverted? && !@achievement_request.student_initiated?
 
-      redirect_to supervisor_root_path, alert: "Only dean-reverted requests you raised can be edited."
+      redirect_to supervisor_queue_path, alert: "Only dean-reverted requests you raised can be edited."
     end
 
     def decide_with_comment(to:, action:, notice:)
@@ -160,7 +160,7 @@ module Supervisors
       reason_template = ReasonTemplate.find_by(id: params[:reason_template_id])
       @achievement_request.transition!(to: to, actor: current_user, action: action,
                                        comment: comment, reason_template: reason_template)
-      redirect_to supervisor_root_path, notice: notice
+      redirect_to supervisor_queue_path, notice: notice
     end
 
     def supervised_categories

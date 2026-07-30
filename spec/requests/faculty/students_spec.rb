@@ -116,6 +116,8 @@ RSpec.describe "Faculty students directory", type: :request do
       expect(response.body).to include("+30 pts")
       expect(response.body).to include("Negative records")
       expect(response.body).to include("-10 pts")
+      expect(response.body).to include("Positive points")
+      expect(response.body).to include("Overall score")
       expect(response.body).to include(student.overall_score.to_s)
       # Only dean-approved requests contribute to the breakdown.
       expect(response.body).not_to include("Still pending")

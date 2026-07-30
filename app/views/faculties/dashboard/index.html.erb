@@ -1,0 +1,52 @@
+<div class="mx-auto w-full max-w-6xl space-y-6 px-4 py-6">
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div class="relative overflow-hidden rounded-3xl p-8 shadow-xl lg:col-span-2"
+         style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%); min-height: 200px;">
+      <div class="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full opacity-20"
+           style="background: radial-gradient(circle at top right, #93c5fd, transparent 65%)"></div>
+
+      <div class="relative flex h-full flex-col justify-center gap-2">
+        <p class="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+          <%= current_user.name.presence || current_user.email %>
+        </p>
+        <p class="text-xs font-semibold uppercase tracking-[0.15em] text-white">
+          <%= chrome_role_label(current_user) %>
+        </p>
+        <p class="mt-2 max-w-sm text-sm leading-relaxed text-white">
+          Campus overview — students, departments, and how the character structure is organised.
+        </p>
+      </div>
+    </div>
+
+    <div class="clay-card flex flex-col justify-center gap-3 rounded-3xl p-6">
+      <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Quick links</p>
+      <%= link_to "Browse students", faculty_students_path, class: "scats-primary-button w-full" %>
+      <%= link_to "Your profile", profile_path, class: "scats-secondary-button w-full" %>
+    </div>
+  </div>
+
+  <div class="grid auto-rows-[minmax(7rem,auto)] grid-cols-2 gap-4 lg:grid-cols-4 lg:grid-rows-2">
+    <%= render "shared/stat_tile",
+          icon: "school", tone: :sky, variant: :feature,
+          span: "col-span-2 row-span-2",
+          value: @student_count, label: "Students",
+          sub: "Browse the directory for profiles and records",
+          href: faculty_students_path %>
+    <%= render "shared/stat_tile",
+          icon: "grid_view", tone: :violet,
+          span: "lg:col-start-3 lg:row-start-1",
+          value: @department_count, label: "Departments" %>
+    <%= render "shared/stat_tile",
+          icon: "group", tone: :indigo,
+          span: "lg:col-start-4 lg:row-start-1 lg:row-span-2",
+          value: @faculty_count, label: "Faculty" %>
+    <div class="col-span-2 flex min-h-0 flex-col gap-2 lg:col-span-1 lg:col-start-3 lg:row-start-2 lg:h-full">
+      <%= render "shared/stat_tile",
+            icon: "account_tree", tone: :teal, variant: :compact,
+            value: @division_count, label: "Divisions" %>
+      <%= render "shared/stat_tile",
+            icon: "folder", tone: :slate, variant: :compact,
+            value: @sub_division_count, label: "Sub-divisions" %>
+    </div>
+  </div>
+</div>

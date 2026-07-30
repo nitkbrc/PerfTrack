@@ -1,15 +1,20 @@
 <div class="mx-auto w-full max-w-3xl">
   <div class="mb-6">
-    <%= link_to "← Back to queue", dean_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+    <%= link_to dean_queue_path, class: "scats-secondary-button gap-1.5" do %>
+      <span class="material-symbols-outlined text-base leading-none" aria-hidden="true">arrow_back</span>
+      Back to queue
+    <% end %>
   </div>
 
-  <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+  <div class="clay-card p-8">
     <%= render "shared/achievement_request_details",
           achievement_request: @achievement_request, histories: @histories %>
   </div>
 
   <% if @achievement_request.supervisor_approved? %>
-    <div class="mt-6 rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
+    <div class="clay-card mt-6 p-6 sm:p-8"
+         data-controller="panel-switch"
+         data-panel-switch-mode-value="approve">
       <h2 class="mb-1 text-lg font-semibold text-slate-900">Your decision</h2>
       <p class="mb-4 text-sm text-slate-500">
         Approving awards
@@ -19,32 +24,67 @@
         to <%= @achievement_request.student.usn %> — final and irreversible.
       </p>
 
-      <%= button_to "Approve — award points",
-            approve_dean_achievement_request_path(@achievement_request), method: :patch,
-            data: { turbo_confirm: "Approve and snapshot the points? This cannot be undone." },
-            class: "cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-500" %>
-
-      <div class="mt-6 space-y-6 border-t border-slate-200 pt-6">
-        <div>
-          <h3 class="mb-3 text-sm font-semibold text-slate-700">Revert to supervisor (message required)</h3>
-          <%= render "shared/decision_form",
-                url: revert_dean_achievement_request_path(@achievement_request),
-                button_label: "Revert for clarification",
-                button_classes: "bg-orange-500 hover:bg-orange-400",
-                reason_templates: @reason_templates,
-                comment_label: "Message" %>
+      <div class="mb-6">
+        <div class="scats-switch w-full"
+             role="tablist"
+             aria-label="Decision action"
+             data-controller="segmented-switch"
+             data-segmented-switch-selected-value="approve"
+             data-action="segmented-switch:change->panel-switch#select">
+          <span class="scats-switch__pill" data-segmented-switch-target="pill" aria-hidden="true"></span>
+          <button type="button"
+                  role="tab"
+                  data-segmented-switch-target="option"
+                  data-value="approve"
+                  data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                  class="scats-switch__option">
+            Approve
+          </button>
+          <button type="button"
+                  role="tab"
+                  data-segmented-switch-target="option"
+                  data-value="revert"
+                  data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                  class="scats-switch__option">
+            Revert
+          </button>
+          <button type="button"
+                  role="tab"
+                  data-segmented-switch-target="option"
+                  data-value="reject"
+                  data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                  class="scats-switch__option">
+            Reject
+          </button>
         </div>
+      </div>
 
-        <div class="border-t border-slate-100 pt-6">
-          <h3 class="mb-3 text-sm font-semibold text-slate-700">Reject (message required)</h3>
-          <%= render "shared/decision_form",
-                url: reject_dean_achievement_request_path(@achievement_request),
-                button_label: "Reject",
-                button_classes: "bg-red-600 hover:bg-red-500",
-                confirm: "Rejecting is final — no points will be awarded. Continue?",
-                reason_templates: @reason_templates,
-                comment_label: "Message" %>
-        </div>
+      <div data-panel-switch-target="panel" data-mode="approve" role="tabpanel">
+        <%= button_to "Approve — award points",
+              approve_dean_achievement_request_path(@achievement_request), method: :patch,
+              data: { turbo_confirm: "Approve and snapshot the points? This cannot be undone." },
+              class: "cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-500" %>
+      </div>
+
+      <div data-panel-switch-target="panel" data-mode="revert" role="tabpanel" class="hidden" aria-hidden="true">
+        <p class="mb-3 text-sm text-slate-500">Send this back to the supervisor with a message (required).</p>
+        <%= render "shared/decision_form",
+              url: revert_dean_achievement_request_path(@achievement_request),
+              button_label: "Revert for clarification",
+              button_classes: "bg-orange-500 hover:bg-orange-400",
+              reason_templates: @reason_templates,
+              comment_label: "Message" %>
+      </div>
+
+      <div data-panel-switch-target="panel" data-mode="reject" role="tabpanel" class="hidden" aria-hidden="true">
+        <p class="mb-3 text-sm text-slate-500">Rejecting is final — no points will be awarded.</p>
+        <%= render "shared/decision_form",
+              url: reject_dean_achievement_request_path(@achievement_request),
+              button_label: "Reject",
+              button_classes: "bg-red-600 hover:bg-red-500",
+              confirm: "Rejecting is final — no points will be awarded. Continue?",
+              reason_templates: @reason_templates,
+              comment_label: "Message" %>
       </div>
     </div>
   <% end %>

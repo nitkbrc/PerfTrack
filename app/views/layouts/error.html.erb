@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for?(:title) ? yield(:title) : "SCATS" %></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <style>
+      :root {
+        --scats-primary: #000666;
+        --scats-primary-container: #1a237e;
+        --scats-secondary: #2857c4;
+        --scats-background: #f7faf9;
+        --scats-surface: #ffffff;
+        --scats-border: #dee2e6;
+        --scats-text: #212529;
+        --scats-text-muted: #6c757d;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+      body {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        background:
+          radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--scats-secondary) 18%, transparent), transparent),
+          var(--scats-background);
+        color: var(--scats-text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.5;
+      }
+
+      main {
+        width: min(100%, 26rem);
+        padding: 2rem 1.75rem;
+        background: var(--scats-surface);
+        border: 1px solid var(--scats-border);
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 6, 102, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        text-align: center;
+      }
+
+      .brand {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--scats-secondary);
+      }
+
+      .status {
+        margin-top: 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--scats-text-muted);
+      }
+
+      h1 {
+        margin-top: 0.5rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--scats-primary);
+      }
+
+      p {
+        margin-top: 0.75rem;
+        font-size: 0.9375rem;
+        color: var(--scats-text-muted);
+      }
+
+      .cta {
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 0.5rem;
+        background: var(--scats-primary);
+        color: #fff;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .cta:hover {
+        background: var(--scats-primary-container);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="brand">SCATS</p>
+      <%= yield %>
+      <%= link_to "Back to SCATS", root_path, class: "cta" %>
+    </main>
+  </body>
+</html>

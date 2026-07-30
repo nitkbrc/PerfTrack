@@ -6,8 +6,8 @@ module Supervisors
       # and re-forwarding (PRD section 6 lifecycle).
       @requests = policy_scope(AchievementRequest)
                     .where(status: [ :submitted, :dean_reverted ])
-                    .includes(:student, category: :sub_division)
-                    .order(:created_at)
+                    .includes(:student, category: :sub_division, req_histories: :actor)
+                    .order(created_at: :desc)
     end
   end
 end

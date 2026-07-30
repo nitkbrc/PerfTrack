@@ -44,7 +44,7 @@ RSpec.describe "Path B lifecycle", type: :system do
 
     # --- Dean approves; points are negative for a negative division ---
     sign_in_as dean
-    visit dean_root_path
+    visit dean_queue_path
     expect(page).to have_content("Ragging incident report")
     click_link "Decide"
     expect(page).to have_content("Raised by supervisor on the student's behalf")

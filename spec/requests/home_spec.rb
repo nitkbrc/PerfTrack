@@ -8,7 +8,7 @@ RSpec.describe "Home", type: :request do
     expect(response.body).to include("Welcome to SCATS")
   end
 
-  it "redirects a signed-in faculty member to students" do
+  it "redirects a signed-in faculty member to the faculty dashboard" do
     sign_in create(:user, :faculty)
 
     get root_path

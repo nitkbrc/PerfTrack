@@ -11,6 +11,7 @@ class ApplicationController < ActionController::Base
   after_action :verify_authorized, unless: :devise_controller?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
   # Admin-created accounts must replace their temporary password before doing
   # anything else. Devise controllers stay reachable so the user can sign out.
@@ -26,5 +27,10 @@ class ApplicationController < ActionController::Base
 
   def user_not_authorized
     redirect_to root_path, alert: "You are not authorized to do that."
+  end
+
+  def render_not_found
+    skip_authorization
+    render template: "errors/not_found", layout: "error", status: :not_found
   end
 end

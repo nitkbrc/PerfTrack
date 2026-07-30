@@ -11,13 +11,13 @@ RSpec.describe "Dean decision flow", type: :request do
 
   before { sign_in dean }
 
-  describe "GET /dean (queue)" do
+  describe "GET /dean/queue" do
     it "shows only supervisor_approved requests in the dean's division" do
       request_record.update!(title: "Forwarded to me")
       create(:achievement_request, title: "Other division").tap { |r| r.update!(status: :supervisor_approved) }
       create(:achievement_request, category: category, title: "Still with supervisor")
 
-      get dean_root_path
+      get dean_queue_path
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Forwarded to me")
@@ -28,7 +28,7 @@ RSpec.describe "Dean decision flow", type: :request do
     it "denies non-dean faculty, students, and admins" do
       [ create(:user, :faculty), create(:user), create(:user, :admin) ].each do |user|
         sign_in user
-        get dean_root_path
+        get dean_queue_path
 
         expect(response).to redirect_to(root_path)
         sign_out user
@@ -40,7 +40,7 @@ RSpec.describe "Dean decision flow", type: :request do
     it "snapshots signed points and logs history" do
       patch approve_dean_achievement_request_path(request_record)
 
-      expect(response).to redirect_to(dean_root_path)
+      expect(response).to redirect_to(dean_queue_path)
       request_record.reload
       expect(request_record.status).to eq("dean_approved")
       expect(request_record.points_awarded).to eq(20)
@@ -78,7 +78,7 @@ RSpec.describe "Dean decision flow", type: :request do
 
       patch approve_dean_achievement_request_path(request_record)
 
-      expect(response).to redirect_to(dean_root_path)
+      expect(response).to redirect_to(dean_queue_path)
       expect(flash[:alert]).to eq("This request is no longer awaiting your decision.")
     end
   end

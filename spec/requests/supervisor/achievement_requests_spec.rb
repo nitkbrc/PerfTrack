@@ -12,7 +12,7 @@ RSpec.describe "Supervisor review actions", type: :request do
     it "forwards to the dean and logs history" do
       patch approve_supervisor_achievement_request_path(request_record)
 
-      expect(response).to redirect_to(supervisor_root_path)
+      expect(response).to redirect_to(supervisor_queue_path)
       expect(request_record.reload.status).to eq("supervisor_approved")
 
       history = request_record.req_histories.sole
@@ -36,7 +36,7 @@ RSpec.describe "Supervisor review actions", type: :request do
 
       patch approve_supervisor_achievement_request_path(request_record)
 
-      expect(response).to redirect_to(supervisor_root_path)
+      expect(response).to redirect_to(supervisor_queue_path)
       expect(flash[:alert]).to eq("This request is no longer awaiting your review.")
     end
   end

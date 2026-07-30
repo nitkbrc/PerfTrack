@@ -15,25 +15,33 @@ RSpec.describe "Supervisor sidebar navigation", type: :request do
 
   before { sign_in supervisor }
 
-  it "keeps Students above Review queue on both supervisor and faculty pages" do
+  it "keeps Dashboard first, then Students, queue, and history" do
     get supervisor_root_path
     expect(response).to have_http_status(:ok)
-    expect(sidebar_labels(response.body)).to eq([ "Students", "Review queue", "Review history" ])
+    expect(sidebar_labels(response.body)).to eq([ "Dashboard", "Students", "Review queue", "Review history" ])
     expect(response.body).not_to include("Raise a req")
     expect(response.body).to include("Sign out")
     expect(response.body).to include("Are you sure you want to sign out?")
 
     get faculty_students_path
     expect(response).to have_http_status(:ok)
-    expect(sidebar_labels(response.body)).to eq([ "Students", "Review queue", "Review history" ])
+    expect(sidebar_labels(response.body)).to eq([ "Dashboard", "Students", "Review queue", "Review history" ])
     expect(response.body).not_to include("Raise a req")
   end
 
-  it "marks only Review queue active on /supervisor" do
+  it "marks only Dashboard active on /supervisor" do
     get supervisor_root_path
 
     expect(first_link_tag(response.body, supervisor_root_path)).to include("scats-nav-link-active")
+    expect(first_link_tag(response.body, supervisor_queue_path)).not_to include("scats-nav-link-active")
     expect(first_link_tag(response.body, faculty_students_path)).not_to include("scats-nav-link-active")
+  end
+
+  it "marks only Review queue active on /supervisor/queue" do
+    get supervisor_queue_path
+
+    expect(first_link_tag(response.body, supervisor_queue_path)).to include("scats-nav-link-active")
+    expect(first_link_tag(response.body, supervisor_root_path)).not_to include("scats-nav-link-active")
   end
 
   it "marks only Students active on /faculty/students" do

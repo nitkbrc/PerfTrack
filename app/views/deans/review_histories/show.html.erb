@@ -1,0 +1,38 @@
+<div class="mx-auto w-full max-w-3xl">
+  <div class="mb-6">
+    <%= link_to dean_review_histories_path, class: "scats-secondary-button gap-1.5" do %>
+      <span class="material-symbols-outlined text-base leading-none" aria-hidden="true">arrow_back</span>
+      Back to review history
+    <% end %>
+  </div>
+
+  <% style = review_history_style(@history.action) %>
+  <div class="scats-callout scats-callout-info mb-6" role="status">
+    <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full <%= style[:wrap] %>"
+          title="<%= style[:label] %>">
+      <span class="material-symbols-outlined text-[18px] leading-none" aria-hidden="true"><%= style[:icon] %></span>
+    </span>
+    <div class="scats-callout-body">
+      <p class="scats-callout-title">
+        You <%= review_history_verb(@history.action) %>
+        this request on <%= @history.created_at.strftime("%d %b %Y") %>.
+      </p>
+      <p class="mt-1 text-sm">
+        Showing the request as it was for this action (version <%= @version.version_number %>). Read-only.
+      </p>
+    </div>
+  </div>
+
+  <div class="clay-card p-8">
+    <%= render "shared/request_version_details",
+          version: @version,
+          student: @request_record.student,
+          to_status: @history.to_status,
+          points_awarded: (@history.action == "dean_approve" ? @request_record.points_awarded : nil) %>
+
+    <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Timeline</h2>
+    <%= render "shared/request_timeline",
+          versions: @versions,
+          initial_index: @version_index %>
+  </div>
+</div>

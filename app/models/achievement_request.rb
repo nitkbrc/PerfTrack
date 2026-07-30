@@ -2,7 +2,8 @@ class AchievementRequest < ApplicationRecord
   belongs_to :student
   belongs_to :category
 
-  has_many :req_histories
+  # Histories must go before versions: versions restrict destroy while histories remain.
+  has_many :req_histories, dependent: :destroy
   has_many :request_versions, dependent: :destroy
   has_many :notifications, dependent: :destroy
 

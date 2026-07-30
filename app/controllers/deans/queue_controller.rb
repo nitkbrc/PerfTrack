@@ -5,7 +5,7 @@ module Deans
       @requests = policy_scope(AchievementRequest)
                     .supervisor_approved
                     .includes(:student, category: :sub_division)
-                    .order(:updated_at)
+                    .order(updated_at: :desc)
     end
   end
 end

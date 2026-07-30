@@ -38,5 +38,8 @@ module Scats
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # Serve branded error pages for uncaught exceptions (production).
+    config.exceptions_app = ->(env) { ErrorsController.action(:show).call(env) }
   end
 end

@@ -1,29 +1,43 @@
-<div class="mx-auto w-full max-w-4xl">
+<div class="mx-auto w-full max-w-6xl">
   <h1 class="mb-6 text-2xl font-bold text-text-main">Decision queue</h1>
 
   <% if @requests.any? %>
     <div class="clay-card scats-list-shell">
-      <table class="w-full text-left text-sm">
+      <table class="w-full min-w-0 text-left text-sm">
         <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
           <tr>
-            <th class="w-28 px-4 py-3">Student</th>
-            <th class="px-4 py-3">Title</th>
-            <th class="hidden px-4 py-3 md:table-cell">Category</th>
-            <th class="w-28 px-4 py-3">Points</th>
-            <th class="w-24 whitespace-nowrap px-4 py-3 text-right">Actions</th>
+            <th class="hidden w-28 px-3 py-3 sm:table-cell sm:px-4">Student</th>
+            <th class="min-w-0 px-3 py-3 sm:px-4">Title</th>
+            <th class="hidden w-44 px-4 py-3 lg:table-cell">Category</th>
+            <th class="hidden w-24 px-4 py-3 md:table-cell">Points</th>
+            <th class="w-28 whitespace-nowrap px-3 py-3 text-right sm:w-32 sm:px-4">Actions</th>
           </tr>
         </thead>
         <tbody class="scats-list">
           <% @requests.each do |request| %>
             <tr class="scats-row">
-              <td class="truncate px-4 py-3 font-medium text-text-main"><%= request.student.usn %></td>
-              <td class="min-w-0 truncate px-4 py-3 text-text-main"><%= request.title %></td>
-              <td class="hidden min-w-0 px-4 py-3 md:table-cell">
+              <td class="hidden truncate px-3 py-3 font-medium text-text-main sm:table-cell sm:px-4">
+                <%= request.student.usn %>
+              </td>
+              <td class="min-w-0 px-3 py-3 text-text-main sm:px-4">
+                <span class="block truncate font-medium"><%= request.title %></span>
+                <div class="mt-1 space-y-0.5 sm:hidden">
+                  <p class="truncate text-xs font-medium text-text-muted"><%= request.student.usn %></p>
+                  <p class="truncate text-xs text-text-muted">
+                    <%= request.category.name %>
+                    <span class="text-border-subtle">&middot;</span>
+                    <%= request.category.points %> pts
+                  </p>
+                </div>
+              </td>
+              <td class="hidden min-w-0 px-4 py-3 lg:table-cell">
                 <p class="truncate text-xs text-text-muted"><%= request.category.sub_division.name %></p>
                 <span class="scats-badge scats-badge-neutral mt-1"><%= request.category.name %></span>
               </td>
-              <td class="whitespace-nowrap px-4 py-3 font-semibold text-text-main"><%= request.category.points %></td>
-              <td class="whitespace-nowrap px-4 py-3 text-right">
+              <td class="hidden whitespace-nowrap px-4 py-3 font-semibold text-text-main md:table-cell">
+                <%= request.category.points %>
+              </td>
+              <td class="whitespace-nowrap px-3 py-3 text-right sm:px-4">
                 <%= link_to "Decide", dean_achievement_request_path(request),
                       class: "scats-primary-button px-2.5 py-1 text-xs" %>
               </td>

@@ -48,7 +48,7 @@ RSpec.describe "Path A lifecycle", type: :system do
 
     # --- Supervisor approves and forwards ---
     sign_in_as supervisor
-    visit supervisor_root_path
+    visit supervisor_queue_path
     expect(page).to have_content("Won the state hackathon")
     click_link "Review"
     click_button "Approve & forward to dean"
@@ -58,7 +58,7 @@ RSpec.describe "Path A lifecycle", type: :system do
 
     # --- Dean approves; the notification job runs inline ---
     sign_in_as dean
-    visit dean_root_path
+    visit dean_queue_path
     expect(page).to have_content("Won the state hackathon")
     click_link "Decide"
     perform_enqueued_jobs do

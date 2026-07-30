@@ -39,8 +39,9 @@ Rails.application.routes.draw do
 
   # Same module-vs-model collision avoidance as the student namespace.
   namespace :supervisor, module: "supervisors" do
-    root "queue#index"
-    resources :review_histories, only: [ :index ]
+    root "dashboard#index"
+    get "queue", to: "queue#index", as: :queue
+    resources :review_histories, only: [ :index, :show ]
     resources :achievement_requests, only: [ :show, :new, :create, :edit, :update ] do
       member do
         patch :approve
@@ -52,14 +53,16 @@ Rails.application.routes.draw do
   end
 
   # Directory of students with scores, visible to every faculty member.
+  # Dashboard is the faculty root; students list stays at /faculty/students.
   namespace :faculty, module: "faculties" do
-    root "students#index"
+    root "dashboard#index"
     resources :students, only: [ :index, :show ]
   end
 
   namespace :dean, module: "deans" do
-    root "queue#index"
-    resources :review_histories, only: [ :index ]
+    root "dashboard#index"
+    get "queue", to: "queue#index", as: :queue
+    resources :review_histories, only: [ :index, :show ]
     resources :achievement_requests, only: [ :show ] do
       member do
         patch :approve
@@ -70,7 +73,7 @@ Rails.application.routes.draw do
   end
 
   namespace :admin do
-    root "divisions#index"
+    root "dashboard#index"
 
     concern :archivable do
       member do
@@ -86,4 +89,10 @@ Rails.application.routes.draw do
     end
     resource :settings, only: [ :edit, :update ]
   end
+
+  match "/404", to: "errors#not_found", via: :all
+  match "/422", to: "errors#unprocessable", via: :all
+  match "/500", to: "errors#internal_server_error", via: :all
+
+  match "*unmatched", to: "errors#not_found", via: :all
 end

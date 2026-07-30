@@ -95,7 +95,7 @@ module ApplicationHelper
       return supervisor_navigation_items if supervisor_nav_user?
       return dean_navigation_items if dean_nav_user?
 
-      [ [ "Students", faculty_students_path, "users" ] ]
+      faculty_navigation_items
     end
   end
 
@@ -105,17 +105,25 @@ module ApplicationHelper
       [ "Raise a req", new_student_achievement_request_path, "plus" ] ]
   end
 
+  # Plain faculty (no supervisor/dean assignment).
+  def faculty_navigation_items
+    [ [ "Dashboard", faculty_root_path, "home" ],
+      [ "Students", faculty_students_path, "users" ] ]
+  end
+
   # Fixed order for every supervisor surface (queue, students, profile, etc.).
   def supervisor_navigation_items
-    [ [ "Students", faculty_students_path, "users" ],
-      [ "Review queue", supervisor_root_path, "check" ],
+    [ [ "Dashboard", supervisor_root_path, "home" ],
+      [ "Students", faculty_students_path, "users" ],
+      [ "Review queue", supervisor_queue_path, "check" ],
       [ "Review history", supervisor_review_histories_path, "history" ] ]
   end
 
   # Fixed order for every dean surface (queue, students, profile, etc.).
   def dean_navigation_items
-    [ [ "Students", faculty_students_path, "users" ],
-      [ "Decision queue", dean_root_path, "check" ],
+    [ [ "Dashboard", dean_root_path, "home" ],
+      [ "Students", faculty_students_path, "users" ],
+      [ "Decision queue", dean_queue_path, "check" ],
       [ "Review history", dean_review_histories_path, "history" ] ]
   end
 
@@ -130,29 +138,47 @@ module ApplicationHelper
   def nav_link_active?(path)
     return current_page?(path) if path.include?("?")
 
-    if path == admin_divisions_path
-      return request.path == admin_root_path || request.path.start_with?("/admin/divisions")
+    if path == admin_root_path
+      return request.path == admin_root_path
     end
 
-    # Students directory lives at /faculty and /faculty/students — not /supervisor or /dean.
-    if path == faculty_students_path || path == faculty_root_path
-      return request.path == faculty_root_path ||
-             request.path == faculty_students_path ||
+    if path == admin_divisions_path
+      return request.path.start_with?("/admin/divisions")
+    end
+
+    # Faculty dashboard: exact /faculty only.
+    if path == faculty_root_path
+      return request.path == faculty_root_path
+    end
+
+    # Students directory lives at /faculty/students.
+    if path == faculty_students_path
+      return request.path == faculty_students_path ||
              request.path.start_with?("#{faculty_students_path}/")
     end
 
-    # Review queue: only the supervisor root (not nested show/history pages).
+    # Supervisor dashboard: exact root only.
     if path == supervisor_root_path
       return request.path == supervisor_root_path
+    end
+
+    # Review queue.
+    if path == supervisor_queue_path
+      return request.path == supervisor_queue_path
     end
 
     if path == supervisor_review_histories_path
       return request.path.start_with?(supervisor_review_histories_path)
     end
 
-    # Decision queue: only the dean root (not nested show/history pages).
+    # Dean dashboard: exact root only.
     if path == dean_root_path
       return request.path == dean_root_path
+    end
+
+    # Decision queue.
+    if path == dean_queue_path
+      return request.path == dean_queue_path
     end
 
     if path == dean_review_histories_path
@@ -173,9 +199,13 @@ module ApplicationHelper
   end
 
   def admin_navigation_items
-    [ [ "Departments", admin_departments_path, "grid" ], [ "Divisions", admin_divisions_path, "layers" ],
-      [ "Reason templates", admin_reason_templates_path, "list" ], [ "Users", admin_users_path, "users" ],
-      [ "Import users", new_admin_user_import_path, "upload" ], [ "Settings", edit_admin_settings_path, "cog" ] ]
+    [ [ "Dashboard", admin_root_path, "home" ],
+      [ "Departments", admin_departments_path, "grid" ],
+      [ "Divisions", admin_divisions_path, "layers" ],
+      [ "Reason templates", admin_reason_templates_path, "list" ],
+      [ "Users", admin_users_path, "users" ],
+      [ "Import users", new_admin_user_import_path, "upload" ],
+      [ "Settings", edit_admin_settings_path, "cog" ] ]
   end
 
   # Material Symbols Outlined icon names mapped from existing nav keys.

@@ -2,7 +2,7 @@ class Student < ApplicationRecord
   belongs_to :user
   belongs_to :department
 
-  has_many :achievement_requests
+  has_many :achievement_requests, dependent: :destroy
 
   validates :usn, presence: true, uniqueness: true
   validates :sem, numericality: { only_integer: true, in: 1..8 }, allow_nil: true

@@ -1,0 +1,87 @@
+<%# Required locals: icon, value, label. Optional: tone, sub, href, span, variant — one of default, feature, wide, compact. %>
+<%
+  tones = {
+    "sky"     => { chip: "bg-sky-50 text-sky-600",         glow: "bg-sky-100/70"     },
+    "violet"  => { chip: "bg-violet-50 text-violet-600",   glow: "bg-violet-100/70"  },
+    "indigo"  => { chip: "bg-indigo-50 text-indigo-600",   glow: "bg-indigo-100/70"  },
+    "teal"    => { chip: "bg-teal-50 text-teal-600",       glow: "bg-teal-100/70"    },
+    "emerald" => { chip: "bg-emerald-50 text-emerald-600", glow: "bg-emerald-100/70" },
+    "amber"   => { chip: "bg-amber-50 text-amber-600",     glow: "bg-amber-100/70"   },
+    "red"     => { chip: "bg-red-50 text-red-500",         glow: "bg-red-100/70"     },
+    "blue"    => { chip: "bg-blue-50 text-blue-600",       glow: "bg-blue-100/70"    },
+    "slate"   => { chip: "bg-slate-100 text-slate-600",    glow: "bg-slate-200/60"   }
+  }
+  palette = tones[(local_assigns[:tone] || :slate).to_s] || tones["slate"]
+  variant = (local_assigns[:variant] || :default).to_sym
+  href    = local_assigns[:href]
+  sub     = local_assigns[:sub]
+
+  radius  = case variant
+              when :feature then "rounded-3xl p-6"
+              when :compact then "rounded-2xl p-3"
+              else "rounded-2xl p-5"
+              end
+  hover   = href ? "transition hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/15" : ""
+  layout  = case variant
+              when :wide then "flex-row items-center justify-between gap-4"
+              when :compact then "flex-row items-center gap-3 min-h-0 flex-1"
+              else "flex-col justify-between gap-4"
+              end
+  shell   = "clay-card group relative flex overflow-hidden #{radius} #{layout} #{hover} #{local_assigns[:span]}"
+
+  chip_size  = case variant
+               when :feature then "h-12 w-12"
+               when :compact then "h-8 w-8"
+               else "h-10 w-10"
+               end
+  icon_size  = case variant
+               when :feature then "text-2xl"
+               when :compact then "text-base"
+               else "text-lg"
+               end
+  value_size = case variant
+               when :feature then "text-5xl"
+               when :wide then "text-4xl"
+               when :compact then "text-xl"
+               else "text-3xl"
+               end
+%>
+
+<% body = capture do %>
+  <% if variant == :feature %>
+    <div class="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full <%= palette[:glow] %> transition duration-300 group-hover:scale-110"></div>
+  <% end %>
+
+  <div class="relative flex <%= variant == :wide || variant == :compact ? "items-center #{variant == :compact ? "gap-3" : "gap-4"}" : "flex-col gap-4" %> <%= "min-w-0 flex-1" if variant == :compact %>">
+    <span class="inline-flex <%= chip_size %> shrink-0 items-center justify-center rounded-xl <%= palette[:chip] %>">
+      <span class="material-symbols-outlined <%= icon_size %>" style="font-variation-settings:'FILL' 1" aria-hidden="true"><%= icon %></span>
+    </span>
+    <div class="min-w-0">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500"><%= label %></p>
+      <% if variant == :wide %>
+        <p class="mt-0.5 text-sm text-slate-500"><%= sub %></p>
+      <% else %>
+        <p class="<%= variant == :compact ? "mt-0.5" : "mt-1" %> <%= value_size %> font-extrabold tracking-tight text-slate-800"><%= value %></p>
+        <% if sub.present? %>
+          <p class="mt-1 text-xs text-slate-500"><%= sub %></p>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if variant == :wide %>
+    <p class="relative shrink-0 <%= value_size %> font-extrabold tracking-tight text-slate-800"><%= value %></p>
+  <% elsif href.present? %>
+    <p class="relative text-sm font-medium text-primary opacity-0 transition group-hover:opacity-100">Open &rarr;</p>
+  <% end %>
+<% end %>
+
+<% if href.present? %>
+  <%= link_to href, class: "#{shell} no-underline" do %>
+    <%= body %>
+  <% end %>
+<% else %>
+  <div class="<%= shell %>">
+    <%= body %>
+  </div>
+<% end %>

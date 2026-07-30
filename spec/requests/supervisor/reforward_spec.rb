@@ -14,7 +14,7 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
   it "shows dean_reverted requests in the queue" do
     request_record
 
-    get supervisor_root_path
+    get supervisor_queue_path
 
     expect(response.body).to include("Sent back by dean")
   end
@@ -22,7 +22,7 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
   it "re-forwards to the dean with a supervisor_reforward history row" do
     patch approve_supervisor_achievement_request_path(request_record)
 
-    expect(response).to redirect_to(supervisor_root_path)
+    expect(response).to redirect_to(supervisor_queue_path)
     expect(request_record.reload.status).to eq("supervisor_approved")
 
     history = request_record.req_histories.sole
@@ -43,7 +43,7 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
       patch revert_supervisor_achievement_request_path(request_record),
             params: { comment: "Please address the dean's feedback." }
 
-      expect(response).to redirect_to(supervisor_root_path)
+      expect(response).to redirect_to(supervisor_queue_path)
       expect(request_record.reload.status).to eq("supervisor_reverted")
 
       history = request_record.req_histories.order(:created_at).last
@@ -53,12 +53,12 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
 
     it "does not allow the supervisor to edit the request" do
       get edit_supervisor_achievement_request_path(request_record)
-      expect(response).to redirect_to(supervisor_root_path)
+      expect(response).to redirect_to(supervisor_queue_path)
 
       patch supervisor_achievement_request_path(request_record),
             params: { achievement_request: { title: "Sneaky edit" } }
 
-      expect(response).to redirect_to(supervisor_root_path)
+      expect(response).to redirect_to(supervisor_queue_path)
       expect(flash[:alert]).to eq("Only dean-reverted requests you raised can be edited.")
       expect(request_record.reload.title).to eq("Sent back by dean")
     end
@@ -75,7 +75,7 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
     it "does not allow reverting to the student" do
       patch revert_supervisor_achievement_request_path(request_record), params: { comment: "nope" }
 
-      expect(response).to redirect_to(supervisor_root_path)
+      expect(response).to redirect_to(supervisor_queue_path)
       expect(flash[:alert]).to eq("This request cannot be reverted to the student.")
       expect(request_record.reload.status).to eq("dean_reverted")
     end
@@ -153,7 +153,7 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
       patch supervisor_achievement_request_path(request_record),
             params: { achievement_request: { title: "Sneaky edit" } }
 
-      expect(response).to redirect_to(supervisor_root_path)
+      expect(response).to redirect_to(supervisor_queue_path)
       expect(request_record.reload.title).to eq("Sent back by dean")
     end
   end
@@ -161,7 +161,7 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
   it "does not allow reject from dean_reverted" do
     patch reject_supervisor_achievement_request_path(request_record), params: { comment: "nope" }
 
-    expect(response).to redirect_to(supervisor_root_path)
+    expect(response).to redirect_to(supervisor_queue_path)
     expect(request_record.reload.status).to eq("dean_reverted")
   end
 end

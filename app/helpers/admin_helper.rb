@@ -36,7 +36,9 @@ module AdminHelper
   end
 
   def admin_delete_classes
-    "scats-danger-button px-2.5 py-1 text-xs"
+    "inline-flex cursor-pointer items-center justify-center rounded-md px-2.5 py-1 text-xs font-semibold " \
+    "text-danger transition hover:bg-danger-soft " \
+    "focus:outline-none focus:ring-2 focus:ring-danger/25 focus:ring-offset-1"
   end
 
   def admin_archive_classes

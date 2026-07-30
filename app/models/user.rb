@@ -14,11 +14,13 @@ class User < ApplicationRecord
                     content_type: [ "image/png", "image/jpeg" ],
                     size: { less_than: 5.megabytes }
 
-  has_one :student_profile, class_name: "Student"
+  has_one :student_profile, class_name: "Student", dependent: :destroy
   accepts_nested_attributes_for :student_profile
   has_many :deaned_divisions, class_name: "Division", foreign_key: :dean_user_id
   has_many :supervised_sub_divisions, class_name: "SubDivision", foreign_key: :supervisor_user_id
-  has_many :req_histories, foreign_key: :actor_id
+  # History rows keep an audit trail; block account deletion while this user is still
+  # recorded as an actor on any remaining request (own student requests cascade away first).
+  has_many :req_histories, foreign_key: :actor_id, dependent: :restrict_with_exception
   has_many :notifications, foreign_key: :recipient_id, dependent: :destroy
 
   # Faculty who may be assigned as a division dean: not already deaning a

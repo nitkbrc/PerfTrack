@@ -102,8 +102,8 @@
          data-controller="integrity-donut"
          data-integrity-donut-integrity-value="<%= integrity %>"
          data-integrity-donut-conduct-value="<%= conduct_pct %>"
-         data-integrity-donut-achieve-color-value="<%= gauge_color %>"
-         data-integrity-donut-conduct-color-value="#fca5a5">
+         data-integrity-donut-achieve-color-value="#10b981"
+         data-integrity-donut-conduct-color-value="#ef4444">
 
       <%# Header %>
       <div class="flex items-center justify-between">
@@ -111,16 +111,13 @@
         <span class="material-symbols-outlined text-lg" style="color:<%= gauge_color %>; font-variation-settings:'FILL' 1">verified_user</span>
       </div>
 
-      <%# Pie + legend %>
-      <div class="flex items-center gap-5">
-
-        <%# SVG filled pie — slices drawn by Stimulus controller %>
-        <div class="relative flex-shrink-0" style="width:120px; height:120px;">
-          <svg width="120" height="120" viewBox="0 0 120 120"
+      <%# Pie (left) + integrity score (right) — centered %>
+      <div class="flex items-center justify-center gap-5">
+        <div class="relative flex-shrink-0" style="width:148px; height:148px;">
+          <svg width="148" height="148" viewBox="0 0 120 120"
                data-integrity-donut-target="svg"
                style="overflow:visible">
           </svg>
-          <%# Floating tooltip — positioned by JS %>
           <div data-integrity-donut-target="tooltip"
                class="pointer-events-none fixed z-50 whitespace-nowrap rounded-lg
                       bg-slate-800 px-3 py-1.5 text-[12px] font-semibold text-white shadow-lg
@@ -128,29 +125,29 @@
           </div>
         </div>
 
-        <%# Legend + big % + risk %>
-        <div class="flex-1 min-w-0 space-y-2.5">
-          <div>
-            <p class="text-3xl font-extrabold leading-none text-slate-800"><%= integrity %>%</p>
-            <p class="mt-0.5 text-[11px] text-slate-400">Integrity score</p>
-          </div>
-
-          <div class="space-y-1.5 pt-1">
-            <div class="flex items-center gap-2">
-              <span class="h-2.5 w-2.5 flex-shrink-0 rounded-full" style="background:<%= gauge_color %>"></span>
-              <span class="text-xs text-slate-600">Achievement — <%= integrity %>%</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="h-2.5 w-2.5 flex-shrink-0 rounded-full bg-red-300"></span>
-              <span class="text-xs text-slate-600">Conduct — <%= conduct_pct %>%</span>
-            </div>
-          </div>
-
-          <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold <%= risk[:classes] %>">
-            <span class="h-1.5 w-1.5 rounded-full" style="background:<%= gauge_color %>"></span>
-            <%= risk[:label] %>
-          </span>
+        <div class="min-w-0">
+          <p class="text-3xl font-extrabold leading-none text-slate-800"><%= integrity %>%</p>
+          <p class="mt-0.5 text-[11px] text-slate-400">Integrity score</p>
         </div>
+      </div>
+
+      <%# Achievement / Conduct breakdown + risk — centered below %>
+      <div class="flex flex-col items-center space-y-2.5 text-center">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-center gap-2">
+            <span class="inline-block h-3 w-3 flex-shrink-0 rounded-full ring-1 ring-black/10" style="background:#10b981" aria-hidden="true"></span>
+            <span class="text-xs text-slate-600">Achievement — <%= integrity %>%</span>
+          </div>
+          <div class="flex items-center justify-center gap-2">
+            <span class="inline-block h-3 w-3 flex-shrink-0 rounded-full ring-1 ring-black/10" style="background:#ef4444" aria-hidden="true"></span>
+            <span class="text-xs text-slate-600">Conduct — <%= conduct_pct %>%</span>
+          </div>
+        </div>
+
+        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold <%= risk[:classes] %>">
+          <span class="h-1.5 w-1.5 rounded-full" style="background:<%= gauge_color %>"></span>
+          <%= risk[:label] %>
+        </span>
       </div>
 
     </div>

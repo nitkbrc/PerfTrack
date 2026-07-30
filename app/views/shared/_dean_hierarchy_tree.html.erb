@@ -1,0 +1,57 @@
+<%# locals: divisions — dean-scoped Division records with sub_divisions, supervisors, categories preloaded. %>
+<%= render "shared/hierarchy_tree",
+      title: "Your organization",
+      empty: divisions.empty?,
+      empty_message: "No divisions assigned" do %>
+  <% divisions.each do |division| %>
+    <% active_subs = division.sub_divisions.reject(&:archived?).sort_by(&:name) %>
+    <%= render "shared/hierarchy_tree_branch",
+          label: division.name,
+          icon: "account_tree",
+          meta: "#{division.div_type.to_s.humanize} · #{active_subs.size} #{"sub-division".pluralize(active_subs.size)}",
+          boxed: true do %>
+      <% if active_subs.empty? %>
+        <%= render "shared/hierarchy_tree_leaf",
+              label: "No active sub-divisions",
+              icon: "info",
+              tone: :slate %>
+      <% else %>
+        <% active_subs.each do |sub_division| %>
+          <% categories = sub_division.categories.reject(&:archived?).sort_by(&:name) %>
+          <% supervisor_label = sub_division.supervisor.name.presence || sub_division.supervisor.email %>
+          <%= render "shared/hierarchy_tree_branch",
+                label: sub_division.name,
+                icon: "folder",
+                meta: "#{categories.size} #{"category".pluralize(categories.size)}",
+                boxed: :nested do %>
+            <%= render "shared/hierarchy_tree_leaf",
+                  label: supervisor_label,
+                  icon: "person",
+                  meta: "Supervisor",
+                  tone: :blue %>
+
+            <% if categories.empty? %>
+              <%= render "shared/hierarchy_tree_leaf",
+                    label: "No active categories",
+                    icon: "info",
+                    tone: :slate %>
+            <% else %>
+              <%= render "shared/hierarchy_tree_branch",
+                    label: "Categories",
+                    icon: "category",
+                    meta: categories.size.to_s do %>
+                <% categories.each do |category| %>
+                  <%= render "shared/hierarchy_tree_leaf",
+                        label: category.name,
+                        icon: "label",
+                        meta: "#{category.points} pts",
+                        tone: :emerald %>
+                <% end %>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

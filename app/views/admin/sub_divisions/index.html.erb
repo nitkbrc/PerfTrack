@@ -16,16 +16,16 @@
           <th class="px-4 py-3">Name</th>
           <th class="hidden px-4 py-3 sm:table-cell">Division</th>
           <th class="hidden px-4 py-3 md:table-cell">Supervisor</th>
-          <th class="w-40 whitespace-nowrap px-4 py-3 text-right">Actions</th>
+          <th class="w-44 whitespace-nowrap px-4 py-3 text-right">Actions</th>
         </tr>
       </thead>
       <tbody class="scats-list divide-y divide-slate-100">
         <% @sub_divisions.each do |sub_division| %>
-          <tr class="<%= "relative cursor-pointer" unless sub_division.archived? %>">
+          <tr class="scats-row <%= "relative cursor-pointer" unless sub_division.archived? %>">
             <td class="min-w-0 px-4 py-3 font-medium text-slate-900">
               <% unless sub_division.archived? %>
                 <%= link_to edit_admin_sub_division_path(sub_division),
-                      class: "absolute inset-0 z-0",
+                      class: "scats-row-hit",
                       data: admin_modal_frame_data,
                       aria: { label: "Edit #{sub_division.name}" } do %>
                 <% end %>
@@ -37,8 +37,8 @@
               <%= sub_division.supervisor.name.presence || sub_division.supervisor.email %>
               <%= archived_badge(sub_division) if sub_division.archived? %>
             </td>
-            <td class="relative z-10 whitespace-nowrap px-4 py-3 text-right">
-              <div class="inline-flex items-center gap-4">
+            <td class="scats-row-actions px-4 py-3 text-right">
+              <div class="inline-flex items-center justify-end gap-3">
                 <% if sub_division.archived? %>
                   <%= button_to "Restore", restore_admin_sub_division_path(sub_division), method: :patch,
                         form: { class: "inline", onclick: "event.stopPropagation()" },

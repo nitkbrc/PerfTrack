@@ -17,16 +17,16 @@
           <th class="hidden px-4 py-3 sm:table-cell">Sub-division</th>
           <th class="hidden px-4 py-3 md:table-cell">Division</th>
           <th class="w-24 px-4 py-3">Points</th>
-          <th class="w-40 whitespace-nowrap px-4 py-3 text-right">Actions</th>
+          <th class="w-44 whitespace-nowrap px-4 py-3 text-right">Actions</th>
         </tr>
       </thead>
       <tbody class="scats-list divide-y divide-slate-100">
         <% @categories.each do |category| %>
-          <tr class="<%= "relative cursor-pointer" unless category.archived? %>">
+          <tr class="scats-row <%= "relative cursor-pointer" unless category.archived? %>">
             <td class="min-w-0 px-4 py-3 font-medium text-slate-900">
               <% unless category.archived? %>
                 <%= link_to edit_admin_category_path(category),
-                      class: "absolute inset-0 z-0",
+                      class: "scats-row-hit",
                       data: admin_modal_frame_data,
                       aria: { label: "Edit #{category.name}" } do %>
                 <% end %>
@@ -39,8 +39,8 @@
               <%= category.sub_division.division.positive? ? "+#{category.points}" : "-#{category.points}" %>
               <%= archived_badge(category) if category.archived? %>
             </td>
-            <td class="relative z-10 whitespace-nowrap px-4 py-3 text-right">
-              <div class="inline-flex items-center gap-4">
+            <td class="scats-row-actions px-4 py-3 text-right">
+              <div class="inline-flex items-center justify-end gap-3">
                 <% if category.archived? %>
                   <%= button_to "Restore", restore_admin_category_path(category), method: :patch,
                         form: { class: "inline", onclick: "event.stopPropagation()" },

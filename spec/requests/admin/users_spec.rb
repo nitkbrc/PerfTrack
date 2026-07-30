@@ -163,6 +163,31 @@ RSpec.describe "Admin users", type: :request do
     }.to change(User, :count).by(-1)
   end
 
+  it "deletes a student account and their profile even with no requests" do
+    student_user = create(:user, name: "hsvdjhadshj")
+    create(:student, user: student_user)
+
+    expect {
+      delete admin_user_path(student_user)
+    }.to change(User, :count).by(-1)
+     .and change(Student, :count).by(-1)
+
+    expect(response).to redirect_to(admin_users_path)
+    expect(flash[:notice]).to eq("User deleted.")
+  end
+
+  it "deletes a student account along with their requests" do
+    student_user = create(:user)
+    student = create(:student, user: student_user)
+    create(:achievement_request, student: student)
+
+    expect {
+      delete admin_user_path(student_user)
+    }.to change(User, :count).by(-1)
+     .and change(Student, :count).by(-1)
+     .and change(AchievementRequest, :count).by(-1)
+  end
+
   it "no longer exposes public signup" do
     get "/users/sign_up"
 

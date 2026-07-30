@@ -29,6 +29,7 @@
             <th class="px-3 py-3 sm:px-4">Name</th>
             <th class="w-32 px-3 py-3 sm:px-4">USN</th>
             <th class="hidden px-3 py-3 sm:table-cell sm:px-4">Department</th>
+            <th class="w-24 whitespace-nowrap px-3 py-3 text-right sm:px-4">Sem</th>
             <th class="w-28 whitespace-nowrap px-3 py-3 text-right sm:px-4">Score</th>
           </tr>
         </thead>
@@ -48,6 +49,9 @@
               </td>
               <td class="pointer-events-none relative z-10 truncate px-3 py-3 text-text-muted sm:px-4"><%= student.usn %></td>
               <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-3 py-3 text-text-muted sm:table-cell sm:px-4"><%= student.department.name %></td>
+              <td class="pointer-events-none relative z-10 whitespace-nowrap px-3 py-3 text-right text-text-muted sm:px-4">
+                <%= student.sem.presence || "—" %>
+              </td>
               <td class="pointer-events-none relative z-10 whitespace-nowrap px-3 py-3 text-right sm:px-4">
                 <%= score_badge(@scores[student.id]) %>
               </td>

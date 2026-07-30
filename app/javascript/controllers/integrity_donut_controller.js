@@ -56,7 +56,7 @@ export default class extends Controller {
       path.setAttribute("fill", s.color)
       path.dataset.baseFill = s.color
       path.style.cursor = "pointer"
-      path.style.transition = "fill 0.18s, stroke 0.18s"
+      path.style.transition = "fill 0.18s, stroke 0.18s, opacity 0.18s, filter 0.18s"
       path.addEventListener("mouseenter", (e) => { this.showTip(e, s.label); this.dimOthers(path, paths) })
       path.addEventListener("mousemove",  (e) => this.moveTip(e))
       path.addEventListener("mouseleave", ()  => { this.hideTip(); this.undim(paths) })
@@ -122,13 +122,17 @@ export default class extends Controller {
     all.forEach(p => {
       const base = p.dataset.baseFill
       if (p === active) {
-        p.setAttribute("fill", base)
-        p.setAttribute("stroke", base)
-        p.setAttribute("stroke-width", "2")
+        p.setAttribute("fill", this.emphasizeFill(base))
+        p.setAttribute("stroke", "#ffffff")
+        p.setAttribute("stroke-width", "2.5")
+        p.style.opacity = "1"
+        p.style.filter = "drop-shadow(0 1px 2px rgb(0 0 0 / 0.18))"
       } else {
-        p.setAttribute("fill", this.dimFill(base))
+        p.setAttribute("fill", base)
         p.removeAttribute("stroke")
         p.removeAttribute("stroke-width")
+        p.style.opacity = "0.32"
+        p.style.filter = "none"
       }
     })
   }
@@ -138,16 +142,17 @@ export default class extends Controller {
       p.setAttribute("fill", p.dataset.baseFill)
       p.removeAttribute("stroke")
       p.removeAttribute("stroke-width")
+      p.style.opacity = "1"
+      p.style.filter = "none"
     })
   }
 
-  // Lighten a hex color toward white so dimmed slices keep their own hue
-  // (element opacity bleeds colors together when slices are similar tones).
-  dimFill(hex) {
+  // Slightly darken the active slice so it reads clearly against the dimmed peer.
+  emphasizeFill(hex) {
     const rgb = this.parseHex(hex)
     if (!rgb) return hex
-    const mix = 0.55
-    const channel = (c) => Math.round(c + (255 - c) * mix)
+    const factor = 0.88
+    const channel = (c) => Math.round(c * factor)
     return `#${[channel(rgb.r), channel(rgb.g), channel(rgb.b)]
       .map(v => v.toString(16).padStart(2, "0")).join("")}`
   }

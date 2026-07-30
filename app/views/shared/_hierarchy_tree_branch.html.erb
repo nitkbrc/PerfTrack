@@ -1,0 +1,41 @@
+<%# locals: label (required), icon (optional), meta (optional), open (default false), boxed (optional: false|true|:nested). Yields nested content. %>
+<%
+  icon = local_assigns.fetch(:icon, "folder")
+  meta = local_assigns[:meta]
+  open = local_assigns.fetch(:open, false)
+  boxed = local_assigns.fetch(:boxed, false)
+
+  box_class =
+    case boxed
+    when true, :outer
+      "rounded-xl border border-border-subtle bg-surface-white p-2 sm:p-3"
+    when :nested, "nested"
+      "rounded-lg border border-border-subtle bg-slate-50/80 p-2"
+    end
+%>
+<li role="treeitem" class="<%= box_class %>">
+  <details class="group/branch" data-tree-target="node" <%= "open" if open %>>
+    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-2 transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+      <span class="material-symbols-outlined shrink-0 text-base text-slate-400 transition group-open/branch:rotate-90"
+            aria-hidden="true">chevron_right</span>
+      <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1" aria-hidden="true"><%= icon %></span>
+      </span>
+      <span class="min-w-0 flex-1">
+        <span class="block text-sm font-semibold text-text-main"><%= label %></span>
+        <% if meta.present? %>
+          <span class="block text-xs text-text-muted"><%= meta %></span>
+        <% end %>
+      </span>
+    </summary>
+    <% if box_class %>
+      <ul class="mt-1 space-y-2 px-1 pb-0.5 sm:px-2" role="group">
+        <%= yield %>
+      </ul>
+    <% else %>
+      <ul class="ml-4 space-y-0.5 border-l border-border-subtle py-1 pl-3 sm:ml-5 sm:pl-4" role="group">
+        <%= yield %>
+      </ul>
+    <% end %>
+  </details>
+</li>

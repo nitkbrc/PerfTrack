@@ -205,11 +205,138 @@ html.sidebar-open .scats-sidebar-scrim {
 
 /* Main content: offset by sidebar on desktop */
 .scats-shell {
-  @apply min-h-screen bg-background;
+  @apply flex min-h-screen flex-col bg-background;
 }
 
 .scats-main {
   @apply relative mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8;
+}
+
+/* Footers: one visual family — quiet bar in the app shell, fuller on landing. */
+.scats-footer {
+  @apply relative border-t;
+  border-color: color-mix(in srgb, var(--scats-primary) 18%, var(--scats-border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--scats-primary) 12%, var(--scats-surface-white)) 0%,
+    color-mix(in srgb, var(--scats-primary-container) 10%, var(--scats-surface-white)) 55%,
+    color-mix(in srgb, var(--scats-primary) 7%, var(--scats-surface-white)) 100%
+  );
+}
+
+.scats-footer::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--scats-secondary-container) 40%, transparent) 22%,
+    color-mix(in srgb, var(--scats-secondary) 55%, var(--scats-secondary-container)) 50%,
+    color-mix(in srgb, var(--scats-secondary-container) 40%, transparent) 78%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.scats-app-footer {
+  @apply mt-auto;
+}
+
+.scats-footer-inner {
+  @apply mx-auto flex w-full max-w-[1440px] flex-col items-center gap-3 px-4 py-3.5 text-center
+         sm:gap-3.5 sm:px-6 sm:py-4 lg:px-8;
+}
+
+.scats-footer-inner--landing {
+  @apply gap-4 py-6 sm:gap-5 sm:py-7;
+}
+
+.scats-footer-brand {
+  @apply flex items-center justify-center gap-3;
+}
+
+.scats-footer-mark {
+  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[13px] font-bold tracking-wide text-white;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--scats-secondary-container) 35%, var(--scats-primary-container)) 0%,
+    var(--scats-primary-container) 42%,
+    var(--scats-primary) 100%
+  );
+  box-shadow:
+    0 2px 6px color-mix(in srgb, var(--scats-primary) 22%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--scats-primary) 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 22%, transparent);
+}
+
+.scats-footer-identity {
+  @apply flex min-w-0 flex-col items-center gap-0.5 text-center;
+}
+
+.scats-footer-name {
+  @apply text-base font-bold tracking-tight;
+  color: var(--scats-primary);
+  letter-spacing: -0.01em;
+}
+
+.scats-footer-tagline {
+  @apply max-w-[16rem] text-[11px] leading-snug sm:max-w-md sm:text-xs;
+  color: color-mix(in srgb, var(--scats-text-muted) 70%, var(--scats-primary));
+}
+
+.scats-app-footer .scats-footer-tagline {
+  @apply hidden sm:block;
+}
+
+.scats-footer-motto {
+  @apply max-w-md text-xs leading-relaxed italic sm:text-[13px];
+  color: color-mix(in srgb, var(--scats-secondary) 48%, var(--scats-text-muted));
+}
+
+.scats-footer-inner--landing .scats-footer-motto {
+  @apply relative pt-1;
+}
+
+.scats-footer-inner--landing .scats-footer-motto::before {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  margin: 0 auto 0.75rem;
+  background: color-mix(in srgb, var(--scats-secondary) 28%, var(--scats-border));
+}
+
+.scats-footer-meta {
+  @apply shrink-0 text-[11px] leading-relaxed tabular-nums sm:text-xs;
+  color: color-mix(in srgb, var(--scats-text-muted) 72%, var(--scats-primary));
+}
+
+.scats-footer-dot {
+  @apply inline px-1.5;
+  color: color-mix(in srgb, var(--scats-secondary) 32%, var(--scats-text-muted));
+}
+
+.scats-footer-link {
+  @apply font-semibold underline decoration-transparent underline-offset-[3px]
+         transition-[color,text-decoration-color] duration-150;
+  color: var(--scats-secondary);
+}
+
+.scats-footer-link:hover {
+  color: var(--scats-primary);
+  text-decoration-color: color-mix(in srgb, var(--scats-secondary) 55%, transparent);
+}
+
+.scats-footer-link:focus-visible {
+  @apply rounded-sm outline-none;
+  color: var(--scats-primary);
+  text-decoration-color: color-mix(in srgb, var(--scats-secondary) 55%, transparent);
+  box-shadow:
+    0 0 0 2px var(--scats-surface-white),
+    0 0 0 4px color-mix(in srgb, var(--scats-secondary-container) 60%, transparent);
 }
 
 @media (min-width: 768px) {
@@ -518,11 +645,37 @@ tbody.scats-list > tr > *:first-child {
 tbody.scats-list > tr > *:last-child {
   border-top-right-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .scats-list-photo {
   overflow: visible;
+}
+
+/* Full-row click target stops before the actions column so Delete stays in the hover wash. */
+a.scats-row-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.scats-row:has(.scats-row-actions) a.scats-row-hit {
+  right: 11rem;
+}
+
+/* Keep row action controls inside the hover wash and away from the full-row hit target. */
+.scats-row-actions {
+  position: relative;
+  z-index: 10;
+  width: 1%;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.scats-row-actions form {
+  display: inline-flex;
+  margin: 0;
+  vertical-align: middle;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -532,13 +685,13 @@ tbody.scats-list > tr > *:last-child {
   }
 }
 
-/* Auth landing: campus column */
+/* Auth landing: campus + form fill space above the footer (not a second full viewport). */
 .scats-auth-campus {
-  @apply relative min-h-[40vh] overflow-hidden bg-primary-container lg:min-h-screen;
+  @apply relative min-h-[40vh] overflow-hidden bg-primary-container lg:min-h-0 lg:h-full;
 }
 
 .scats-auth-form-panel {
-  @apply flex min-h-[60vh] flex-col justify-center bg-background px-6 py-10 sm:px-10 lg:min-h-screen lg:px-16 xl:px-20;
+  @apply flex min-h-[60vh] flex-col justify-center bg-background px-6 py-10 sm:px-10 lg:min-h-0 lg:h-full lg:px-16 xl:px-20;
 }
 
 @media (min-width: 1024px) {

@@ -12,7 +12,7 @@ RSpec.describe "Supervisor queue", type: :request do
     approved.update!(status: :supervisor_approved)
 
     sign_in supervisor
-    get supervisor_root_path
+    get supervisor_queue_path
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("In my queue")
@@ -24,7 +24,7 @@ RSpec.describe "Supervisor queue", type: :request do
   it "denies faculty without supervised sub-divisions, students, and admins" do
     [ create(:user, :faculty), create(:user), create(:user, :admin) ].each do |user|
       sign_in user
-      get supervisor_root_path
+      get supervisor_queue_path
 
       expect(response).to redirect_to(root_path)
       sign_out user

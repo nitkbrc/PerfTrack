@@ -45,9 +45,11 @@
   </section>
 
   <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-    <div class="clay-card bg-primary p-6 text-center text-white shadow-md">
+    <div class="rounded-xl bg-primary-container p-6 text-center text-white shadow-md">
       <p class="text-sm font-medium text-white/80">Overall score</p>
-      <p class="mt-1 text-4xl font-bold"><%= @student.overall_score %><span class="text-lg font-medium text-white/70"> / 10</span></p>
+      <p class="mt-1 text-4xl font-bold text-white">
+        <%= @student.overall_score %><span class="text-lg font-medium text-white/70"> / 10</span>
+      </p>
     </div>
     <div class="clay-card p-6 text-center">
       <p class="text-sm font-medium text-text-muted">Positive points</p>

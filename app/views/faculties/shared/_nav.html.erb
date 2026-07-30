@@ -7,11 +7,12 @@
     <div class="flex items-center gap-4">
       <% if current_user.supervised_sub_divisions.exists? %>
         <%= link_to "Students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
-        <%= link_to "Review queue", supervisor_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+        <%= link_to "Review queue", supervisor_queue_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <% elsif current_user.deaned_divisions.exists? %>
         <%= link_to "Students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
-        <%= link_to "Decision queue", dean_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+        <%= link_to "Decision queue", dean_queue_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <% else %>
+        <%= link_to "Dashboard", faculty_root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
         <%= link_to "Students", faculty_students_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
       <% end %>
       <%= link_to "Change password", edit_account_password_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>

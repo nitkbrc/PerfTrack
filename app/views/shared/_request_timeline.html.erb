@@ -1,10 +1,12 @@
 <% ordered = versions.to_a %>
 <% latest_index = [ ordered.size - 1, 0 ].max %>
+<% initial_index = local_assigns.fetch(:initial_index, latest_index) %>
+<% initial_index = [[ initial_index.to_i, 0 ].max, latest_index ].min %>
 <% history_only = local_assigns.fetch(:history_only, false) %>
 
 <div class="relative px-6 sm:px-8"
      data-controller="version-carousel"
-     data-version-carousel-index-value="<%= latest_index %>">
+     data-version-carousel-index-value="<%= initial_index %>">
   <button type="button"
           class="absolute left-0 top-1/2 z-20 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#000666] text-xl leading-none text-white shadow-lg transition hover:bg-[#1a237e] focus:outline-none focus:ring-2 focus:ring-[#668efe] focus:ring-offset-2 disabled:pointer-events-none disabled:hidden"
           aria-label="Previous version"
@@ -20,7 +22,7 @@
     <% else %>
       <% ordered.each_with_index do |version, index| %>
         <div data-version-carousel-target="slide"
-             class="<%= index == latest_index ? '' : 'hidden' %>"
+             class="<%= index == initial_index ? '' : 'hidden' %>"
              data-version-index="<%= index %>">
           <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
             <h3 class="text-base font-semibold text-slate-900">

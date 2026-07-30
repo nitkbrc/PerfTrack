@@ -64,6 +64,9 @@ module Admin
         user.destroy!
         redirect_to admin_users_path, notice: "User deleted."
       end
+    rescue ActiveRecord::DeleteRestrictionError
+      redirect_to admin_users_path,
+                  alert: "Cannot delete — this account still appears in request history. Remove or reassign related records first."
     end
 
     private
