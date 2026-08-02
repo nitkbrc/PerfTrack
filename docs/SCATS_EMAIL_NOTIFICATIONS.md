@@ -11,7 +11,7 @@ Every role gets emailed whenever a request lands in their court. Ties directly i
 ## The rule, stated once
  
 - **Dean or Supervisor:** notified every time a request lands in their queue for action — fresh, forwarded, or coming back after a clarification loop.
-- **Student:** notified on revert (fix and resubmit), and on the dean's final decision — approve or reject, always.
+- **Student:** notified when a supervisor raises a request on their behalf (Path B), on revert (fix and resubmit), and on the dean's final decision — approve or reject, always.
 - **The originating Supervisor** (only when the request was *raised by them on the student's behalf*, not when they merely forwarded something the student submitted themselves): also notified on the dean's final decision, approve **or** reject — same logic either way, they vouched for it and deserve to know the outcome regardless of which way it went.
 "Originating supervisor" is derived the same way the rest of the system already tells Path A from Path B — the actor on the request's first `ReqHistory` row. If that's the student, it's a normal forward and only the student gets the final-decision email. If it's a supervisor, both get it.
  
@@ -20,7 +20,7 @@ Every role gets emailed whenever a request lands in their court. Ties directly i
 | Transition | Recipient(s) | Mailer method |
 |---|---|---|
 | Student submits (fresh) | Supervisor | `submitted_to_supervisor` |
-| Supervisor raises on behalf of student | Dean | `raised_on_behalf` |
+| Supervisor raises on behalf of student | Dean + Student | `raised_on_behalf` + `raised_on_your_behalf` |
 | Supervisor approves & forwards | Dean | `forwarded_to_dean(is_reforward: false)` |
 | Dean reverts for clarification | Supervisor | `reverted_to_supervisor` |
 | Supervisor reverts to student | Student | `reverted_to_student` |
@@ -103,7 +103,7 @@ What was actually built. Glance here to recover context for this phase.
 Automated emails when a request **lands in someone's court**, plus outcome emails on final decisions:
 
 - Dean / supervisor get mail when work arrives for them (submit, initiate, forward, reforward, dean revert).
-- Student gets mail on revert, reject, and approve.
+- Student gets mail when a supervisor raises on their behalf (Path B), and on revert, reject, and approve.
 - **Path B** (first `ReqHistory` actor is the supervisor who raised on behalf of the student): on **dean approve or dean reject**, both **student and originating supervisor** get mail.
 - **Path A** (student-initiated): dean approve/reject → **student only**.
 - Supervisor direct reject (Submitted → Rejected) → **student only**.
@@ -142,7 +142,7 @@ Hooks on [`AchievementRequest`](../app/models/achievement_request.rb) after the 
 | Event | Mail |
 |---|---|
 | Student submit / resubmit | `submitted_to_supervisor` |
-| Supervisor initiate | `raised_on_behalf` |
+| Supervisor initiate | `raised_on_behalf` (dean) + `raised_on_your_behalf` (student) |
 | Supervisor approve / reforward | `forwarded_to_dean` |
 | Dean revert | `reverted_to_supervisor` |
 | Supervisor revert | `reverted_to_student` |

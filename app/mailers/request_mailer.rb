@@ -17,6 +17,12 @@ class RequestMailer < ApplicationMailer
     mail(to: @recipient.email, subject: "Supervisor-raised SCATS request awaiting your review")
   end
 
+  # Path B supervisor raise → student (informational)
+  def raised_on_your_behalf(request, actor:)
+    setup_request_mail(request, actor: actor, recipient: request.student.user)
+    mail(to: @recipient.email, subject: "A supervisor raised a SCATS request on your behalf")
+  end
+
   # Supervisor approve / reforward → dean
   def forwarded_to_dean(request, actor:, is_reforward: false)
     @is_reforward = is_reforward

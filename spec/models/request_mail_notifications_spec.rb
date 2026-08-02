@@ -37,10 +37,11 @@ RSpec.describe "Request email notification triggers", type: :model do
     }.to have_enqueued_mail(RequestMailer, :submitted_to_supervisor).once
   end
 
-  it "emails the dean on supervisor initiate" do
+  it "emails the dean and student on supervisor initiate" do
     expect {
       path_b_request
     }.to have_enqueued_mail(RequestMailer, :raised_on_behalf).once
+     .and have_enqueued_mail(RequestMailer, :raised_on_your_behalf).once
   end
 
   it "emails the supervisor on student resubmit" do

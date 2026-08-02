@@ -76,6 +76,7 @@ class AchievementRequest < ApplicationRecord
       created
     end
     RequestMailer.raised_on_behalf(request, actor: actor).deliver_later
+    RequestMailer.raised_on_your_behalf(request, actor: actor).deliver_later
     request
   end
 

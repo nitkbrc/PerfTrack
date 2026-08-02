@@ -51,6 +51,18 @@ RSpec.describe RequestMailer, type: :mailer do
     end
   end
 
+  describe "#raised_on_your_behalf" do
+    it "emails the student" do
+      mail = described_class.raised_on_your_behalf(request_record, actor: supervisor)
+
+      expect(mail.to).to eq([ student.user.email ])
+      expect(mail.subject).to include("on your behalf")
+      expect(decoded_body(mail)).to include(supervisor.name)
+      expect(decoded_body(mail)).to include("Hackathon Win")
+      expect(decoded_body(mail)).to include(student_achievement_request_url(request_record))
+    end
+  end
+
   describe "#forwarded_to_dean" do
     it "uses reforward framing when is_reforward is true" do
       mail = described_class.forwarded_to_dean(request_record, actor: supervisor, is_reforward: true)
