@@ -68,25 +68,28 @@ RSpec.describe ReviewChainResolver do
       request.update_columns(current_step_id: supervisor_step.id)
       original_step_id = request.current_step_id
 
-      associate = create(:user, :faculty)
-      associate_role = ReviewRole.associate_dean
-      # Shift dean to position 2 first to free position 1
-      dean_step = division.hierarchy_steps.find_by!(review_role: ReviewRole.dean)
-      dean_step.update!(position: 2)
-      insert = HierarchyStep.create!(
-        review_role: associate_role,
+      mid_user = create(:user, :faculty)
+      mid_role = ReviewRole.find_or_create_by!(name: "Division Reviewer") do |role|
+        role.scope = "division"
+        role.raiseable_on_behalf_eligible = false
+        role.system_role = false
+      end
+      HierarchyStep.create!(
+        review_role: mid_role,
         division: division,
-        position: 1
+        position: (division.hierarchy_steps.maximum(:position) || 0) + 1
       )
-      RoleAssignment.create!(user: associate, review_role: associate_role, division: division)
+      HierarchyStep.normalize_positions_for!(division)
+      RoleAssignment.create!(user: mid_user, review_role: mid_role, division: division)
 
       request.reload
       resolver = described_class.new(request)
 
       expect(request.current_step_id).to eq(original_step_id)
-      expect(resolver.next_step.review_role.name).to eq(ReviewRole::ASSOCIATE_DEAN)
-      expect(resolver.next_step.user).to eq(associate)
+      expect(resolver.next_step.review_role.name).to eq("Division Reviewer")
+      expect(resolver.next_step.user).to eq(mid_user)
 
+      insert = division.hierarchy_steps.find_by!(review_role: mid_role)
       request.update_columns(current_step_id: insert.id)
       resolver = described_class.new(request.reload)
       expect(resolver.previous_step.user).to eq(supervisor)

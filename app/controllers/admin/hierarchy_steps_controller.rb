@@ -13,6 +13,7 @@ module Admin
       step = @owner.hierarchy_steps.build(step_params)
       step.position = (@owner.hierarchy_steps.maximum(:position) || 0) + 1
       if step.save
+        HierarchyStep.normalize_positions_for!(@owner)
         redirect_to owner_steps_path, notice: "Step added."
       else
         redirect_to owner_steps_path, alert: step.errors.full_messages.to_sentence
@@ -30,20 +31,40 @@ module Admin
 
     def destroy
       step = authorize @owner.hierarchy_steps.find(params[:id])
-      step.destroy!
-      renumber_steps!
-      redirect_to owner_steps_path, notice: "Step removed."
+      if step.destroy
+        HierarchyStep.normalize_positions_for!(@owner)
+        redirect_to owner_steps_path, notice: "Step removed."
+      else
+        redirect_to owner_steps_path,
+                    alert: step.errors.full_messages.to_sentence.presence || "Could not remove step."
+      end
     end
 
     def move_up
       step = authorize @owner.hierarchy_steps.find(params[:id])
+      if step.supervisor_anchor?
+        return redirect_to owner_steps_path, alert: "Supervisor stays first when present."
+      end
+      if step.dean_anchor?
+        return redirect_to owner_steps_path, alert: "Dean stays last when present."
+      end
+
       swap_with(step, -1)
+      HierarchyStep.normalize_positions_for!(@owner)
       redirect_to owner_steps_path
     end
 
     def move_down
       step = authorize @owner.hierarchy_steps.find(params[:id])
+      if step.dean_anchor?
+        return redirect_to owner_steps_path, alert: "Dean stays last when present."
+      end
+      if step.supervisor_anchor?
+        return redirect_to owner_steps_path, alert: "Supervisor stays first when present."
+      end
+
       swap_with(step, 1)
+      HierarchyStep.normalize_positions_for!(@owner)
       redirect_to owner_steps_path
     end
 
@@ -58,7 +79,8 @@ module Admin
       targets = bulk_targets(target_ids)
       HierarchyStep.transaction do
         targets.each do |target|
-          target.hierarchy_steps.destroy_all
+          # delete_all skips last-step guard so we can replace the whole chain.
+          target.hierarchy_steps.delete_all
           source_steps.each do |source|
             target.hierarchy_steps.create!(
               review_role: source.review_role,
@@ -66,6 +88,7 @@ module Admin
               can_raise_on_behalf: source.can_raise_on_behalf
             )
           end
+          HierarchyStep.normalize_positions_for!(target)
         end
       end
       redirect_to owner_steps_path, notice: "Hierarchy copied to #{targets.size} #{owner_label.pluralize}."
@@ -114,6 +137,8 @@ module Admin
     def swap_with(step, direction)
       other = @owner.hierarchy_steps.find_by(position: step.position + direction)
       return unless other
+      return if direction.negative? && other.supervisor_anchor?
+      return if direction.positive? && other.dean_anchor?
 
       HierarchyStep.transaction do
         temporary = -step.position
@@ -122,12 +147,6 @@ module Admin
         step.update_columns(position: temporary)
         other.update_columns(position: step_pos)
         step.update_columns(position: other_pos)
-      end
-    end
-
-    def renumber_steps!
-      @owner.hierarchy_steps.ordered.each.with_index(1) do |step, index|
-        step.update_columns(position: index)
       end
     end
 

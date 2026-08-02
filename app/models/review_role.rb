@@ -1,11 +1,12 @@
 class ReviewRole < ApplicationRecord
   DEAN = "Dean"
-  ASSOCIATE_DEAN = "Associate Dean"
+  ASSOCIATE_DEAN = "Associate Dean" # historical name; not a system role
   SUPERVISOR = "Supervisor"
 
+  # Only Dean and Supervisor are undeletable system role types.
+  # Hierarchies may use any division / sub-division roles; Dean/Supervisor are optional.
   SYSTEM_DEFINITIONS = [
     { name: DEAN, scope: "division", raiseable_on_behalf_eligible: false, system_role: true },
-    { name: ASSOCIATE_DEAN, scope: "division", raiseable_on_behalf_eligible: false, system_role: true },
     { name: SUPERVISOR, scope: "sub_division", raiseable_on_behalf_eligible: true, system_role: true }
   ].freeze
 
@@ -33,14 +34,17 @@ class ReviewRole < ApplicationRecord
     find_by!(name: DEAN)
   end
 
-  def self.associate_dean
-    ensure_system_roles!
-    find_by!(name: ASSOCIATE_DEAN)
-  end
-
   def self.supervisor
     ensure_system_roles!
     find_by!(name: SUPERVISOR)
+  end
+
+  def dean?
+    name == DEAN
+  end
+
+  def supervisor?
+    name == SUPERVISOR
   end
 
   private

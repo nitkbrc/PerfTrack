@@ -34,7 +34,9 @@
     <div class="border-b border-border-subtle/70 px-5 py-4 sm:px-6">
       <h2 class="text-base font-semibold text-text-main">Review steps</h2>
       <p class="mt-0.5 text-sm text-text-muted">
-        Requests advance from top to bottom. Steps without an assigned person are skipped at runtime.
+        Any <%= scope_label.downcase %>-scoped role works. Requests advance top to bottom.
+        If Supervisor is included it stays first; if Dean is included it stays last.
+        Unassigned steps are skipped at runtime. At least one step is required.
       </p>
     </div>
 
@@ -59,7 +61,11 @@
                   <% if step.can_raise_on_behalf? %>
                     <span class="scats-badge scats-badge-warning">Raise on behalf</span>
                   <% end %>
-                  <% if index.zero? %>
+                  <% if step.supervisor_anchor? %>
+                    <span class="scats-badge scats-badge-info">Anchor · first</span>
+                  <% elsif step.dean_anchor? %>
+                    <span class="scats-badge scats-badge-neutral">Anchor · last</span>
+                  <% elsif index.zero? %>
                     <span class="scats-badge scats-badge-info">First</span>
                   <% elsif index == @steps.size - 1 %>
                     <span class="scats-badge scats-badge-neutral">Final</span>
@@ -88,7 +94,9 @@
               <% end %>
 
               <div class="inline-flex overflow-hidden rounded-md border border-border-subtle bg-white shadow-sm">
-                <% unless index.zero? %>
+                <% can_move_up = index.positive? && !step.supervisor_anchor? && !step.dean_anchor? %>
+                <% can_move_down = index < @steps.size - 1 && !step.supervisor_anchor? && !step.dean_anchor? %>
+                <% if can_move_up %>
                   <%= button_to (@owner_type == :division ? move_up_admin_division_hierarchy_step_path(@owner, step) : move_up_admin_sub_division_hierarchy_step_path(@owner, step)),
                         method: :patch,
                         class: "inline-flex h-9 w-9 cursor-pointer items-center justify-center text-slate-600 transition hover:bg-slate-50",
@@ -98,12 +106,13 @@
                     <span class="sr-only">Move up</span>
                   <% end %>
                 <% else %>
-                  <span class="inline-flex h-9 w-9 items-center justify-center text-slate-300" aria-hidden="true" title="Already first">
+                  <span class="inline-flex h-9 w-9 items-center justify-center text-slate-300" aria-hidden="true"
+                        title="<%= step.supervisor_anchor? || step.dean_anchor? ? 'Anchored role' : 'Already first' %>">
                     <span class="material-symbols-outlined text-lg">arrow_upward</span>
                   </span>
                 <% end %>
 
-                <% unless index == @steps.size - 1 %>
+                <% if can_move_down %>
                   <%= button_to (@owner_type == :division ? move_down_admin_division_hierarchy_step_path(@owner, step) : move_down_admin_sub_division_hierarchy_step_path(@owner, step)),
                         method: :patch,
                         class: "inline-flex h-9 w-9 cursor-pointer items-center justify-center border-l border-border-subtle text-slate-600 transition hover:bg-slate-50",
@@ -113,17 +122,22 @@
                     <span class="sr-only">Move down</span>
                   <% end %>
                 <% else %>
-                  <span class="inline-flex h-9 w-9 items-center justify-center border-l border-border-subtle text-slate-300" aria-hidden="true" title="Already last">
+                  <span class="inline-flex h-9 w-9 items-center justify-center border-l border-border-subtle text-slate-300" aria-hidden="true"
+                        title="<%= step.supervisor_anchor? || step.dean_anchor? ? 'Anchored role' : 'Already last' %>">
                     <span class="material-symbols-outlined text-lg">arrow_downward</span>
                   </span>
                 <% end %>
               </div>
 
-              <%= button_to "Remove",
-                    (@owner_type == :division ? admin_division_hierarchy_step_path(@owner, step) : admin_sub_division_hierarchy_step_path(@owner, step)),
-                    method: :delete,
-                    form: { data: { turbo_confirm: "Remove this step from the chain?" } },
-                    class: admin_delete_classes %>
+              <% if @steps.size > 1 %>
+                <%= button_to "Remove",
+                      (@owner_type == :division ? admin_division_hierarchy_step_path(@owner, step) : admin_sub_division_hierarchy_step_path(@owner, step)),
+                      method: :delete,
+                      form: { data: { turbo_confirm: "Remove this step from the chain?" } },
+                      class: admin_delete_classes %>
+              <% else %>
+                <span class="text-xs text-text-muted" title="At least one step is required">Last step</span>
+              <% end %>
             </div>
           </li>
         <% end %>
