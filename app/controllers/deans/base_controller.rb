@@ -6,7 +6,7 @@ module Deans
     private
 
     def deaned_divisions
-      current_user.deaned_divisions
+      current_user.assigned_divisions
     end
     helper_method :deaned_divisions
 

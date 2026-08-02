@@ -9,16 +9,15 @@ RSpec.describe "Request timeline UI", type: :request do
   let(:category)     { create(:category, sub_division: sub_division) }
 
   let!(:request_record) do
-    create(:achievement_request, student: student, category: category, title: "Original title").tap do |r|
+    create(:achievement_request, student: student, category: category, title: "Original title",
+           at_step: :supervisor).tap do |r|
       v1 = r.current_version
-      r.req_histories.create!(actor: student.user, action: "submit", to_status: "submitted",
+      r.req_histories.create!(actor: student.user, action: "submit", to_status: "in_review",
                               request_version: v1)
-      r.transition!(to: :supervisor_reverted, actor: supervisor, action: "supervisor_revert",
-                    comment: "Need clearer proof on version 1")
+      r.revert!(actor: supervisor, comment: "Need clearer proof on version 1")
       r.resubmit!(actor: student.user,
                   attrs: { title: "Revised title", description: "Second attempt" })
-      r.transition!(to: :supervisor_reverted, actor: supervisor, action: "supervisor_revert",
-                    comment: "Still missing date on version 2")
+      r.revert!(actor: supervisor, comment: "Still missing date on version 2")
     end
   end
 
@@ -112,8 +111,7 @@ RSpec.describe "Request timeline UI", type: :request do
       attrs: { category_id: category.id, title: "Original Path B", description: "First cut",
                proofs: [ proof ] }
     )
-    path_b.transition!(to: :dean_reverted, actor: dean, action: "dean_revert",
-                       comment: "Clarify the dates")
+    path_b.revert!(actor: dean, comment: "Clarify the dates")
     path_b.revise!(actor: supervisor,
                    attrs: { title: "Clarified Path B", description: "Dates fixed" })
 
@@ -127,7 +125,7 @@ RSpec.describe "Request timeline UI", type: :request do
     expect(response.body).to include("Original Path B")
     expect(response.body).to include("Clarified Path B")
     expect(response.body).to include("Clarify the dates")
-    expect(response.body).to include("Revised by supervisor after dean feedback")
+    expect(response.body).to include("Revised by supervisor after feedback")
     expect(response.body).to include('data-controller="version-carousel"')
     expect(response.body.scan(/data-version-carousel-target="slide"/).size).to eq(2)
   end

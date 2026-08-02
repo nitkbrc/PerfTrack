@@ -5,12 +5,11 @@ module Deans
 
       scope = scoped_requests
       @divisions = deaned_divisions
-                     .includes(sub_divisions: [ :supervisor, :categories ])
+                     .includes(sub_divisions: [ :categories ])
                      .order(:name)
 
-      # Scoped to the dean's divisions.
-      @awaiting_decision = scope.supervisor_approved.count
-      @accepted = scope.dean_approved.count
+      @awaiting_decision = AchievementRequest.for_current_reviewer(current_user).count
+      @accepted = scope.approved.count
       @rejected = scope.rejected.count
       @history_count = ReqHistory.review_actions.by_actor(current_user).count
 
@@ -23,7 +22,7 @@ module Deans
 
     def scoped_requests
       AchievementRequest.joins(category: { sub_division: :division })
-                        .where(divisions: { dean_user_id: current_user.id })
+                        .where(divisions: { id: current_user.assigned_divisions.select(:id) })
     end
   end
 end

@@ -12,7 +12,7 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "home#index"
-  resource :profile, only: [ :show ]
+  resource :profile, only: [ :show, :update ]
 
   namespace :account do
     resource :password, only: [ :edit, :update ]
@@ -83,7 +83,27 @@ Rails.application.routes.draw do
     end
 
     resources :departments, :reason_templates, :users
-    resources :divisions, :sub_divisions, :categories, concerns: :archivable
+    resources :categories, concerns: :archivable
+    resources :review_roles
+    resources :role_assignments
+    resources :divisions, concerns: :archivable do
+      resources :hierarchy_steps, only: [ :index, :create, :update, :destroy ] do
+        member do
+          patch :move_up
+          patch :move_down
+        end
+        collection { post :bulk_apply }
+      end
+    end
+    resources :sub_divisions, concerns: :archivable do
+      resources :hierarchy_steps, only: [ :index, :create, :update, :destroy ] do
+        member do
+          patch :move_up
+          patch :move_down
+        end
+        collection { post :bulk_apply }
+      end
+    end
     resources :user_imports, only: [ :new, :create ] do
       get :template, on: :collection
     end

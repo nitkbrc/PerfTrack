@@ -4,7 +4,7 @@ module Admin
       authorize Division
       @show_archived = params[:archived].present?
       scope = @show_archived ? Division.archived : Division.active
-      @divisions = scope.includes(:dean).order(:name)
+      @divisions = scope.includes(role_assignments: :user).order(:name)
       @archived_count = Division.archived.count
     end
 
@@ -12,7 +12,7 @@ module Admin
       @division = authorize Division.find(params[:id])
       @show_archived = params[:archived].present?
       scope = @show_archived ? @division.sub_divisions.archived : @division.sub_divisions.active
-      @sub_divisions = scope.includes(:supervisor).order(:name)
+      @sub_divisions = scope.includes(:division, role_assignments: :user).order(:name)
       @archived_count = @division.sub_divisions.archived.count
     end
 
@@ -50,7 +50,7 @@ module Admin
 
     def archive
       division = authorize Division.find(params[:id])
-      division.archive!
+      division.archive!(actor: current_user)
       redirect_to admin_divisions_path,
                   notice: "#{division.name} archived, along with its sub-divisions and categories."
     end
@@ -64,7 +64,7 @@ module Admin
     private
 
     def division_params
-      params.expect(division: [ :name, :div_type, :dean_user_id ])
+      params.expect(division: [ :name, :div_type ])
     end
   end
 end

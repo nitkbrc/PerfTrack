@@ -2,6 +2,10 @@ class ReqHistory < ApplicationRecord
   REVIEW_ACTIONS = %w[
     supervisor_initiate
     supervisor_revise
+    advance
+    approve
+    revert
+    reject
     supervisor_approve
     supervisor_reforward
     supervisor_revert

@@ -2,9 +2,8 @@ module Deans
   class QueueController < BaseController
     def index
       authorize AchievementRequest, :dean_queue?
-      @requests = policy_scope(AchievementRequest)
-                    .supervisor_approved
-                    .includes(:student, category: :sub_division)
+      @requests = AchievementRequest.for_current_reviewer(current_user)
+                    .includes(:student, :current_step, category: :sub_division)
                     .order(updated_at: :desc)
     end
   end

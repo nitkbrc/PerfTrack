@@ -1,7 +1,18 @@
 <div class="mx-auto w-full max-w-6xl">
-  <div class="mb-6 flex items-center justify-between">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold text-text-main">Review queue</h1>
   </div>
+
+  <% if @sub_divisions.many? %>
+    <div class="mb-4 flex flex-wrap gap-2">
+      <%= link_to "All", supervisor_queue_path,
+            class: "rounded-lg px-3 py-1.5 text-sm font-medium #{@selected_sub_division.nil? ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}" %>
+      <% @sub_divisions.each do |sub| %>
+        <%= link_to sub.name, supervisor_queue_path(sub_division_id: sub.id),
+              class: "rounded-lg px-3 py-1.5 text-sm font-medium #{@selected_sub_division&.id == sub.id ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}" %>
+      <% end %>
+    </div>
+  <% end %>
 
   <% if @requests.any? %>
     <div class="clay-card scats-list-shell">
@@ -25,8 +36,8 @@
               <td class="min-w-0 px-3 py-3 text-text-main sm:px-4">
                 <div class="flex min-w-0 items-center gap-1.5">
                   <span class="truncate font-medium"><%= request.title %></span>
-                  <% if request.dean_reverted? %>
-                    <%= attention_dot("Sent back by the dean — needs your action") %>
+                  <% if request.awaiting_raiseable_revision? %>
+                    <%= attention_dot("Sent back — needs your action") %>
                   <% end %>
                 </div>
                 <div class="mt-1 space-y-1 sm:hidden">

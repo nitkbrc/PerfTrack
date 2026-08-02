@@ -9,25 +9,23 @@ RSpec.describe DeanApprovalNotificationJob, type: :job do
   let(:student)      { create(:student) }
 
   def path_a_request(title: "State-level hackathon")
-    create(:achievement_request, student: student, category: category, title: title).tap do |r|
-      r.req_histories.create!(actor: student.user, action: "submit", to_status: "submitted",
+    create(:achievement_request, student: student, category: category, title: title, at_step: :dean).tap do |r|
+      r.req_histories.create!(actor: student.user, action: "submit", to_status: "in_review",
                               request_version: r.current_version)
-      r.update!(status: :supervisor_approved)
     end
   end
 
   def path_b_request(title: "Conduct incident")
-    create(:achievement_request, student: student, category: category, title: title,
-                                 status: :supervisor_approved).tap do |r|
+    create(:achievement_request, student: student, category: category, title: title, at_step: :dean).tap do |r|
       r.req_histories.create!(actor: supervisor, action: "supervisor_initiate",
-                              to_status: "supervisor_approved",
+                              to_status: "in_review",
                               request_version: r.current_version)
     end
   end
 
   it "notifies Path A students that positive points were added" do
     request_record = path_a_request
-    request_record.dean_approve!(actor: dean)
+    request_record.advance!(actor: dean)
 
     expect { described_class.perform_now(request_record.id) }
       .to change(Notification, :count).by(1)
@@ -45,7 +43,7 @@ RSpec.describe DeanApprovalNotificationJob, type: :job do
   it "notifies Path A students that negative points were verified and deducted" do
     division.update!(div_type: "negative")
     request_record = path_a_request(title: "Self-reported incident")
-    request_record.dean_approve!(actor: dean)
+    request_record.advance!(actor: dean)
 
     described_class.perform_now(request_record.id)
 
@@ -57,7 +55,7 @@ RSpec.describe DeanApprovalNotificationJob, type: :job do
 
   it "notifies Path B students that a supervisor-raised request was approved" do
     request_record = path_b_request(title: "Hackathon win")
-    request_record.dean_approve!(actor: dean)
+    request_record.advance!(actor: dean)
 
     described_class.perform_now(request_record.id)
 
@@ -70,7 +68,7 @@ RSpec.describe DeanApprovalNotificationJob, type: :job do
   it "notifies Path B students that a supervisor-raised conduct record was verified" do
     division.update!(div_type: "negative")
     request_record = path_b_request(title: "Ragging incident")
-    request_record.dean_approve!(actor: dean)
+    request_record.advance!(actor: dean)
 
     described_class.perform_now(request_record.id)
 
@@ -80,7 +78,7 @@ RSpec.describe DeanApprovalNotificationJob, type: :job do
     )
   end
 
-  it "does nothing when the request is not dean_approved" do
+  it "does nothing when the request is not approved" do
     request_record = path_a_request
 
     expect { described_class.perform_now(request_record.id) }

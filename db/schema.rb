@@ -10,20 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_30_153000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_02_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "achievement_requests", force: :cascade do |t|
     t.bigint "category_id", null: false
     t.datetime "created_at", null: false
+    t.bigint "current_step_id"
     t.text "description"
     t.integer "points_awarded"
-    t.string "status", default: "submitted", null: false
+    t.string "status", default: "in_review", null: false
     t.bigint "student_id", null: false
     t.string "title"
     t.datetime "updated_at", null: false
     t.index ["category_id"], name: "index_achievement_requests_on_category_id"
+    t.index ["current_step_id"], name: "index_achievement_requests_on_current_step_id"
     t.index ["student_id"], name: "index_achievement_requests_on_student_id"
   end
 
@@ -75,12 +77,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_153000) do
   create_table "divisions", force: :cascade do |t|
     t.datetime "archived_at"
     t.datetime "created_at", null: false
-    t.bigint "dean_user_id", null: false
     t.string "div_type", null: false
     t.string "name"
     t.datetime "updated_at", null: false
     t.index ["archived_at"], name: "index_divisions_on_archived_at"
-    t.index ["dean_user_id"], name: "index_divisions_on_dean_user_id", unique: true
+  end
+
+  create_table "hierarchy_steps", force: :cascade do |t|
+    t.boolean "can_raise_on_behalf", default: false, null: false
+    t.datetime "created_at", null: false
+    t.bigint "division_id"
+    t.integer "position", null: false
+    t.bigint "review_role_id", null: false
+    t.bigint "sub_division_id"
+    t.datetime "updated_at", null: false
+    t.index ["division_id", "position"], name: "index_hierarchy_steps_on_division_and_position", unique: true, where: "(division_id IS NOT NULL)"
+    t.index ["division_id", "review_role_id"], name: "index_hierarchy_steps_on_division_and_role", unique: true, where: "(division_id IS NOT NULL)"
+    t.index ["division_id"], name: "index_hierarchy_steps_on_division_id"
+    t.index ["review_role_id"], name: "index_hierarchy_steps_on_review_role_id"
+    t.index ["sub_division_id", "position"], name: "index_hierarchy_steps_on_sub_division_and_position", unique: true, where: "(sub_division_id IS NOT NULL)"
+    t.index ["sub_division_id", "review_role_id"], name: "index_hierarchy_steps_on_sub_division_and_role", unique: true, where: "(sub_division_id IS NOT NULL)"
+    t.index ["sub_division_id"], name: "index_hierarchy_steps_on_sub_division_id"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -93,6 +110,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_153000) do
     t.index ["achievement_request_id"], name: "index_notifications_on_achievement_request_id"
     t.index ["recipient_id", "read"], name: "index_notifications_on_recipient_id_and_read"
     t.index ["recipient_id"], name: "index_notifications_on_recipient_id"
+  end
+
+  create_table "permissions", force: :cascade do |t|
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: false, null: false
+    t.string "role", null: false
+    t.datetime "updated_at", null: false
+    t.index ["role", "action"], name: "index_permissions_on_role_and_action", unique: true
   end
 
   create_table "reason_templates", force: :cascade do |t|
@@ -129,6 +155,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_153000) do
     t.index ["achievement_request_id", "version_number"], name: "index_request_versions_on_request_and_number", unique: true
     t.index ["achievement_request_id"], name: "index_request_versions_on_achievement_request_id"
     t.index ["category_id"], name: "index_request_versions_on_category_id"
+  end
+
+  create_table "review_roles", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.boolean "raiseable_on_behalf_eligible", default: false, null: false
+    t.string "scope", null: false
+    t.boolean "system_role", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_review_roles_on_name", unique: true
+  end
+
+  create_table "role_assignments", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "division_id"
+    t.bigint "review_role_id", null: false
+    t.bigint "sub_division_id"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["division_id"], name: "index_role_assignments_on_division_id"
+    t.index ["review_role_id", "division_id"], name: "index_role_assignments_on_role_and_division", unique: true, where: "(division_id IS NOT NULL)"
+    t.index ["review_role_id", "sub_division_id"], name: "index_role_assignments_on_role_and_sub_division", unique: true, where: "(sub_division_id IS NOT NULL)"
+    t.index ["review_role_id"], name: "index_role_assignments_on_review_role_id"
+    t.index ["sub_division_id"], name: "index_role_assignments_on_sub_division_id"
+    t.index ["user_id"], name: "index_role_assignments_on_user_id"
   end
 
   create_table "settings", force: :cascade do |t|
@@ -296,11 +347,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_153000) do
     t.datetime "created_at", null: false
     t.bigint "division_id", null: false
     t.string "name"
-    t.bigint "supervisor_user_id", null: false
     t.datetime "updated_at", null: false
     t.index ["archived_at"], name: "index_sub_divisions_on_archived_at"
     t.index ["division_id"], name: "index_sub_divisions_on_division_id"
-    t.index ["supervisor_user_id"], name: "index_sub_divisions_on_supervisor_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -321,11 +370,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_153000) do
   end
 
   add_foreign_key "achievement_requests", "categories"
+  add_foreign_key "achievement_requests", "hierarchy_steps", column: "current_step_id"
   add_foreign_key "achievement_requests", "students"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "categories", "sub_divisions"
-  add_foreign_key "divisions", "users", column: "dean_user_id"
+  add_foreign_key "hierarchy_steps", "divisions"
+  add_foreign_key "hierarchy_steps", "review_roles"
+  add_foreign_key "hierarchy_steps", "sub_divisions"
   add_foreign_key "notifications", "achievement_requests"
   add_foreign_key "notifications", "users", column: "recipient_id"
   add_foreign_key "req_histories", "achievement_requests"
@@ -334,6 +386,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_153000) do
   add_foreign_key "req_histories", "users", column: "actor_id"
   add_foreign_key "request_versions", "achievement_requests"
   add_foreign_key "request_versions", "categories"
+  add_foreign_key "role_assignments", "divisions"
+  add_foreign_key "role_assignments", "review_roles"
+  add_foreign_key "role_assignments", "sub_divisions"
+  add_foreign_key "role_assignments", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
@@ -343,5 +399,4 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_153000) do
   add_foreign_key "students", "departments"
   add_foreign_key "students", "users"
   add_foreign_key "sub_divisions", "divisions"
-  add_foreign_key "sub_divisions", "users", column: "supervisor_user_id"
 end

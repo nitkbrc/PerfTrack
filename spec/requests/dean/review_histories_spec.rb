@@ -8,12 +8,12 @@ RSpec.describe "Dean review history", type: :request do
   let(:sub_division) { create(:sub_division, division: division, supervisor: supervisor) }
   let(:category)     { create(:category, sub_division: sub_division, points: 10) }
   let(:request_record) do
-    create(:achievement_request, student: student, category: category, title: "Paper presentation").tap do |r|
-      r.req_histories.create!(actor: student.user, action: "submit", to_status: "submitted",
+    create(:achievement_request, student: student, category: category, title: "Paper presentation",
+           at_step: :dean).tap do |r|
+      r.req_histories.create!(actor: student.user, action: "submit", to_status: "in_review",
                               request_version: r.current_version)
-      r.update!(status: :supervisor_approved)
-      r.req_histories.create!(actor: supervisor, action: "supervisor_approve",
-                              from_status: "submitted", to_status: "supervisor_approved",
+      r.req_histories.create!(actor: supervisor, action: "advance",
+                              from_status: "in_review", to_status: "in_review",
                               request_version: r.current_version)
     end
   end
@@ -24,14 +24,14 @@ RSpec.describe "Dean review history", type: :request do
     patch approve_dean_achievement_request_path(request_record)
     expect(response).to redirect_to(dean_queue_path)
 
-    history = ReqHistory.find_by!(actor: dean, action: "dean_approve")
+    history = ReqHistory.find_by!(actor: dean, action: "approve")
 
     get dean_queue_path
     expect(response.body).not_to include("Paper presentation")
 
     get dean_review_histories_path
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("You approved")
+    expect(response.body).to include(">approved</span>")
     expect(response.body).to include("Paper presentation")
     expect(response.body).to include(dean_review_history_path(history))
     expect(response.body).not_to include(dean_achievement_request_path(request_record))
@@ -47,7 +47,7 @@ RSpec.describe "Dean review history", type: :request do
 
   it "keeps the historical version title when the live request title later changes" do
     patch approve_dean_achievement_request_path(request_record)
-    history = ReqHistory.find_by!(actor: dean, action: "dean_approve")
+    history = ReqHistory.find_by!(actor: dean, action: "approve")
 
     v1 = request_record.current_version
     v2 = request_record.request_versions.build(

@@ -34,7 +34,7 @@
             </td>
             <td class="<%= "pointer-events-none relative z-10" unless sub_division.archived? %> hidden min-w-0 truncate px-4 py-3 text-slate-600 sm:table-cell"><%= sub_division.division.name %></td>
             <td class="<%= "pointer-events-none relative z-10" unless sub_division.archived? %> hidden min-w-0 truncate px-4 py-3 text-slate-600 md:table-cell">
-              <%= sub_division.supervisor.name.presence || sub_division.supervisor.email %>
+              <%= sub_division.supervisor&.name.presence || sub_division.supervisor&.email || "Unassigned" %>
               <%= archived_badge(sub_division) if sub_division.archived? %>
             </td>
             <td class="scats-row-actions px-4 py-3 text-right">

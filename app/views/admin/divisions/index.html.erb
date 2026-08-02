@@ -19,7 +19,7 @@
       <div class="<%= "pointer-events-none relative z-10" unless division.archived? %>">
         <%= division_type_badge(division) %>
         <h2 class="mt-3 text-lg font-bold text-primary"><%= division.name %></h2>
-        <p class="mt-1 text-sm text-text-muted">Dean: <%= division.dean.name.presence || division.dean.email %></p>
+        <p class="mt-1 text-sm text-text-muted">Dean: <%= division.dean&.name.presence || division.dean&.email || "Unassigned" %></p>
         <%= archived_badge(division) if division.archived? %>
       </div>
       <div class="relative z-10 mt-5 flex flex-wrap items-center gap-2">

@@ -8,12 +8,14 @@ class Student < ApplicationRecord
   validates :sem, numericality: { only_integer: true, in: 1..8 }, allow_nil: true
 
   # Totals are computed on every read, never stored (TRD section 6).
+  # Bucket by the snapshotted sign of points_awarded — never re-join live
+  # division polarity, so later div_type edits cannot reshuffle history.
   def positive_total
-    approved_points_in_divisions("positive")
+    approved_points_where("points_awarded > 0")
   end
 
   def negative_total
-    approved_points_in_divisions("negative")
+    approved_points_where("points_awarded < 0")
   end
 
   # Sigmoid mapping of net points to 0..10; net = 0 scores exactly 5.0 (PRD section 5).
@@ -29,15 +31,14 @@ class Student < ApplicationRecord
   # requests default to 5.0 (sigmoid of net 0, regardless of k).
   def self.overall_scores(k: nil)
     k ||= Setting.instance.score_scale_k
-    sums = AchievementRequest.dean_approved
-                             .joins(category: { sub_division: :division })
-                             .group(:student_id, "divisions.div_type")
-                             .sum(:points_awarded)
+    approved = AchievementRequest.approved
+    positives = approved.where("points_awarded > 0").group(:student_id).sum(:points_awarded)
+    negatives = approved.where("points_awarded < 0").group(:student_id).sum(:points_awarded)
 
     scores = Hash.new(5.0)
-    sums.keys.map(&:first).uniq.each do |student_id|
-      positive = sums[[ student_id, "positive" ]].to_i
-      negative = sums[[ student_id, "negative" ]].to_i
+    (positives.keys | negatives.keys).each do |student_id|
+      positive = positives[student_id].to_i
+      negative = negatives[student_id].to_i
       scores[student_id] = sigmoid_score(positive - negative.abs, k)
     end
     scores
@@ -49,11 +50,7 @@ class Student < ApplicationRecord
 
   private
 
-  def approved_points_in_divisions(div_type)
-    achievement_requests
-      .dean_approved
-      .joins(category: { sub_division: :division })
-      .where(divisions: { div_type: div_type })
-      .sum(:points_awarded)
+  def approved_points_where(sql_condition)
+    achievement_requests.approved.where(sql_condition).sum(:points_awarded)
   end
 end

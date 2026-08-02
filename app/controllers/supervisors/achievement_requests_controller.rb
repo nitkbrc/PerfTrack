@@ -1,21 +1,15 @@
 module Supervisors
   class AchievementRequestsController < BaseController
     before_action :set_request, only: [ :show, :approve, :revert, :reject, :edit, :update, :remove_proof ]
-    # Approve also re-forwards dean_reverted requests. Revert applies to fresh
-    # submissions, or to dean-reverted requests the student originally raised
-    # (so the student can address the dean's feedback themselves). Reject only
-    # applies to fresh submissions; editing only to dean-reverted ones.
-    before_action :require_approvable_status, only: [ :approve ]
-    before_action :require_revertable_status, only: [ :revert ]
-    before_action :require_submitted_status, only: [ :reject ]
-    before_action :require_dean_reverted_status, only: [ :edit, :update, :remove_proof ]
+    before_action :require_in_review, only: [ :approve, :revert, :reject ]
+    before_action :require_raiseable_revision, only: [ :edit, :update, :remove_proof ]
 
     def show
       authorize @achievement_request
       @achievement_request = AchievementRequest
         .includes(request_versions: [ :proofs_attachments, { req_histories: :actor } ],
                   category: { sub_division: :division },
-                  student: {})
+                  student: {}, current_step: :review_role)
         .find(@achievement_request.id)
       @histories = @achievement_request.req_histories.includes(:actor).order(:created_at)
       @reason_templates = ReasonTemplate.order(:created_at)
@@ -23,19 +17,15 @@ module Supervisors
 
     def approve
       authorize @achievement_request, :review?
-      action = @achievement_request.dean_reverted? ? "supervisor_reforward" : "supervisor_approve"
-      @achievement_request.transition!(to: :supervisor_approved, actor: current_user,
-                                       action: action)
-      redirect_to supervisor_queue_path, notice: "Request approved and forwarded to the dean."
+      @achievement_request.advance!(actor: current_user)
+      redirect_to supervisor_queue_path, notice: "Request advanced to the next reviewer."
     end
 
     def revert
       authorize @achievement_request, :review?
-      decide_with_comment(to: :supervisor_reverted, action: "supervisor_revert",
-                          notice: "Request reverted to the student.")
+      decide_revert(notice: "Request reverted.")
     end
 
-    # Fix-ups on a dean-reverted request before re-forwarding it.
     def edit
       authorize @achievement_request, :review?
     end
@@ -54,7 +44,7 @@ module Supervisors
 
       @achievement_request.revise!(actor: current_user, attrs: update_params)
       redirect_to supervisor_achievement_request_path(@achievement_request),
-                  notice: "Draft version updated — re-forward when ready."
+                  notice: "Draft version updated — advance when ready."
     rescue ActiveRecord::RecordInvalid => e
       @achievement_request.assign_attributes(update_params.except(:proofs, :remove_proof_ids))
       copy_record_errors(@achievement_request, e.record) unless e.record.is_a?(AchievementRequest)
@@ -63,11 +53,9 @@ module Supervisors
 
     def reject
       authorize @achievement_request, :review?
-      decide_with_comment(to: :rejected, action: "supervisor_reject",
-                          notice: "Request rejected.")
+      decide_reject(notice: "Request rejected.")
     end
 
-    # Path B — supervisor-initiated request.
     def new
       authorize AchievementRequest, :initiate?
       @achievement_request = AchievementRequest.new
@@ -80,8 +68,6 @@ module Supervisors
     def create
       authorize AchievementRequest, :initiate?
 
-      # A category outside the supervisor's sub-divisions is rejected up front;
-      # blank student/category/title fall through to model validations below.
       if request_params[:category_id].present? && !supervised_categories.exists?(id: request_params[:category_id])
         @achievement_request = AchievementRequest.new(request_params.except(:proofs))
         @achievement_request.errors.add(:category, "must be under one of your sub-divisions")
@@ -105,9 +91,6 @@ module Supervisors
       @achievement_request = AchievementRequest.find(params[:id])
     end
 
-    # When RequestVersion validations fail inside the create/revise transaction,
-    # rebuild a form-friendly AchievementRequest that keeps submitted fields
-    # (including student_id) and surfaces version errors such as blank proofs.
     def form_request_from_invalid(error, attrs:)
       return error.record if error.record.is_a?(AchievementRequest)
 
@@ -122,34 +105,32 @@ module Supervisors
       end
     end
 
-    def require_submitted_status
-      return if @achievement_request.submitted?
+    def require_in_review
+      return if @achievement_request.in_review? && @achievement_request.current_reviewer&.id == current_user.id
 
       redirect_to supervisor_queue_path, alert: "This request is no longer awaiting your review."
     end
 
-    def require_approvable_status
-      return if @achievement_request.submitted? || @achievement_request.dean_reverted?
+    def require_raiseable_revision
+      return if @achievement_request.awaiting_raiseable_revision? &&
+                @achievement_request.current_reviewer&.id == current_user.id
 
-      redirect_to supervisor_queue_path, alert: "This request is no longer awaiting your review."
+      redirect_to supervisor_queue_path, alert: "Only reverted requests you raised can be edited."
     end
 
-    def require_revertable_status
-      return if @achievement_request.submitted?
-      return if @achievement_request.dean_reverted? && @achievement_request.student_initiated?
+    def decide_revert(notice:)
+      comment = params[:comment].to_s.strip
+      if comment.blank?
+        redirect_to supervisor_achievement_request_path(@achievement_request),
+                    alert: "A message to the student is required."
+        return
+      end
 
-      redirect_to supervisor_queue_path, alert: "This request cannot be reverted to the student."
+      @achievement_request.revert!(actor: current_user, comment: comment)
+      redirect_to supervisor_queue_path, notice: notice
     end
 
-    # Editing is only for Path B requests the supervisor raised himself; a
-    # student-initiated request goes back to the student for fixes instead.
-    def require_dean_reverted_status
-      return if @achievement_request.dean_reverted? && !@achievement_request.student_initiated?
-
-      redirect_to supervisor_queue_path, alert: "Only dean-reverted requests you raised can be edited."
-    end
-
-    def decide_with_comment(to:, action:, notice:)
+    def decide_reject(notice:)
       comment = params[:comment].to_s.strip
       if comment.blank?
         redirect_to supervisor_achievement_request_path(@achievement_request),
@@ -158,13 +139,14 @@ module Supervisors
       end
 
       reason_template = ReasonTemplate.find_by(id: params[:reason_template_id])
-      @achievement_request.transition!(to: to, actor: current_user, action: action,
-                                       comment: comment, reason_template: reason_template)
+      @achievement_request.reject!(actor: current_user, comment: comment,
+                                   reason_template: reason_template)
       redirect_to supervisor_queue_path, notice: notice
     end
 
     def supervised_categories
-      Category.active.joins(:sub_division).where(sub_divisions: { supervisor_user_id: current_user.id })
+      Category.active.joins(:sub_division)
+              .where(sub_divisions: { id: current_user.assigned_sub_divisions.select(:id) })
     end
 
     def request_params

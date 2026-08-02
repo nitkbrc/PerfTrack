@@ -2,12 +2,19 @@ module Supervisors
   class QueueController < BaseController
     def index
       authorize AchievementRequest, :initiate?
-      # dean_reverted requests come back to the supervisor for clarification
-      # and re-forwarding (PRD section 6 lifecycle).
-      @requests = policy_scope(AchievementRequest)
-                    .where(status: [ :submitted, :dean_reverted ])
-                    .includes(:student, category: :sub_division, req_histories: :actor)
-                    .order(created_at: :desc)
+      @sub_divisions = supervised_sub_divisions.order(:name)
+      @selected_sub_division = if params[:sub_division_id].present?
+        @sub_divisions.find_by(id: params[:sub_division_id])
+      end
+
+      scope = AchievementRequest.for_current_reviewer(current_user)
+                                .includes(:student, :current_step, category: :sub_division, req_histories: :actor)
+                                .order(created_at: :desc)
+      if @selected_sub_division
+        scope = scope.joins(category: :sub_division)
+                     .where(sub_divisions: { id: @selected_sub_division.id })
+      end
+      @requests = scope
     end
   end
 end

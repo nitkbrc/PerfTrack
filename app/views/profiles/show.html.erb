@@ -11,68 +11,103 @@
       </div>
     </div>
 
-    <dl class="mt-8 grid gap-5 border-t border-border-subtle pt-6 sm:grid-cols-2">
-      <div>
-        <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Phone</dt>
-        <dd class="mt-1 text-text-main"><%= @user.phone %></dd>
-      </div>
-      <div>
-        <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Address</dt>
-        <dd class="mt-1 text-text-main"><%= @user.address %></dd>
-      </div>
-
-      <% if @user.admin? %>
-        <div class="sm:col-span-2">
-          <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Responsibility</dt>
-          <dd class="mt-1 text-text-main">System-wide administration (all divisions and users)</dd>
-        </div>
-      <% end %>
-
-      <% if @user.deaned_divisions.any? %>
-        <div class="sm:col-span-2">
-          <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">
-            Dean of <%= "division".pluralize(@user.deaned_divisions.size) %>
-          </dt>
-          <dd class="mt-3 flex flex-wrap gap-2">
-            <% @user.deaned_divisions.order(:name).each do |division| %>
-              <span class="scats-chip">
-                <%= division.name %>
-                <span class="scats-chip-muted">(<%= division.div_type.titleize %>)</span>
-              </span>
+    <%= form_with model: @user, url: profile_path, method: :patch, class: "mt-8 space-y-6 border-t border-border-subtle pt-6",
+          html: { multipart: true } do |f| %>
+      <% if @user.errors.any? %>
+        <div class="rounded-md border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
+          <ul class="list-disc pl-5">
+            <% @user.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
             <% end %>
-          </dd>
+          </ul>
         </div>
       <% end %>
 
-      <% if @user.supervised_sub_divisions.any? %>
-        <div class="sm:col-span-2">
-          <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">
-            Supervisor of <%= "sub-division".pluralize(@user.supervised_sub_divisions.size) %>
-          </dt>
-          <dd class="mt-3 flex flex-wrap gap-2">
-            <% @user.supervised_sub_divisions.sort_by(&:name).each do |sub_division| %>
-              <span class="scats-chip">
-                <%= sub_division.name %>
-                <span class="scats-chip-muted">· <%= sub_division.division.name %></span>
-              </span>
-            <% end %>
-          </dd>
-        </div>
-      <% end %>
-
-      <% if @user.student_profile %>
+      <div class="grid gap-5 sm:grid-cols-2">
         <div>
-          <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">USN</dt>
-          <dd class="mt-1 text-text-main"><%= @user.student_profile.usn %></dd>
+          <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Phone</dt>
+          <% if @editable[:phone] %>
+            <%= f.telephone_field :phone, class: "#{admin_input_classes} mt-1" %>
+          <% else %>
+            <dd class="mt-1 text-text-main"><%= @user.phone %></dd>
+          <% end %>
         </div>
         <div>
-          <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Department / semester</dt>
-          <dd class="mt-1 text-text-main">
-            <%= @user.student_profile.department.name %> · Semester <%= @user.student_profile.sem %>
-          </dd>
+          <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Address</dt>
+          <% if @editable[:address] %>
+            <%= f.text_area :address, rows: 2, class: "#{admin_input_classes} mt-1 h-auto" %>
+          <% else %>
+            <dd class="mt-1 text-text-main"><%= @user.address %></dd>
+          <% end %>
+        </div>
+
+        <% if @editable[:photo] %>
+          <div class="sm:col-span-2">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Photo</dt>
+            <%= f.file_field :photo, accept: "image/png,image/jpeg", class: "mt-2 block w-full text-sm text-text-main" %>
+            <p class="mt-1 text-xs text-text-muted">PNG or JPEG, max 5 MB.</p>
+          </div>
+        <% end %>
+
+        <% if @user.admin? %>
+          <div class="sm:col-span-2">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Responsibility</dt>
+            <dd class="mt-1 text-text-main">System-wide administration (all divisions and users)</dd>
+          </div>
+        <% end %>
+
+        <% if @user.deaned_divisions.any? %>
+          <div class="sm:col-span-2">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">
+              Dean of <%= "division".pluralize(@user.deaned_divisions.size) %>
+            </dt>
+            <dd class="mt-3 flex flex-wrap gap-2">
+              <% @user.deaned_divisions.order(:name).each do |division| %>
+                <span class="scats-chip">
+                  <%= division.name %>
+                  <span class="scats-chip-muted">(<%= division.div_type.titleize %>)</span>
+                </span>
+              <% end %>
+            </dd>
+          </div>
+        <% end %>
+
+        <% if @user.supervised_sub_divisions.any? %>
+          <div class="sm:col-span-2">
+            <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">
+              Supervisor of <%= "sub-division".pluralize(@user.supervised_sub_divisions.size) %>
+            </dt>
+            <dd class="mt-3 flex flex-wrap gap-2">
+              <% @user.supervised_sub_divisions.sort_by(&:name).each do |sub_division| %>
+                <span class="scats-chip">
+                  <%= sub_division.name %>
+                  <span class="scats-chip-muted">· <%= sub_division.division.name %></span>
+                </span>
+              <% end %>
+            </dd>
+          </div>
+        <% end %>
+
+        <% if @user.student_profile %>
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">USN</dt>
+            <dd class="mt-1 text-text-main"><%= @user.student_profile.usn %></dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wide text-text-muted">Department / semester</dt>
+            <dd class="mt-1 text-text-main">
+              <%= @user.student_profile.department.name %> · Semester <%= @user.student_profile.sem %>
+            </dd>
+          </div>
+        <% end %>
+      </div>
+
+      <% if @editable.values.any? %>
+        <div>
+          <%= f.submit "Save profile", class: "scats-primary-button" %>
         </div>
       <% end %>
-    </dl>
+    <% end %>
 
     <div class="mt-8 flex flex-wrap gap-3 border-t border-border-subtle pt-6">
       <%= link_to "Change password", edit_account_password_path, class: "scats-primary-button" %>

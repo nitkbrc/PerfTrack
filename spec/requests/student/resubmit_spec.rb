@@ -3,23 +3,22 @@ require "rails_helper"
 RSpec.describe "Student resubmit", type: :request do
   let(:profile) { create(:student) }
   let(:request_record) do
-    create(:achievement_request, student: profile).tap do |r|
+    create(:achievement_request, :reverted, student: profile).tap do |r|
       r.req_histories.create!(actor: profile.user, action: "submit",
-                              to_status: "submitted", request_version: r.current_version)
-      r.update!(status: :supervisor_reverted)
+                              to_status: "in_review", request_version: r.current_version)
     end
   end
 
   before { sign_in profile.user }
 
-  it "updates the request and returns it to submitted with a resubmit history row" do
+  it "updates the request and returns it to in review with a resubmit history row" do
     patch student_achievement_request_path(request_record), params: {
       achievement_request: { title: "Fixed title", description: "Now with clearer proof" }
     }
 
     expect(response).to redirect_to(student_achievement_request_path(request_record))
     request_record.reload
-    expect(request_record.status).to eq("submitted")
+    expect(request_record.status).to eq("in_review")
     expect(request_record.title).to eq("Fixed title")
     expect(request_record.request_versions.count).to eq(2)
     expect(request_record.title).to eq(request_record.current_version.title)
@@ -27,8 +26,8 @@ RSpec.describe "Student resubmit", type: :request do
     history = request_record.req_histories.order(:created_at).last
     expect(history.action).to eq("resubmit")
     expect(history.actor).to eq(profile.user)
-    expect(history.from_status).to eq("supervisor_reverted")
-    expect(history.to_status).to eq("submitted")
+    expect(history.from_status).to eq("reverted")
+    expect(history.to_status).to eq("in_review")
     expect(history.request_version).to eq(request_record.current_version)
   end
 
@@ -63,7 +62,7 @@ RSpec.describe "Student resubmit", type: :request do
 
     expect(response).to have_http_status(:ok)
     request_record.reload
-    expect(request_record.status).to eq("supervisor_reverted")
+    expect(request_record.status).to eq("reverted")
     expect(request_record.current_version.proofs.count).to eq(1)
     expect(request_record.current_version.proofs.map(&:signed_id)).not_to include(signed_id)
     expect(original_version.reload.proofs.count).to eq(2)
@@ -97,18 +96,18 @@ RSpec.describe "Student resubmit", type: :request do
   end
 
   it "is blocked for non-reverted requests" do
-    submitted = create(:achievement_request, student: profile)
+    in_review = create(:achievement_request, student: profile)
 
-    patch student_achievement_request_path(submitted), params: {
+    patch student_achievement_request_path(in_review), params: {
       achievement_request: { title: "Sneaky edit", description: "x" }
     }
 
     expect(response).to redirect_to(root_path)
-    expect(submitted.reload.title).not_to eq("Sneaky edit")
+    expect(in_review.reload.title).not_to eq("Sneaky edit")
   end
 
   it "is blocked for another student's reverted request" do
-    other = create(:achievement_request).tap { |r| r.update!(status: :supervisor_reverted) }
+    other = create(:achievement_request, :reverted)
 
     get edit_student_achievement_request_path(other)
 

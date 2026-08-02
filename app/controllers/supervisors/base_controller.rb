@@ -6,7 +6,7 @@ module Supervisors
     private
 
     def supervised_sub_divisions
-      current_user.supervised_sub_divisions
+      current_user.assigned_sub_divisions
     end
     helper_method :supervised_sub_divisions
 

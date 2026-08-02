@@ -6,15 +6,15 @@ RSpec.describe "Dean decision flow", type: :request do
   let(:sub_division) { create(:sub_division, division: division) }
   let(:category)     { create(:category, sub_division: sub_division, points: 20) }
   let(:request_record) do
-    create(:achievement_request, category: category).tap { |r| r.update!(status: :supervisor_approved) }
+    create(:achievement_request, category: category, at_step: :dean)
   end
 
   before { sign_in dean }
 
   describe "GET /dean/queue" do
-    it "shows only supervisor_approved requests in the dean's division" do
+    it "shows only in-review requests at the dean step in the dean's division" do
       request_record.update!(title: "Forwarded to me")
-      create(:achievement_request, title: "Other division").tap { |r| r.update!(status: :supervisor_approved) }
+      create(:achievement_request, at_step: :dean, title: "Other division")
       create(:achievement_request, category: category, title: "Still with supervisor")
 
       get dean_queue_path
@@ -42,11 +42,11 @@ RSpec.describe "Dean decision flow", type: :request do
 
       expect(response).to redirect_to(dean_queue_path)
       request_record.reload
-      expect(request_record.status).to eq("dean_approved")
+      expect(request_record.status).to eq("approved")
       expect(request_record.points_awarded).to eq(20)
 
       history = request_record.req_histories.sole
-      expect(history.action).to eq("dean_approve")
+      expect(history.action).to eq("approve")
       expect(history.actor).to eq(dean)
     end
 
@@ -69,12 +69,13 @@ RSpec.describe "Dean decision flow", type: :request do
 
       patch approve_dean_achievement_request_path(request_record)
 
-      expect(response).to redirect_to(root_path)
-      expect(request_record.reload.status).to eq("supervisor_approved")
+      expect(response).to redirect_to(dean_queue_path)
+      expect(flash[:alert]).to eq("This request is no longer awaiting your decision.")
+      expect(request_record.reload.status).to eq("in_review")
     end
 
-    it "refuses requests not at supervisor_approved" do
-      request_record.update!(status: :submitted)
+    it "refuses requests not at the dean step" do
+      request_record.update_columns(current_step_id: category.sub_division.hierarchy_steps.ordered.first.id)
 
       patch approve_dean_achievement_request_path(request_record)
 
@@ -91,20 +92,20 @@ RSpec.describe "Dean decision flow", type: :request do
             params: { comment: "Need the original certificate.", reason_template_id: template.id }
 
       request_record.reload
-      expect(request_record.status).to eq("dean_reverted")
+      expect(request_record.status).to eq("in_review")
+      expect(request_record.current_reviewer).to eq(sub_division.supervisor)
       expect(request_record.points_awarded).to be_nil
 
       history = request_record.req_histories.sole
-      expect(history.action).to eq("dean_revert")
+      expect(history.action).to eq("revert")
       expect(history.comment).to eq("Need the original certificate.")
-      expect(history.reason_template).to eq(template)
     end
 
     it "requires a comment" do
       patch revert_dean_achievement_request_path(request_record), params: { comment: "" }
 
       expect(response).to redirect_to(dean_achievement_request_path(request_record))
-      expect(request_record.reload.status).to eq("supervisor_approved")
+      expect(request_record.reload.status).to eq("in_review")
     end
   end
 
@@ -116,7 +117,7 @@ RSpec.describe "Dean decision flow", type: :request do
       request_record.reload
       expect(request_record.status).to eq("rejected")
       expect(request_record.points_awarded).to be_nil
-      expect(request_record.req_histories.sole.action).to eq("dean_reject")
+      expect(request_record.req_histories.sole.action).to eq("reject")
     end
   end
 

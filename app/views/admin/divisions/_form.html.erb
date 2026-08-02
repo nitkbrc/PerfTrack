@@ -12,12 +12,11 @@
     <p class="mt-1 text-xs text-slate-500">Positive divisions award points; negative divisions deduct them.</p>
   </div>
 
-  <div>
-    <%= f.label :dean_user_id, "Dean", class: admin_label_classes %>
-    <%= f.collection_select :dean_user_id, User.eligible_deans(division.dean_user_id).order(:name), :id,
-          ->(u) { u.name.presence || u.email }, { prompt: "Select a faculty member" }, class: admin_input_classes %>
-    <p class="mt-1 text-xs text-slate-500">Only faculty who are not already a dean or a supervisor are listed.</p>
-  </div>
+  <p class="text-xs text-slate-500">
+    Assign a Dean via
+    <%= link_to "Role assignments", admin_role_assignments_path, class: admin_link_classes %>
+    after creating the division. Configure the review chain under Hierarchy on the division page.
+  </p>
 
   <div class="flex items-center gap-4">
     <%= f.submit class: admin_primary_button_classes %>

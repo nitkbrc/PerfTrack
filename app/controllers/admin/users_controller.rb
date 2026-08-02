@@ -3,13 +3,13 @@ module Admin
     def index
       authorize User
       @users = User.with_attached_photo
-                   .includes(:deaned_divisions, :supervised_sub_divisions, student_profile: :department)
+                   .includes(role_assignments: [ :division, :sub_division ], student_profile: :department)
                    .order(:name)
       case params[:role]
       when "supervisor"
-        @users = @users.faculty.joins(:supervised_sub_divisions).distinct
+        @users = @users.faculty.joins(:role_assignments).where.not(role_assignments: { sub_division_id: nil }).distinct
       when "dean"
-        @users = @users.faculty.joins(:deaned_divisions).distinct
+        @users = @users.faculty.joins(:role_assignments).where.not(role_assignments: { division_id: nil }).distinct
       when "admin", "faculty", "student"
         @users = @users.where(role: params[:role])
       end

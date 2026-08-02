@@ -76,8 +76,8 @@ module AdminHelper
     return [ user.role.titleize ] unless user.faculty?
 
     labels = []
-    labels << "Dean" if user.deaned_divisions.any?
-    labels << "Supervisor" if user.supervised_sub_divisions.any?
+    labels << "Dean" if user.assigned_divisions.any?
+    labels << "Supervisor" if user.assigned_sub_divisions.any?
     labels.presence || [ "Faculty" ]
   end
 

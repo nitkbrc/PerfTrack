@@ -46,9 +46,7 @@ RSpec.describe "Request email notification triggers", type: :model do
 
   it "emails the supervisor on student resubmit" do
     request = path_a_request
-    clear_enqueued_jobs
-    request.transition!(to: :supervisor_reverted, actor: supervisor, action: "supervisor_revert",
-                        comment: "Fix proof")
+    request.revert!(actor: supervisor, comment: "Fix proof")
     clear_enqueued_jobs
 
     expect {
@@ -57,43 +55,41 @@ RSpec.describe "Request email notification triggers", type: :model do
     }.to have_enqueued_mail(RequestMailer, :submitted_to_supervisor).once
   end
 
-  it "emails the dean on supervisor approve" do
+  it "emails the next reviewer on supervisor advance" do
     request = path_a_request
     clear_enqueued_jobs
 
     expect {
-      request.transition!(to: :supervisor_approved, actor: supervisor, action: "supervisor_approve")
+      request.advance!(actor: supervisor)
     }.to have_enqueued_mail(RequestMailer, :forwarded_to_dean).once
   end
 
-  it "emails the dean on supervisor reforward" do
+  it "emails the next reviewer when Path B request is re-advanced after revert" do
     request = path_b_request
-    request.transition!(to: :dean_reverted, actor: dean, action: "dean_revert", comment: "Clarify")
+    request.revert!(actor: dean, comment: "Clarify")
     clear_enqueued_jobs
 
     expect {
-      request.transition!(to: :supervisor_approved, actor: supervisor, action: "supervisor_reforward")
+      request.advance!(actor: supervisor)
     }.to have_enqueued_mail(RequestMailer, :forwarded_to_dean).once
   end
 
-  it "emails the supervisor on dean revert" do
+  it "emails the previous reviewer on dean revert" do
     request = path_a_request
-    request.transition!(to: :supervisor_approved, actor: supervisor, action: "supervisor_approve")
+    request.advance!(actor: supervisor)
     clear_enqueued_jobs
 
     expect {
-      request.transition!(to: :dean_reverted, actor: dean, action: "dean_revert",
-                          comment: "Need dates")
+      request.revert!(actor: dean, comment: "Need dates")
     }.to have_enqueued_mail(RequestMailer, :reverted_to_supervisor).once
   end
 
-  it "emails the student on supervisor revert" do
+  it "emails the student on supervisor revert to floor" do
     request = path_a_request
     clear_enqueued_jobs
 
     expect {
-      request.transition!(to: :supervisor_reverted, actor: supervisor, action: "supervisor_revert",
-                          comment: "Need clearer proof")
+      request.revert!(actor: supervisor, comment: "Need clearer proof")
     }.to have_enqueued_mail(RequestMailer, :reverted_to_student).once
   end
 
@@ -102,54 +98,51 @@ RSpec.describe "Request email notification triggers", type: :model do
     clear_enqueued_jobs
 
     expect {
-      request.transition!(to: :rejected, actor: supervisor, action: "supervisor_reject",
-                          comment: "Not eligible")
+      request.reject!(actor: supervisor, comment: "Not eligible")
     }.to have_enqueued_mail(RequestMailer, :rejected_notification).once
   end
 
-  it "emails only the student on Path A dean approve" do
+  it "emails only the student on Path A final approve" do
     request = path_a_request
-    request.transition!(to: :supervisor_approved, actor: supervisor, action: "supervisor_approve")
+    request.advance!(actor: supervisor)
     clear_enqueued_jobs
 
     expect {
-      request.dean_approve!(actor: dean)
+      request.advance!(actor: dean)
     }.to have_enqueued_mail(RequestMailer, :approved_notification).once
   end
 
-  it "emails the student and originating supervisor on Path B dean approve" do
+  it "emails the student and originating supervisor on Path B final approve" do
     request = path_b_request
     clear_enqueued_jobs
 
     expect {
-      request.dean_approve!(actor: dean)
+      request.advance!(actor: dean)
     }.to have_enqueued_mail(RequestMailer, :approved_notification).twice
   end
 
-  it "emails only the student on Path A dean reject" do
+  it "emails only the student on Path A reject from dean" do
     request = path_a_request
-    request.transition!(to: :supervisor_approved, actor: supervisor, action: "supervisor_approve")
+    request.advance!(actor: supervisor)
     clear_enqueued_jobs
 
     expect {
-      request.transition!(to: :rejected, actor: dean, action: "dean_reject",
-                          comment: "Not eligible")
+      request.reject!(actor: dean, comment: "Not eligible")
     }.to have_enqueued_mail(RequestMailer, :rejected_notification).once
   end
 
-  it "emails the student and originating supervisor on Path B dean reject" do
+  it "emails the student and originating supervisor on Path B reject" do
     request = path_b_request
     clear_enqueued_jobs
 
     expect {
-      request.transition!(to: :rejected, actor: dean, action: "dean_reject",
-                          comment: "Not eligible")
+      request.reject!(actor: dean, comment: "Not eligible")
     }.to have_enqueued_mail(RequestMailer, :rejected_notification).twice
   end
 
   it "does not email on revise draft saves" do
     request = path_b_request
-    request.transition!(to: :dean_reverted, actor: dean, action: "dean_revert", comment: "Fix")
+    request.revert!(actor: dean, comment: "Fix")
     clear_enqueued_jobs
 
     expect {

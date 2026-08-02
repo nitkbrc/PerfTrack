@@ -1,20 +1,29 @@
 class Division < ApplicationRecord
   include Archivable
 
-  belongs_to :dean, class_name: "User", foreign_key: :dean_user_id
-
   has_many :sub_divisions
+  has_many :hierarchy_steps, dependent: :destroy
+  has_many :role_assignments, dependent: :destroy
 
   enum :div_type, { positive: "positive", negative: "negative" }
+
+  after_create :ensure_default_dean_step!
+
+  def dean
+    RoleAssignment.holder_for(review_role: ReviewRole.dean, division: self)
+  end
+
+  def dean_assignment
+    role_assignments.find_by(review_role: ReviewRole.dean)
+  end
 
   # The whole cascade shares one timestamp so restore! can tell which children
   # were archived by this cascade (and must come back) from children that were
   # archived individually beforehand (and must stay archived).
-  def archive!
+  def archive!(stamp = Time.current, actor: nil)
     transaction do
-      stamp = Time.current
       update!(archived_at: stamp)
-      sub_divisions.active.find_each { |sub_division| sub_division.archive!(stamp) }
+      sub_divisions.active.find_each { |sub_division| sub_division.archive!(stamp, actor: actor) }
     end
   end
 
@@ -26,18 +35,13 @@ class Division < ApplicationRecord
     end
   end
 
-  # Backs the unique DB index so a duplicate dean re-renders the form with an
-  # error instead of raising ActiveRecord::RecordNotUnique.
-  validates :dean_user_id, uniqueness: { message: "is already the dean of another division" }
-  validate :dean_is_not_a_supervisor
-
   private
 
-  # Dean/Supervisor mutual exclusivity (TRD section 6) spans two tables,
-  # so it can't be a DB constraint.
-  def dean_is_not_a_supervisor
-    if SubDivision.exists?(supervisor_user_id: dean_user_id)
-      errors.add(:dean_user_id, "is already a supervisor of a sub-division")
+  def ensure_default_dean_step!
+    ReviewRole.ensure_system_roles!
+    hierarchy_steps.find_or_create_by!(review_role: ReviewRole.dean) do |step|
+      step.position = 1
+      step.can_raise_on_behalf = false
     end
   end
 end

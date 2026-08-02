@@ -1,6 +1,7 @@
 class AchievementRequest < ApplicationRecord
   belongs_to :student
   belongs_to :category
+  belongs_to :current_step, class_name: "HierarchyStep", optional: true
 
   # Histories must go before versions: versions restrict destroy while histories remain.
   has_many :req_histories, dependent: :destroy
@@ -13,9 +14,26 @@ class AchievementRequest < ApplicationRecord
   # categories keep their existing requests but never accept new ones.
   validate :category_is_not_archived, on: :create
 
-  enum :status, { submitted: "submitted", supervisor_approved: "supervisor_approved",
-                  supervisor_reverted: "supervisor_reverted", dean_approved: "dean_approved",
-                  dean_reverted: "dean_reverted", rejected: "rejected" }
+  enum :status, {
+    in_review: "in_review",
+    reverted: "reverted",
+    approved: "approved",
+    rejected: "rejected"
+  }
+
+  scope :for_current_reviewer, ->(user) {
+    in_review
+      .joins("INNER JOIN hierarchy_steps ON hierarchy_steps.id = achievement_requests.current_step_id")
+      .joins(<<~SQL.squish)
+        INNER JOIN role_assignments ON role_assignments.review_role_id = hierarchy_steps.review_role_id
+          AND (
+            (hierarchy_steps.division_id IS NOT NULL AND role_assignments.division_id = hierarchy_steps.division_id)
+            OR
+            (hierarchy_steps.sub_division_id IS NOT NULL AND role_assignments.sub_division_id = hierarchy_steps.sub_division_id)
+          )
+      SQL
+      .where(role_assignments: { user_id: user.id })
+  }
 
   # Actions that lock a version as sent (immutable snapshot). Edits after that
   # create a new draft; further edits coalesce onto that draft until the next send.
@@ -23,8 +41,14 @@ class AchievementRequest < ApplicationRecord
     submit
     resubmit
     supervisor_initiate
-    supervisor_reforward
+    advance
   ].freeze
+
+  def review_chain_resolver
+    ReviewChainResolver.new(self)
+  end
+
+  delegate :review_chain, :current_reviewer, :next_step, :previous_step, to: :review_chain_resolver
 
   def current_version
     request_versions.order(version_number: :desc).first
@@ -43,18 +67,24 @@ class AchievementRequest < ApplicationRecord
   # read request.proofs (always the latest version's attachments).
   delegate :proofs, to: :current_version
 
-  # Path A submission: the request, first version, and first history row are
-  # created in one transaction so none can exist without the others.
+  # Path A submission: lands on the first assigned chain step (typically Supervisor).
   def self.submit!(student:, actor:, attrs:)
     attrs, proofs = split_proofs(attrs)
     request = transaction do
-      created = create!(attrs.merge(student: student, status: :submitted))
+      created = create!(attrs.merge(student: student, status: :in_review))
+      entry = created.review_chain_resolver.entry_step_for_submit
+      unless entry
+        created.errors.add(:base, "No reviewer is assigned for this category's review chain")
+        raise ActiveRecord::RecordInvalid, created
+      end
+
+      created.update!(current_step: entry.step)
       version = created.create_version!(version_number: 1, proofs: proofs)
-      created.req_histories.create!(actor: actor, action: "submit", to_status: "submitted",
+      created.req_histories.create!(actor: actor, action: "submit", to_status: "in_review",
                                     request_version: version)
       created
     end
-    RequestMailer.submitted_to_supervisor(request, actor: actor).deliver_later
+    notify_current_reviewer!(request, actor: actor, kind: :submitted)
     request
   end
 
@@ -63,24 +93,28 @@ class AchievementRequest < ApplicationRecord
     req_histories.order(:created_at).first&.action == "submit"
   end
 
-  # Path B: the supervisor creating the request is itself the review step, so it
-  # skips submitted; the first history row records the supervisor as originator.
+  # Path B: skip the raiseable initiator's step; land on the next assigned step
+  # (typically Dean in the default 2-step hierarchy).
   def self.supervisor_initiate!(student:, actor:, attrs:)
     attrs, proofs = split_proofs(attrs)
     request = transaction do
-      created = create!(attrs.merge(student: student, status: :supervisor_approved))
+      created = create!(attrs.merge(student: student, status: :in_review))
+      entry = created.review_chain_resolver.entry_step_for_raise_on_behalf(actor: actor)
+      raise ActiveRecord::RecordInvalid, created unless entry
+
+      created.update!(current_step: entry.step)
       version = created.create_version!(version_number: 1, proofs: proofs)
       created.req_histories.create!(actor: actor, action: "supervisor_initiate",
-                                    to_status: "supervisor_approved",
+                                    to_status: "in_review",
                                     request_version: version)
       created
     end
-    RequestMailer.raised_on_behalf(request, actor: actor).deliver_later
+    notify_current_reviewer!(request, actor: actor, kind: :raised_on_behalf)
     RequestMailer.raised_on_your_behalf(request, actor: actor).deliver_later
     request
   end
 
-  # Student edit-and-resubmit after supervisor_reverted: new version + history.
+  # Student (or Path B floor creator) edit-and-resubmit after reverted.
   def resubmit!(actor:, attrs:)
     attrs, new_proofs, remove_proof_ids = self.class.split_proof_attrs(attrs)
     transaction do
@@ -92,18 +126,19 @@ class AchievementRequest < ApplicationRecord
                                          new_proofs: new_proofs, remove_proof_ids: remove_proof_ids)
       end
       from = status
-      update!(title: version.title, description: version.description, status: :submitted)
+      entry = review_chain_resolver.entry_step_for_submit
+      update!(title: version.title, description: version.description,
+              status: :in_review, current_step: entry&.step)
       req_histories.create!(actor: actor, action: "resubmit",
-                            from_status: from, to_status: "submitted",
+                            from_status: from, to_status: "in_review",
                             request_version: version)
     end
-    RequestMailer.submitted_to_supervisor(self, actor: actor).deliver_later
+    self.class.notify_current_reviewer!(self, actor: actor, kind: :submitted)
     self
   end
 
-  # Path B supervisor fix-up after dean_reverted.
-  # First edit after a sent version creates a draft (N+1); further saves update
-  # that draft in place until re-forward locks it.
+  # Path B supervisor fix-up while the request sits at their raiseable step
+  # after a later reviewer reverted.
   def revise!(actor:, attrs:)
     attrs, new_proofs, remove_proof_ids = self.class.split_proof_attrs(attrs)
     transaction do
@@ -137,9 +172,73 @@ class AchievementRequest < ApplicationRecord
     raise e
   end
 
-  # Every review transition writes its history row in the same transaction as
-  # the status change (PRD section 6 — auditability).
+  # Advance to the next assigned chain step, or final-approve when at the last step.
+  def advance!(actor:, comment: nil)
+    raise ArgumentError, "request is not in review" unless in_review?
+
+    nxt = next_step
+    if nxt
+      transaction do
+        from = status
+        update!(current_step: nxt.step, status: :in_review)
+        req_histories.create!(actor: actor, action: "advance", comment: comment,
+                              from_status: from, to_status: "in_review",
+                              request_version: current_version)
+      end
+      self.class.notify_current_reviewer!(self, actor: actor, kind: :advanced)
+    else
+      finalize_approve!(actor: actor)
+    end
+    self
+  end
+
+  # Move to the previous assigned step, or floor to the creator with status reverted.
+  def revert!(actor:, comment:)
+    raise ArgumentError, "request is not in review" unless in_review?
+
+    prev = previous_step
+    floored = prev.nil?
+    transaction do
+      from = status
+      if prev
+        update!(current_step: prev.step, status: :in_review)
+        req_histories.create!(actor: actor, action: "revert", comment: comment,
+                              from_status: from, to_status: "in_review",
+                              request_version: current_version)
+      else
+        update!(current_step: nil, status: :reverted)
+        req_histories.create!(actor: actor, action: "revert", comment: comment,
+                              from_status: from, to_status: "reverted",
+                              request_version: current_version)
+      end
+    end
+    if floored
+      notify_creator_of_revert!(actor: actor, comment: comment)
+    else
+      self.class.notify_current_reviewer!(self, actor: actor, kind: :reverted, comment: comment)
+    end
+    self
+  end
+
+  def reject!(actor:, comment:, reason_template: nil, action: "reject")
+    transaction do
+      from = status
+      update!(status: :rejected, current_step: nil)
+      req_histories.create!(actor: actor, action: action, comment: comment,
+                            reason_template: reason_template,
+                            from_status: from, to_status: "rejected",
+                            request_version: current_version)
+    end
+    enqueue_final_decision_mails!(:rejected_notification, actor: actor, comment: comment)
+    self
+  end
+
+  # Kept for archive auto-reject and any remaining callers that need a generic write.
   def transition!(to:, actor:, action:, comment: nil, reason_template: nil)
+    if to.to_sym == :rejected
+      return reject!(actor: actor, comment: comment, reason_template: reason_template, action: action.to_s)
+    end
+
     transaction do
       from = status
       update!(status: to)
@@ -148,26 +247,6 @@ class AchievementRequest < ApplicationRecord
                             from_status: from, to_status: to.to_s,
                             request_version: current_version)
     end
-    enqueue_transition_mail!(actor: actor, action: action, comment: comment)
-    self
-  end
-
-  # Dean approval snapshots the signed point value in the same transaction as
-  # the status change and its history row (TRD section 6), so later
-  # category.points edits never retroactively change an already-verified record.
-  def dean_approve!(actor:)
-    transaction do
-      sign = category.sub_division.division.positive? ? 1 : -1
-      from = status
-      update!(status: :dean_approved, points_awarded: category.points * sign)
-      req_histories.create!(actor: actor, action: "dean_approve",
-                            from_status: from, to_status: "dean_approved",
-                            request_version: current_version)
-    end
-    # Enqueued after the transaction commits so the job never sees a rolled-back
-    # approval (PRD section 8 — notify on verification).
-    DeanApprovalNotificationJob.perform_later(id)
-    enqueue_final_decision_mails!(:approved_notification, actor: actor)
     self
   end
 
@@ -183,8 +262,6 @@ class AchievementRequest < ApplicationRecord
     version
   end
 
-  # Snapshot a new version from the previous one, carrying forward existing
-  # proofs (minus any marked for removal) and appending newly uploaded files.
   def append_version!(title:, description:, new_proofs: [], remove_proof_ids: [])
     previous = current_version
     kept = previous.proofs.reject { |proof| remove_proof_ids.include?(proof.signed_id) }
@@ -239,24 +316,53 @@ class AchievementRequest < ApplicationRecord
     [ attrs, proofs, remove_ids ]
   end
 
+  # True when the request sits at a raiseable-on-behalf step (Path B edit window).
+  def awaiting_raiseable_revision?
+    in_review? && current_step&.can_raise_on_behalf? && !student_initiated?
+  end
+
   private
 
-  def enqueue_transition_mail!(actor:, action:, comment:)
-    case action.to_s
-    when "supervisor_approve"
-      RequestMailer.forwarded_to_dean(self, actor: actor, is_reforward: false).deliver_later
-    when "supervisor_reforward"
-      RequestMailer.forwarded_to_dean(self, actor: actor, is_reforward: true).deliver_later
-    when "dean_revert"
-      RequestMailer.reverted_to_supervisor(self, actor: actor, comment: comment).deliver_later
-    when "supervisor_revert"
+  def finalize_approve!(actor:)
+    transaction do
+      sign = category.sub_division.division.positive? ? 1 : -1
+      from = status
+      update!(status: :approved, current_step: nil, points_awarded: category.points * sign)
+      req_histories.create!(actor: actor, action: "approve",
+                            from_status: from, to_status: "approved",
+                            request_version: current_version)
+    end
+    DeanApprovalNotificationJob.perform_later(id)
+    enqueue_final_decision_mails!(:approved_notification, actor: actor)
+  end
+
+  def self.notify_current_reviewer!(request, actor:, kind:, comment: nil)
+    reviewer = request.current_reviewer
+    return unless reviewer
+
+    case kind
+    when :submitted
+      RequestMailer.submitted_to_supervisor(request, actor: actor, recipient: reviewer).deliver_later
+    when :raised_on_behalf
+      RequestMailer.raised_on_behalf(request, actor: actor, recipient: reviewer).deliver_later
+    when :advanced
+      RequestMailer.forwarded_to_dean(request, actor: actor, recipient: reviewer,
+                                      is_reforward: false).deliver_later
+    when :reverted
+      RequestMailer.reverted_to_supervisor(request, actor: actor, recipient: reviewer,
+                                           comment: comment).deliver_later
+    end
+  end
+
+  def notify_creator_of_revert!(actor:, comment:)
+    if student_initiated?
       RequestMailer.reverted_to_student(self, actor: actor, comment: comment).deliver_later
-    when "supervisor_reject"
-      # Submitted → Rejected is always student-originated; student only.
-      RequestMailer.rejected_notification(self, actor: actor, recipient: student.user,
-                                          comment: comment).deliver_later
-    when "dean_reject"
-      enqueue_final_decision_mails!(:rejected_notification, actor: actor, comment: comment)
+    else
+      supervisor = originating_supervisor
+      return unless supervisor
+
+      RequestMailer.reverted_to_supervisor(self, actor: actor, recipient: supervisor,
+                                           comment: comment).deliver_later
     end
   end
 
@@ -269,8 +375,6 @@ class AchievementRequest < ApplicationRecord
     first.actor
   end
 
-  # Dean final decision (approve or reject): always the student; Path B also the
-  # originating supervisor from the first history row.
   def enqueue_final_decision_mails!(mailer_method, actor:, comment: nil)
     student_args = { actor: actor, recipient: student.user }
     student_args[:comment] = comment if comment

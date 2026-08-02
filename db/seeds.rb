@@ -38,6 +38,12 @@ def seed_user(name:, email:, role:, phone:, address:)
   user
 end
 
+puts "Seeding profile permissions..."
+Permission.ensure_defaults!
+
+puts "Seeding system review roles..."
+ReviewRole.ensure_system_roles!
+
 puts "Seeding departments..."
 departments = [ "CSE", "ECE", "Mechanical" ].index_with do |name|
   Department.find_or_create_by!(name: name)
@@ -80,11 +86,14 @@ categories = {}
 structure.each do |(div_name, div_type, dean), sub_divisions|
   division = Division.find_or_create_by!(name: div_name) do |d|
     d.div_type = div_type
-    d.dean = dean
+  end
+  RoleAssignment.find_or_create_by!(review_role: ReviewRole.dean, division: division) do |a|
+    a.user = dean
   end
   sub_divisions.each do |(sub_name, supervisor), cats|
-    sub_division = SubDivision.find_or_create_by!(name: sub_name, division: division) do |sd|
-      sd.supervisor = supervisor
+    sub_division = SubDivision.find_or_create_by!(name: sub_name, division: division)
+    RoleAssignment.find_or_create_by!(review_role: ReviewRole.supervisor, sub_division: sub_division) do |a|
+      a.user = supervisor
     end
     cats.each do |cat_name, points|
       categories[cat_name] = Category.find_or_create_by!(name: cat_name, sub_division: sub_division) do |c|
@@ -142,52 +151,47 @@ asha, vikram, priya, rahul, sneha, arjun, divya, karthik = students
 # seed rerunnable.
 if asha.achievement_requests.none?
   r = request_for(asha, categories["National hackathon win"], "Won Smart India Hackathon", "First place in the national finals.")
-  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
-  r.dean_approve!(actor: dean_of(r))
+  r.advance!(actor: supervisor_of(r))
+  r.advance!(actor: dean_of(r))
 
   r = request_for(asha, categories["Open-source contribution"], "Merged PR into Rails", "Contributed a documentation fix.")
-  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
+  r.advance!(actor: supervisor_of(r))
 
   request_for(asha, categories["Tech fest presentation"], "Presented at Techkriti", "Talk on service workers.")
 end
 
 if vikram.achievement_requests.none?
   r = request_for(vikram, categories["University-level medal"], "Gold in 400m sprint", "University athletics meet.")
-  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
-  r.dean_approve!(actor: dean_of(r))
+  r.advance!(actor: supervisor_of(r))
+  r.advance!(actor: dean_of(r))
 
   r = AchievementRequest.supervisor_initiate!(
     student: vikram, actor: sup_conduct,
     attrs: { category: categories["Repeated late attendance"], title: "Late to first hour 12 times",
              description: "Attendance register, March–April.", proofs: [ proof ] }
   )
-  r.dean_approve!(actor: dean_of(r))
+  r.advance!(actor: dean_of(r))
 end
 
 if priya.achievement_requests.none?
   r = request_for(priya, categories["Stage performance"], "Classical dance at Utsav", "Solo Bharatanatyam performance.")
-  r.transition!(to: :supervisor_reverted, actor: supervisor_of(r), action: "supervisor_revert",
-                comment: "Please attach clearer proof — the current image is not readable.",
-                reason_template: any_template)
+  r.revert!(actor: supervisor_of(r), comment: "Please attach clearer proof — the current image is not readable.")
 end
 
 if rahul.achievement_requests.none?
   r = request_for(rahul, categories["Inter-college tournament"], "Cricket tournament winner", "College team captain.")
-  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
-  r.transition!(to: :dean_reverted, actor: dean_of(r), action: "dean_revert",
-                comment: "The certificate does not mention the student's name; please clarify.",
-                reason_template: any_template)
+  r.advance!(actor: supervisor_of(r))
+  r.revert!(actor: dean_of(r), comment: "The certificate does not mention the student's name; please clarify.")
 end
 
 if sneha.achievement_requests.none?
   r = request_for(sneha, categories["Journal paper published"], "Paper in IEEE Access", "Co-authored with faculty.")
-  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
+  r.advance!(actor: supervisor_of(r))
 end
 
 if arjun.achievement_requests.none?
   r = request_for(arjun, categories["Event organisation"], "Organised freshers' day", "Led a team of ten volunteers.")
-  r.transition!(to: :rejected, actor: supervisor_of(r), action: "supervisor_reject",
-                comment: "Insufficient evidence to verify this claim.", reason_template: any_template)
+  r.reject!(actor: supervisor_of(r), comment: "Insufficient evidence to verify this claim.", reason_template: any_template)
 end
 
 if divya.achievement_requests.none?
@@ -196,22 +200,22 @@ if divya.achievement_requests.none?
     attrs: { category: categories["Property damage"], title: "Broken lab equipment",
              description: "Damaged an oscilloscope in the electronics lab.", proofs: [ proof ] }
   )
-  r.dean_approve!(actor: dean_of(r))
+  r.advance!(actor: dean_of(r))
 
   r = request_for(divya, categories["Inter-college hackathon win"], "Won CodeStorm 2026", "Team of three, first place.")
-  r.transition!(to: :supervisor_approved, actor: supervisor_of(r), action: "supervisor_approve")
-  r.dean_approve!(actor: dean_of(r))
+  r.advance!(actor: supervisor_of(r))
+  r.advance!(actor: dean_of(r))
 end
 
 if karthik.achievement_requests.none?
   request_for(karthik, categories["Inter-college hackathon win"], "Runner-up at HackBlitz", "48-hour hackathon, second place.")
 end
 
-# dean_approve! already enqueues DeanApprovalNotificationJob asynchronously;
+# advance! final approval already enqueues DeanApprovalNotificationJob asynchronously;
 # run it inline too so notifications exist even if the queue worker isn't
 # around. The job is idempotent, so overlapping runs are harmless.
 puts "Ensuring notifications for approved requests..."
-AchievementRequest.dean_approved.pluck(:id).each { |id| DeanApprovalNotificationJob.perform_now(id) }
+AchievementRequest.approved.pluck(:id).each { |id| DeanApprovalNotificationJob.perform_now(id) }
 
 puts <<~DONE
 

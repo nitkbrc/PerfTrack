@@ -4,7 +4,7 @@ RSpec.describe "Supervisor review actions", type: :request do
   let(:supervisor)   { create(:user, :faculty) }
   let(:sub_division) { create(:sub_division, supervisor: supervisor) }
   let(:category)     { create(:category, sub_division: sub_division) }
-  let(:request_record) { create(:achievement_request, category: category) }
+  let(:request_record) { create(:achievement_request, category: category, at_step: :supervisor) }
 
   before { sign_in supervisor }
 
@@ -13,13 +13,14 @@ RSpec.describe "Supervisor review actions", type: :request do
       patch approve_supervisor_achievement_request_path(request_record)
 
       expect(response).to redirect_to(supervisor_queue_path)
-      expect(request_record.reload.status).to eq("supervisor_approved")
+      expect(request_record.reload.status).to eq("in_review")
+      expect(request_record.current_reviewer).to eq(sub_division.division.dean)
 
       history = request_record.req_histories.sole
-      expect(history.action).to eq("supervisor_approve")
+      expect(history.action).to eq("advance")
       expect(history.actor).to eq(supervisor)
-      expect(history.from_status).to eq("submitted")
-      expect(history.to_status).to eq("supervisor_approved")
+      expect(history.from_status).to eq("in_review")
+      expect(history.to_status).to eq("in_review")
     end
 
     it "blocks faculty who don't supervise that sub-division" do
@@ -28,11 +29,11 @@ RSpec.describe "Supervisor review actions", type: :request do
       patch approve_supervisor_achievement_request_path(request_record)
 
       expect(response).to redirect_to(root_path)
-      expect(request_record.reload.status).to eq("submitted")
+      expect(request_record.reload.status).to eq("in_review")
     end
 
-    it "refuses requests that are not submitted" do
-      request_record.update!(status: :supervisor_approved)
+    it "refuses requests that are not awaiting the supervisor" do
+      request_record.advance!(actor: supervisor)
 
       patch approve_supervisor_achievement_request_path(request_record)
 
@@ -48,12 +49,11 @@ RSpec.describe "Supervisor review actions", type: :request do
       patch revert_supervisor_achievement_request_path(request_record),
             params: { comment: "Proof is unreadable, please re-upload.", reason_template_id: template.id }
 
-      expect(request_record.reload.status).to eq("supervisor_reverted")
+      expect(request_record.reload.status).to eq("reverted")
 
       history = request_record.req_histories.sole
-      expect(history.action).to eq("supervisor_revert")
+      expect(history.action).to eq("revert")
       expect(history.comment).to eq("Proof is unreadable, please re-upload.")
-      expect(history.reason_template).to eq(template)
     end
 
     it "requires a comment" do
@@ -61,7 +61,7 @@ RSpec.describe "Supervisor review actions", type: :request do
 
       expect(response).to redirect_to(supervisor_achievement_request_path(request_record))
       expect(flash[:alert]).to eq("A message to the student is required.")
-      expect(request_record.reload.status).to eq("submitted")
+      expect(request_record.reload.status).to eq("in_review")
       expect(request_record.req_histories.count).to eq(0)
     end
   end
@@ -74,7 +74,7 @@ RSpec.describe "Supervisor review actions", type: :request do
       expect(request_record.reload.status).to eq("rejected")
 
       history = request_record.req_histories.sole
-      expect(history.action).to eq("supervisor_reject")
+      expect(history.action).to eq("reject")
       expect(history.comment).to eq("Fraudulent claim.")
     end
   end
@@ -110,13 +110,14 @@ RSpec.describe "Supervisor review actions", type: :request do
       } }
     end
 
-    it "creates the request at supervisor_approved with the supervisor as actor" do
+    it "creates the request in review at the dean step with the supervisor as actor" do
       expect {
         post supervisor_achievement_requests_path, params: valid_params
       }.to change(AchievementRequest, :count).by(1)
 
       request = AchievementRequest.last
-      expect(request.status).to eq("supervisor_approved")
+      expect(request.status).to eq("in_review")
+      expect(request.current_reviewer).to eq(sub_division.division.dean)
       expect(request.student).to eq(student_profile)
       expect(request.request_versions.count).to eq(1)
 

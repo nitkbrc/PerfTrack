@@ -1,21 +1,31 @@
 require "rails_helper"
 
 RSpec.describe Student, type: :model do
+  def proof_upload
+    Rack::Test::UploadedFile.new(
+      Rails.root.join("spec/fixtures/files/proof.png"), "image/png"
+    )
+  end
+
   def approved_request(student, div_type, points)
     division = create(:division, div_type: div_type)
     sub_division = create(:sub_division, division: division)
     category = create(:category, sub_division: sub_division, points: points)
-    create(:achievement_request, student: student, category: category,
-           status: :supervisor_approved).tap { |r| r.dean_approve!(actor: division.dean) }
+    request = AchievementRequest.submit!(
+      student: student, actor: student.user,
+      attrs: { category: category, title: "T", description: "D", proofs: [ proof_upload ] }
+    )
+    request.advance!(actor: sub_division.supervisor)
+    request.advance!(actor: division.dean)
+    request
   end
 
   describe "#positive_total and #negative_total" do
-    it "sums only dean-approved requests, split by division polarity" do
+    it "sums only approved requests, split by snapshotted polarity" do
       student = create(:student)
       approved_request(student, "positive", 20)
       approved_request(student, "positive", 30)
       approved_request(student, "negative", 10)
-      # Pending request in a positive division must not count.
       create(:achievement_request, student: student)
 
       expect(student.positive_total).to eq(50)
@@ -26,6 +36,26 @@ RSpec.describe Student, type: :model do
       student = create(:student)
 
       expect(student.positive_total).to eq(0)
+      expect(student.negative_total).to eq(0)
+    end
+
+    it "keeps snapshotted polarity when a division's div_type later flips" do
+      student = create(:student)
+      division = create(:division, div_type: "positive")
+      sub_division = create(:sub_division, division: division)
+      category = create(:category, sub_division: sub_division, points: 20)
+      request = AchievementRequest.submit!(
+        student: student, actor: student.user,
+        attrs: { category: category, title: "T", description: "D", proofs: [ proof_upload ] }
+      )
+      request.advance!(actor: sub_division.supervisor)
+      request.advance!(actor: division.dean)
+
+      expect(student.positive_total).to eq(20)
+
+      division.update!(div_type: "negative")
+
+      expect(student.reload.positive_total).to eq(20)
       expect(student.negative_total).to eq(0)
     end
   end
@@ -71,7 +101,6 @@ RSpec.describe Student, type: :model do
       student = create(:student)
       approved_request(student, "positive", 50)
 
-      # Smaller k saturates faster, so the score should be higher for the same net.
       expect(student.overall_score(k: 10)).to be > student.overall_score(k: 200)
     end
   end

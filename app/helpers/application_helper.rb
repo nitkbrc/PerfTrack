@@ -128,11 +128,11 @@ module ApplicationHelper
   end
 
   def supervisor_nav_user?
-    current_user.supervised_sub_divisions.exists?
+    current_user.assigned_sub_divisions.exists?
   end
 
   def dean_nav_user?
-    current_user.deaned_divisions.exists?
+    current_user.assigned_divisions.exists?
   end
 
   def nav_link_active?(path)
@@ -202,6 +202,8 @@ module ApplicationHelper
     [ [ "Dashboard", admin_root_path, "home" ],
       [ "Departments", admin_departments_path, "grid" ],
       [ "Divisions", admin_divisions_path, "layers" ],
+      [ "Review roles", admin_review_roles_path, "list" ],
+      [ "Assignments", admin_role_assignments_path, "users" ],
       [ "Reason templates", admin_reason_templates_path, "list" ],
       [ "Users", admin_users_path, "users" ],
       [ "Import users", new_admin_user_import_path, "upload" ],
@@ -242,8 +244,8 @@ module ApplicationHelper
   def chrome_role_label(user)
     return user.role.to_s.titleize unless user.faculty?
 
-    return "Dean" if user.deaned_divisions.exists?
-    return "Supervisor" if user.supervised_sub_divisions.exists?
+    return "Dean" if user.assigned_divisions.exists?
+    return "Supervisor" if user.assigned_sub_divisions.exists?
 
     "Faculty"
   end
@@ -300,18 +302,13 @@ module ApplicationHelper
   def student_attention_needed?
     return false unless current_user&.student? && current_user.student_profile
 
-    current_user.student_profile.achievement_requests.supervisor_reverted.exists?
+    current_user.student_profile.achievement_requests.reverted.exists?
   end
 
-  # Same logic for supervisors: dean_reverted requests leave that status once
-  # the supervisor re-forwards (or reverts/edits), so their presence means
-  # the supervisor hasn't acted yet.
+  # Requests awaiting this faculty member as the live current reviewer.
   def supervisor_attention_needed?
     return false unless current_user&.faculty?
 
-    AchievementRequest.joins(category: :sub_division)
-                      .where(sub_divisions: { supervisor_user_id: current_user.id },
-                             status: :dean_reverted)
-                      .exists?
+    AchievementRequest.for_current_reviewer(current_user).exists?
   end
 end

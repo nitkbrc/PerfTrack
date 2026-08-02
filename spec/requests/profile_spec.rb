@@ -46,4 +46,27 @@ RSpec.describe "Profile", type: :request do
 
     expect(response.body).to include("System-wide administration")
   end
+
+  it "lets faculty update phone when the permission is enabled" do
+    Permission.ensure_defaults!
+    user = create(:user, :faculty, phone: "9100000999", address: "Old address")
+    sign_in user
+
+    patch profile_path, params: { user: { phone: "9100000888" } }
+
+    expect(response).to redirect_to(profile_path)
+    expect(user.reload.phone).to eq("9100000888")
+  end
+
+  it "rejects student phone updates when the permission is disabled" do
+    Permission.ensure_defaults!
+    student_user = create(:student).user
+    original_phone = student_user.phone
+    sign_in student_user
+
+    patch profile_path, params: { user: { phone: "9100000777" } }
+
+    expect(response).to redirect_to(profile_path)
+    expect(student_user.reload.phone).to eq(original_phone)
+  end
 end

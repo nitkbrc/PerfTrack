@@ -5,11 +5,11 @@ RSpec.describe "Supervisor queue", type: :request do
   let(:sub_division) { create(:sub_division, supervisor: supervisor) }
   let(:category)     { create(:category, sub_division: sub_division) }
 
-  it "shows only submitted requests under the supervisor's sub-divisions" do
-    mine = create(:achievement_request, category: category, title: "In my queue")
+  it "shows only in-review requests at the supervisor step under the supervisor's sub-divisions" do
+    mine = create(:achievement_request, category: category, title: "In my queue", at_step: :supervisor)
     create(:achievement_request, title: "Another sub-division")
-    approved = create(:achievement_request, category: category, title: "Already forwarded")
-    approved.update!(status: :supervisor_approved)
+    forwarded = create(:achievement_request, category: category, title: "Already forwarded", at_step: :supervisor)
+    forwarded.advance!(actor: supervisor)
 
     sign_in supervisor
     get supervisor_queue_path

@@ -6,20 +6,18 @@
     <% end %>
   </div>
 
-  <% if @achievement_request.dean_reverted? %>
+  <% if @achievement_request.awaiting_raiseable_revision? %>
     <div class="scats-callout scats-callout-warning mb-6" role="status">
       <span class="scats-callout-icon material-symbols-outlined" aria-hidden="true">undo</span>
       <div class="scats-callout-body flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
-          <p class="scats-callout-title">The dean sent this back for clarification.</p>
-          <% if (revert = @histories.select { |h| h.action == "dean_revert" }.last) %>
+          <p class="scats-callout-title">A later reviewer sent this back for clarification.</p>
+          <% if (revert = @histories.select { |h| h.action == "revert" }.last) %>
             <p class="mt-1"><%= revert.comment %></p>
           <% end %>
         </div>
-        <% unless @achievement_request.student_initiated? %>
-          <%= link_to "Edit request", edit_supervisor_achievement_request_path(@achievement_request),
-                class: "scats-secondary-button shrink-0" %>
-        <% end %>
+        <%= link_to "Edit request", edit_supervisor_achievement_request_path(@achievement_request),
+              class: "scats-secondary-button shrink-0" %>
       </div>
     </div>
   <% end %>
@@ -29,7 +27,8 @@
           achievement_request: @achievement_request, histories: @histories %>
   </div>
 
-  <% if @achievement_request.submitted? %>
+  <% if @achievement_request.in_review? && @achievement_request.current_reviewer&.id == current_user.id %>
+    <% can_floor = @achievement_request.previous_step.nil? %>
     <div class="clay-card mt-6 p-6 sm:p-8"
          data-controller="panel-switch"
          data-panel-switch-mode-value="approve">
@@ -43,48 +42,37 @@
              data-segmented-switch-selected-value="approve"
              data-action="segmented-switch:change->panel-switch#select">
           <span class="scats-switch__pill" data-segmented-switch-target="pill" aria-hidden="true"></span>
-          <button type="button"
-                  role="tab"
-                  data-segmented-switch-target="option"
-                  data-value="approve"
+          <button type="button" role="tab" data-segmented-switch-target="option" data-value="approve"
                   data-action="segmented-switch#select keydown->segmented-switch#keydown"
-                  class="scats-switch__option">
-            Approve
-          </button>
-          <button type="button"
-                  role="tab"
-                  data-segmented-switch-target="option"
-                  data-value="revert"
+                  class="scats-switch__option">Advance</button>
+          <button type="button" role="tab" data-segmented-switch-target="option" data-value="revert"
                   data-action="segmented-switch#select keydown->segmented-switch#keydown"
-                  class="scats-switch__option">
-            Revert
-          </button>
-          <button type="button"
-                  role="tab"
-                  data-segmented-switch-target="option"
-                  data-value="reject"
+                  class="scats-switch__option">Revert</button>
+          <button type="button" role="tab" data-segmented-switch-target="option" data-value="reject"
                   data-action="segmented-switch#select keydown->segmented-switch#keydown"
-                  class="scats-switch__option">
-            Reject
-          </button>
+                  class="scats-switch__option">Reject</button>
         </div>
       </div>
 
       <div data-panel-switch-target="panel" data-mode="approve" role="tabpanel">
-        <p class="mb-4 text-sm text-slate-500">Forward this request to the dean for final review.</p>
-        <%= button_to "Approve & forward to dean",
+        <p class="mb-4 text-sm text-slate-500">
+          <%= @achievement_request.next_step ? "Forward this request to the next reviewer." : "This is the final step — advancing will approve and award points." %>
+        </p>
+        <%= button_to @achievement_request.next_step ? "Advance to next reviewer" : "Approve & award points",
               approve_supervisor_achievement_request_path(@achievement_request), method: :patch,
               class: "cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-500" %>
       </div>
 
       <div data-panel-switch-target="panel" data-mode="revert" role="tabpanel" class="hidden" aria-hidden="true">
-        <p class="mb-3 text-sm text-slate-500">Send this back to the student with a message (required).</p>
+        <p class="mb-3 text-sm text-slate-500">
+          <%= can_floor ? "Send this back to the creator with a message (required)." : "Send this back to the previous reviewer (required)." %>
+        </p>
         <%= render "shared/decision_form",
               url: revert_supervisor_achievement_request_path(@achievement_request),
-              button_label: "Revert to student",
+              button_label: can_floor ? "Revert to creator" : "Revert to previous step",
               button_classes: "bg-orange-500 hover:bg-orange-400",
               reason_templates: @reason_templates,
-              comment_label: "Message to the student" %>
+              comment_label: "Message" %>
       </div>
 
       <div data-panel-switch-target="panel" data-mode="reject" role="tabpanel" class="hidden" aria-hidden="true">
@@ -97,63 +85,6 @@
               reason_templates: @reason_templates,
               comment_label: "Message to the student" %>
       </div>
-    </div>
-  <% elsif @achievement_request.dean_reverted? %>
-    <% can_revert_to_student = @achievement_request.student_initiated? %>
-    <div class="clay-card mt-6 p-6 sm:p-8"
-         <% if can_revert_to_student %>
-         data-controller="panel-switch"
-         data-panel-switch-mode-value="reforward"
-         <% end %>>
-      <h2 class="mb-4 text-lg font-semibold text-slate-900">Your decision</h2>
-
-      <% if can_revert_to_student %>
-        <div class="mb-6">
-          <div class="scats-switch w-full"
-               role="tablist"
-               aria-label="Decision action"
-               data-controller="segmented-switch"
-               data-segmented-switch-selected-value="reforward"
-               data-action="segmented-switch:change->panel-switch#select">
-            <span class="scats-switch__pill" data-segmented-switch-target="pill" aria-hidden="true"></span>
-            <button type="button"
-                    role="tab"
-                    data-segmented-switch-target="option"
-                    data-value="reforward"
-                    data-action="segmented-switch#select keydown->segmented-switch#keydown"
-                    class="scats-switch__option">
-              Re-forward
-            </button>
-            <button type="button"
-                    role="tab"
-                    data-segmented-switch-target="option"
-                    data-value="revert"
-                    data-action="segmented-switch#select keydown->segmented-switch#keydown"
-                    class="scats-switch__option">
-              Revert
-            </button>
-          </div>
-        </div>
-      <% end %>
-
-      <div <% if can_revert_to_student %>data-panel-switch-target="panel" data-mode="reforward" role="tabpanel"<% end %>>
-        <p class="mb-4 text-sm text-slate-500">Clarify as needed, then send this back to the dean.</p>
-        <%= button_to "Re-forward to dean", approve_supervisor_achievement_request_path(@achievement_request),
-              method: :patch,
-              class: "cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-500" %>
-      </div>
-
-      <% if can_revert_to_student %>
-        <div data-panel-switch-target="panel" data-mode="revert" role="tabpanel" class="hidden" aria-hidden="true">
-          <p class="mb-3 text-sm text-slate-500">The student raised this request, so they can address the dean's feedback themselves.</p>
-          <%= render "shared/decision_form",
-                url: revert_supervisor_achievement_request_path(@achievement_request),
-                button_label: "Revert to student",
-                button_classes: "bg-orange-500 hover:bg-orange-400",
-                reason_templates: @reason_templates,
-                comment_label: "Message to the student" %>
-        </div>
-      <% end %>
     </div>
   <% end %>
 </div>

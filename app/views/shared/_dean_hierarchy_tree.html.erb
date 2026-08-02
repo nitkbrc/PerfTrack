@@ -18,7 +18,7 @@
       <% else %>
         <% active_subs.each do |sub_division| %>
           <% categories = sub_division.categories.reject(&:archived?).sort_by(&:name) %>
-          <% supervisor_label = sub_division.supervisor.name.presence || sub_division.supervisor.email %>
+          <% supervisor_label = sub_division.supervisor&.name.presence || sub_division.supervisor&.email || "Unassigned" %>
           <%= render "shared/hierarchy_tree_branch",
                 label: sub_division.name,
                 icon: "folder",

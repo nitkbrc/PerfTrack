@@ -3,7 +3,7 @@
     <%= link_to "← Back to dashboard", student_root_path, class: admin_back_link_classes %>
   </div>
 
-  <% if @achievement_request.supervisor_reverted? %>
+  <% if @achievement_request.reverted? %>
     <div class="mb-6 rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm text-orange-800">
       <p class="font-semibold">This request was reverted by your supervisor.</p>
       <% if (revert = @histories.select { |h| h.action == "supervisor_revert" }.last) %>

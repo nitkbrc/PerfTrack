@@ -1,21 +1,11 @@
 require "rails_helper"
 
 RSpec.describe SubDivision, type: :model do
-  describe "dean/supervisor mutual exclusivity" do
-    it "rejects a supervisor who is already a dean of a division" do
-      dean = create(:user, :faculty)
-      create(:division, dean: dean)
-
-      sub_division = build(:sub_division, supervisor: dean)
-
-      expect(sub_division).not_to be_valid
-      expect(sub_division.errors[:supervisor_user_id]).to include("is already a dean of a division")
-    end
-
-    it "accepts a supervisor with no dean assignment" do
-      sub_division = build(:sub_division)
-
-      expect(sub_division).to be_valid
-    end
+  it "creates a default Supervisor hierarchy step that can raise on behalf" do
+    sub_division = create(:sub_division)
+    step = sub_division.hierarchy_steps.first
+    expect(step.review_role.name).to eq(ReviewRole::SUPERVISOR)
+    expect(step.can_raise_on_behalf?).to eq(true)
+    expect(sub_division.supervisor).to be_present
   end
 end

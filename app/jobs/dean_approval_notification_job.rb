@@ -5,7 +5,7 @@ class DeanApprovalNotificationJob < ApplicationJob
     request = AchievementRequest.includes(:req_histories).find_by(id: achievement_request_id)
     # The request may have been deleted, or its status changed, between enqueue
     # and execution; only notify for a still-approved request.
-    return unless request&.dean_approved?
+    return unless request&.approved?
 
     Notification.find_or_create_by!(recipient: request.student.user,
                                     achievement_request: request) do |notification|

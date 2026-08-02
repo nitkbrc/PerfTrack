@@ -4,6 +4,7 @@ require "rails_helper"
 # supervisor raises the request on the student's behalf → dean approves.
 RSpec.describe "Path B lifecycle", type: :system do
   include ActiveJob::TestHelper
+  include Warden::Test::Helpers
 
   let!(:supervisor) { create(:user, :faculty, name: "Sup Erwiser", password: "password123") }
   let!(:dean)       { create(:user, :faculty, name: "Dean Ley", password: "password123") }
@@ -13,22 +14,18 @@ RSpec.describe "Path B lifecycle", type: :system do
   let!(:student_user) { create(:user, name: "Asha Kumar", password: "password123") }
   let!(:student)    { create(:student, user: student_user, usn: "1XX22CS001") }
 
+  before { Warden.test_mode! }
+  after { Warden.test_reset! }
+
   def sign_in_as(user)
-    visit new_user_session_path
-    fill_in "Email", with: user.email
-    fill_in "Password", with: "password123"
-    click_button "Sign in"
-    expect(page).to have_content("Signed in successfully")
+    login_as(user, scope: :user)
   end
 
-  def sign_out_via_nav
-    visit profile_path
-    click_button "Sign out"
-    expect(page).to have_content("Welcome to SCATS")
+  def sign_out_user
+    logout(:user)
   end
 
   it "goes straight to the dean and deducts points on approval" do
-    # --- Supervisor raises the request (Path B) ---
     sign_in_as supervisor
     visit new_supervisor_achievement_request_path
 
@@ -40,9 +37,8 @@ RSpec.describe "Path B lifecycle", type: :system do
     click_button "Raise request"
 
     expect(page).to have_content("Request raised on behalf of 1XX22CS001.")
-    sign_out_via_nav
+    sign_out_user
 
-    # --- Dean approves; points are negative for a negative division ---
     sign_in_as dean
     visit dean_queue_path
     expect(page).to have_content("Ragging incident report")
@@ -53,9 +49,8 @@ RSpec.describe "Path B lifecycle", type: :system do
       accept_confirm { click_button "Approve — award points" }
       expect(page).to have_content("Request approved — -15 points awarded.")
     end
-    sign_out_via_nav
+    sign_out_user
 
-    # --- Student's dashboard reflects the deduction ---
     sign_in_as student_user
     visit student_root_path
     expect(page).to have_content("-15")

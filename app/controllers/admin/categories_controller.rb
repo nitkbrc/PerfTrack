@@ -43,7 +43,7 @@ module Admin
 
     def archive
       category = authorize Category.find(params[:id])
-      category.archive!
+      category.archive!(actor: current_user)
       redirect_to admin_sub_division_path(category.sub_division), notice: "#{category.name} archived."
     end
 

@@ -1,7 +1,6 @@
 require "rails_helper"
 
 RSpec.describe AchievementRequestPolicy do
-  # One division with one sub-division; the request lives under that sub-division.
   let(:dean)         { create(:user, :faculty) }
   let(:supervisor)   { create(:user, :faculty) }
   let(:other_faculty) { create(:user, :faculty) }
@@ -13,28 +12,44 @@ RSpec.describe AchievementRequestPolicy do
   let(:category)     { create(:category, sub_division: sub_division) }
   let(:request)      { create(:achievement_request, category: category) }
 
+  def at_supervisor!(req)
+    step = sub_division.hierarchy_steps.ordered.first
+    req.update!(status: :in_review, current_step: step)
+  end
+
+  def at_dean!(req)
+    step = division.hierarchy_steps.ordered.first
+    req.update!(status: :in_review, current_step: step)
+  end
+
   describe "#review?" do
-    it "permits the sub-division's assigned supervisor" do
+    it "permits the current reviewer at the supervisor step" do
+      at_supervisor!(request)
       expect(described_class.new(supervisor, request).review?).to be true
     end
 
     it "denies faculty not assigned to the sub-division" do
+      at_supervisor!(request)
       expect(described_class.new(other_faculty, request).review?).to be false
     end
 
-    it "denies the division's dean" do
+    it "denies the division's dean while at the supervisor step" do
+      at_supervisor!(request)
       expect(described_class.new(dean, request).review?).to be false
     end
 
     it "denies a student" do
+      at_supervisor!(request)
       expect(described_class.new(student_user, request).review?).to be false
     end
 
     it "denies an admin" do
+      at_supervisor!(request)
       expect(described_class.new(admin, request).review?).to be false
     end
 
     it "denies a supervisor of a different sub-division" do
+      at_supervisor!(request)
       other_sub = create(:sub_division, division: division)
 
       expect(described_class.new(other_sub.supervisor, request).review?).to be false
@@ -42,27 +57,33 @@ RSpec.describe AchievementRequestPolicy do
   end
 
   describe "#dean_decide?" do
-    it "permits the division's dean" do
+    it "permits the division's dean when the request is at their step" do
+      at_dean!(request)
       expect(described_class.new(dean, request).dean_decide?).to be true
     end
 
-    it "denies the sub-division's supervisor" do
+    it "denies the sub-division's supervisor while at the dean step" do
+      at_dean!(request)
       expect(described_class.new(supervisor, request).dean_decide?).to be false
     end
 
     it "denies faculty not deaning the division" do
+      at_dean!(request)
       expect(described_class.new(other_faculty, request).dean_decide?).to be false
     end
 
     it "denies a student" do
+      at_dean!(request)
       expect(described_class.new(student_user, request).dean_decide?).to be false
     end
 
     it "denies an admin" do
+      at_dean!(request)
       expect(described_class.new(admin, request).dean_decide?).to be false
     end
 
     it "denies the dean of a different division" do
+      at_dean!(request)
       other_division = create(:division)
 
       expect(described_class.new(other_division.dean, request).dean_decide?).to be false
@@ -112,8 +133,8 @@ RSpec.describe AchievementRequestPolicy do
     end
 
     describe "#resubmit?" do
-      it "permits the owning student when supervisor_reverted" do
-        own_request.update!(status: :supervisor_reverted)
+      it "permits the owning student when reverted" do
+        own_request.update!(status: :reverted, current_step: nil)
 
         expect(described_class.new(owner, own_request).resubmit?).to be true
       end
@@ -123,7 +144,7 @@ RSpec.describe AchievementRequestPolicy do
       end
 
       it "denies a different student even when reverted" do
-        own_request.update!(status: :supervisor_reverted)
+        own_request.update!(status: :reverted, current_step: nil)
         other = create(:student)
 
         expect(described_class.new(other.user, own_request).resubmit?).to be false
@@ -133,7 +154,7 @@ RSpec.describe AchievementRequestPolicy do
 
   describe "#initiate?" do
     it "permits faculty who supervise at least one sub-division" do
-      sub_division # materialize the assignment
+      sub_division
 
       expect(described_class.new(supervisor, AchievementRequest).initiate?).to be true
     end
@@ -160,7 +181,7 @@ RSpec.describe AchievementRequestPolicy do
 
     it "resolves to the supervisor's sub-division requests only" do
       in_queue = create(:achievement_request, category: category)
-      create(:achievement_request) # different sub-division
+      create(:achievement_request)
 
       resolved = described_class::Scope.new(supervisor, AchievementRequest).resolve
       expect(resolved).to contain_exactly(in_queue)
@@ -168,7 +189,7 @@ RSpec.describe AchievementRequestPolicy do
 
     it "resolves to the dean's division requests only" do
       in_division = create(:achievement_request, category: category)
-      create(:achievement_request) # different division
+      create(:achievement_request)
 
       resolved = described_class::Scope.new(dean, AchievementRequest).resolve
       expect(resolved).to contain_exactly(in_division)

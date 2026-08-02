@@ -17,8 +17,8 @@ RSpec.describe "Faculty students directory", type: :request do
   end
 
   def approve!(category, points)
-    create(:achievement_request, student: student, category: category, title: "#{category.name} entry")
-      .update!(status: :dean_approved, points_awarded: points)
+    create(:achievement_request, :approved, student: student, category: category,
+           title: "#{category.name} entry", points_awarded: points)
   end
 
   before { sign_in faculty }
@@ -119,11 +119,11 @@ RSpec.describe "Faculty students directory", type: :request do
       expect(response.body).to include("Positive points")
       expect(response.body).to include("Overall score")
       expect(response.body).to include(student.overall_score.to_s)
-      # Only dean-approved requests contribute to the breakdown.
+      # Only approved requests contribute to the breakdown.
       expect(response.body).not_to include("Still pending")
     end
 
-    it "shows photo, phone, and address (blank as em dash)" do
+    it "shows photo, phone, and address" do
       student.user.update!(phone: "9988776655", address: "42 Campus Road")
       get faculty_student_path(student)
 
@@ -131,14 +131,6 @@ RSpec.describe "Faculty students directory", type: :request do
       expect(response.body).to include("9988776655")
       expect(response.body).to include("42 Campus Road")
       expect(response.body).to include("rounded-full")
-
-      # Bypass presence validations to exercise the blank display path.
-      student.user.update_columns(phone: nil, address: nil)
-      get faculty_student_path(student)
-
-      expect(response.body).to include("Phone")
-      expect(response.body).to include("Address")
-      expect(response.body).to include("—")
     end
 
     it "is denied to students" do

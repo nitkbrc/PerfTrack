@@ -1,0 +1,38 @@
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-bold text-text-main">Role assignments</h1>
+  <%= link_to "Assign role", new_admin_role_assignment_path, class: admin_primary_button_classes, data: admin_modal_frame_data %>
+</div>
+
+<div class="clay-card scats-list-shell">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
+      <tr>
+        <th class="px-4 py-3">User</th>
+        <th class="px-4 py-3">Role</th>
+        <th class="px-4 py-3">Scope owner</th>
+        <th class="px-4 py-3 text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="scats-list">
+      <% @assignments.each do |assignment| %>
+        <tr class="scats-row">
+          <td class="px-4 py-3"><%= assignment.user.name.presence || assignment.user.email %></td>
+          <td class="px-4 py-3"><%= assignment.review_role.name %></td>
+          <td class="px-4 py-3">
+            <% if assignment.division %>
+              Division: <%= assignment.division.name %>
+            <% else %>
+              Sub-division: <%= assignment.sub_division.name %>
+            <% end %>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <%= link_to admin_edit_action_label, edit_admin_role_assignment_path(assignment), class: admin_secondary_button_classes, data: admin_modal_frame_data %>
+            <%= button_to "Remove", admin_role_assignment_path(assignment), method: :delete,
+                  form: { data: { turbo_confirm: "Remove this assignment?" } },
+                  class: admin_delete_classes %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

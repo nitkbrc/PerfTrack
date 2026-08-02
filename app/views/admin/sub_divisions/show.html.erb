@@ -1,5 +1,12 @@
 <div class="mb-6 flex items-center justify-between">
-  <div><%= link_to "? Back to #{@sub_division.division.name}", admin_division_path(@sub_division.division), class: admin_back_link_classes %><h1 class="mt-2 text-2xl font-bold text-slate-900"><%= @sub_division.name %></h1></div>
+  <div><%= link_to "← Back to #{@sub_division.division.name}", admin_division_path(@sub_division.division), class: admin_back_link_classes %>
+    <h1 class="mt-2 text-2xl font-bold text-slate-900"><%= @sub_division.name %></h1>
+    <p class="mt-1 text-sm text-text-muted">
+      Supervisor: <%= @sub_division.supervisor&.name.presence || @sub_division.supervisor&.email || "Unassigned" %>
+      ·
+      <%= link_to "Edit hierarchy", admin_sub_division_hierarchy_steps_path(@sub_division), class: admin_link_classes %>
+    </p>
+  </div>
   <div class="flex items-center gap-4">
     <%= render "admin/shared/archived_toggle", show_archived: @show_archived, archived_count: @archived_count, active_path: admin_sub_division_path(@sub_division), archived_path: admin_sub_division_path(@sub_division, archived: 1) %>
   </div>

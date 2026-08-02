@@ -5,32 +5,36 @@ require "rails_helper"
 # the form without the button — silently performing a revert instead. These
 # specs click Reject in a real browser and assert the request is rejected.
 RSpec.describe "Reject decisions", type: :system do
+  include Warden::Test::Helpers
+
   let!(:supervisor) { create(:user, :faculty, name: "Sup Erwiser", password: "password123") }
   let!(:dean)       { create(:user, :faculty, name: "Dean Ley", password: "password123") }
   let!(:division)   { create(:division, div_type: "positive", dean: dean) }
   let!(:sub_division) { create(:sub_division, division: division, supervisor: supervisor) }
   let!(:category)   { create(:category, sub_division: sub_division) }
   let!(:request_record) do
-    create(:achievement_request, category: category, status: :submitted, title: "Borderline claim")
+    create(:achievement_request, category: category, at_step: :supervisor, title: "Borderline claim")
   end
 
+  before { Warden.test_mode! }
+  after { Warden.test_reset! }
+
   def sign_in_as(user)
-    visit new_user_session_path
-    fill_in "Email", with: user.email
-    fill_in "Password", with: "password123"
-    click_button "Sign in"
-    expect(page).to have_content("Signed in successfully")
+    login_as(user, scope: :user)
+  end
+
+  def open_reject_panel!
+    within('[aria-label="Decision action"]') { click_button "Reject" }
   end
 
   it "supervisor reject rejects the request (does not revert it)" do
     sign_in_as supervisor
     visit supervisor_achievement_request_path(request_record)
 
+    open_reject_panel!
     within("form[action$='/reject']") do
       fill_in "comment", with: "Not enough evidence."
-    end
-    accept_confirm do
-      within("form[action$='/reject']") { click_button "Reject" }
+      accept_confirm { click_button "Reject" }
     end
 
     expect(page).to have_content("Request rejected.")
@@ -38,16 +42,15 @@ RSpec.describe "Reject decisions", type: :system do
   end
 
   it "dean reject rejects the request (does not revert it)" do
-    request_record.update!(status: :supervisor_approved)
+    request_record.advance!(actor: supervisor)
 
     sign_in_as dean
     visit dean_achievement_request_path(request_record)
 
+    open_reject_panel!
     within("form[action$='/reject']") do
       fill_in "comment", with: "Does not meet the bar."
-    end
-    accept_confirm do
-      within("form[action$='/reject']") { click_button "Reject" }
+      accept_confirm { click_button "Reject" }
     end
 
     expect(page).to have_content("Request rejected.")

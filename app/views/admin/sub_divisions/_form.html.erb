@@ -12,12 +12,11 @@
     <%= f.text_field :name, class: admin_input_classes %>
   </div>
 
-  <div>
-    <%= f.label :supervisor_user_id, "Supervisor", class: admin_label_classes %>
-    <%= f.collection_select :supervisor_user_id, User.eligible_supervisors.order(:name), :id,
-          ->(u) { u.name.presence || u.email }, { prompt: "Select a faculty member" }, class: admin_input_classes %>
-    <p class="mt-1 text-xs text-slate-500">Faculty who are already a dean are not listed.</p>
-  </div>
+  <p class="text-xs text-slate-500">
+    Assign a Supervisor via
+    <%= link_to "Role assignments", admin_role_assignments_path, class: admin_link_classes %>
+    after creating the sub-division.
+  </p>
 
   <div class="flex items-center gap-4">
     <%= f.submit class: admin_primary_button_classes %>

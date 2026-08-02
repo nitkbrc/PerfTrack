@@ -26,7 +26,9 @@ class ErrorsController < ActionController::Base
 
   def render_error(status)
     @status = status
-    render template_for(status), status: status
+    # Missing assets (e.g. .png) 404 through exceptions_app with a non-HTML
+    # format; force HTML so branded error pages always render.
+    render template_for(status), status: status, formats: [ :html ]
   end
 
   def template_for(status)

@@ -14,7 +14,7 @@ RSpec.describe "Dean dashboard", type: :request do
   before { sign_in dean }
 
   it "renders the overview with scoped decision metrics and campus counts" do
-    create(:achievement_request, category: category).update!(status: :supervisor_approved)
+    create(:achievement_request, category: category, at_step: :dean)
 
     get dean_root_path
     expect(response).to have_http_status(:ok)
@@ -31,8 +31,8 @@ RSpec.describe "Dean dashboard", type: :request do
   end
 
   it "counts only requests under the dean's divisions" do
-    create(:achievement_request, category: category).update!(status: :dean_approved)
-    create(:achievement_request).update!(status: :dean_approved)
+    create(:achievement_request, :approved, category: category)
+    create(:achievement_request, :approved)
 
     get dean_root_path
 

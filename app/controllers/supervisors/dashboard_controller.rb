@@ -8,9 +8,8 @@ module Supervisors
                          .includes(:categories)
                          .order(:name)
 
-      # Scoped to the supervisor's sub-divisions.
-      @pending_reviews = scope.where(status: [ :submitted, :dean_reverted ]).count
-      @accepted_by_dean = scope.dean_approved.count
+      @pending_reviews = AchievementRequest.for_current_reviewer(current_user).count
+      @accepted_by_dean = scope.approved.count
       @rejected = scope.rejected.count
       @history_count = ReqHistory.review_actions.by_actor(current_user).count
 
@@ -23,7 +22,7 @@ module Supervisors
 
     def scoped_requests
       AchievementRequest.joins(category: :sub_division)
-                        .where(sub_divisions: { supervisor_user_id: current_user.id })
+                        .where(sub_divisions: { id: current_user.assigned_sub_divisions.select(:id) })
     end
   end
 end

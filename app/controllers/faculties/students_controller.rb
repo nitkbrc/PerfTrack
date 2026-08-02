@@ -21,7 +21,7 @@ module Faculties
       @student = authorize ::Student.includes(:department, user: { photo_attachment: :blob })
                                     .find(params[:id])
 
-      approved = @student.achievement_requests.dean_approved
+      approved = @student.achievement_requests.approved
                          .includes(category: { sub_division: :division })
                          .order(updated_at: :desc)
       @positive_requests, @negative_requests = approved.partition { |r| r.points_awarded.positive? }

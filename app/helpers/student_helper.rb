@@ -1,10 +1,8 @@
 module StudentHelper
   STATUS_BADGES = {
-    "submitted" => "bg-blue-100 text-blue-700",
-    "supervisor_approved" => "bg-amber-100 text-amber-700",
-    "supervisor_reverted" => "bg-orange-100 text-orange-700",
-    "dean_approved" => "bg-green-100 text-green-700",
-    "dean_reverted" => "bg-orange-100 text-orange-700",
+    "in_review" => "bg-blue-100 text-blue-700",
+    "reverted" => "bg-orange-100 text-orange-700",
+    "approved" => "bg-green-100 text-green-700",
     "rejected" => "bg-red-100 text-red-700"
   }.freeze
 
@@ -14,14 +12,19 @@ module StudentHelper
     "submit" => "Submitted by student",
     "resubmit" => "Edited & resubmitted by student",
     "supervisor_initiate" => "Raised by supervisor on the student's behalf",
-    "supervisor_revise" => "Revised by supervisor after dean feedback",
+    "supervisor_revise" => "Revised by supervisor after feedback",
+    "advance" => "Advanced to the next reviewer",
+    "approve" => "Approved — points awarded",
+    "revert" => "Sent back for revision",
+    "reject" => "Rejected",
     "supervisor_approve" => "Approved & forwarded to dean by supervisor",
     "supervisor_reforward" => "Clarified & re-forwarded to dean by supervisor",
     "supervisor_revert" => "Reverted to student by supervisor",
     "supervisor_reject" => "Rejected by supervisor",
     "dean_approve" => "Approved by dean — points awarded",
     "dean_revert" => "Sent back to supervisor by dean",
-    "dean_reject" => "Rejected by dean"
+    "dean_reject" => "Rejected by dean",
+    "auto_reject_archived" => "Automatically rejected — category archived"
   }.freeze
 
   def status_badge(request)
@@ -42,13 +45,11 @@ module StudentHelper
     when "resubmit" then "Resubmitted"
     when "supervisor_initiate" then "Raised by #{actor}"
     when "supervisor_revise" then "Revised by #{actor}"
-    when "supervisor_approve" then "Approved by #{actor}"
+    when "advance" then "Advanced by #{actor}"
+    when "approve", "dean_approve", "supervisor_approve" then "Approved by #{actor}"
     when "supervisor_reforward" then "Re-forwarded by #{actor}"
-    when "supervisor_revert" then "Reverted by #{actor}"
-    when "supervisor_reject" then "Rejected by #{actor}"
-    when "dean_approve" then "Approved by #{actor}"
-    when "dean_revert" then "Sent back by #{actor}"
-    when "dean_reject" then "Rejected by #{actor}"
+    when "revert", "supervisor_revert", "dean_revert" then "Reverted by #{actor}"
+    when "reject", "supervisor_reject", "dean_reject", "auto_reject_archived" then "Rejected by #{actor}"
     else request.status.humanize
     end
   end
@@ -62,13 +63,18 @@ module StudentHelper
     {
       "supervisor_initiate" => "raised",
       "supervisor_revise" => "revised",
+      "advance" => "advanced",
+      "approve" => "approved",
+      "revert" => "reverted",
+      "reject" => "rejected",
       "supervisor_approve" => "approved",
       "supervisor_reforward" => "re-forwarded",
       "supervisor_revert" => "reverted",
       "supervisor_reject" => "rejected",
       "dean_approve" => "approved",
       "dean_revert" => "sent back",
-      "dean_reject" => "rejected"
+      "dean_reject" => "rejected",
+      "auto_reject_archived" => "auto-rejected"
     }.fetch(action, action.to_s.tr("_", " "))
   end
 
@@ -76,17 +82,17 @@ module StudentHelper
   # Does not touch STATUS_BADGES / status_badge / .scats-status-badge.
   def review_history_style(action)
     case action.to_s
-    when /\A.+_approve\z/
+    when "approve", "dean_approve", "supervisor_approve", /\A.+_approve\z/
       { icon: "check_circle", wrap: "bg-success-soft text-success", label: "Approved" }
-    when "supervisor_reforward"
+    when "advance", "supervisor_reforward"
       { icon: "forward", wrap: "bg-info-soft text-info", label: "Forwarded" }
     when "supervisor_revise"
       { icon: "edit", wrap: "bg-warning-soft text-warning", label: "Revised" }
     when "supervisor_initiate"
       { icon: "flag", wrap: "bg-violet-100 text-violet-800", label: "Raised" }
-    when /\A.+_revert\z/
+    when "revert", "supervisor_revert", "dean_revert", /\A.+_revert\z/
       { icon: "undo", wrap: "bg-orange-100 text-orange-700", label: "Reverted" }
-    when /\A.+_reject\z/
+    when "reject", "supervisor_reject", "dean_reject", "auto_reject_archived", /\A.+_reject\z/
       { icon: "cancel", wrap: "bg-danger-soft text-danger", label: "Rejected" }
     else
       { icon: "history", wrap: "bg-slate-100 text-slate-600", label: action.to_s.humanize }
@@ -97,8 +103,9 @@ module StudentHelper
 
   def history_actor_with_role(action, actor_name)
     role = case action.to_s
-    when /\Adean_/ then "Dean"
+    when /\Adean_/, "approve" then "Reviewer"
     when /\Asupervisor_/ then "Supervisor"
+    when "advance", "revert", "reject" then "Reviewer"
     when "submit", "resubmit" then "Student"
     end
     role ? "#{actor_name} (#{role})" : actor_name

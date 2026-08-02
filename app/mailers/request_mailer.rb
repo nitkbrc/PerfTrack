@@ -1,7 +1,7 @@
 class RequestMailer < ApplicationMailer
-  # Student submit / resubmit → sub-division supervisor
-  def submitted_to_supervisor(request, actor:)
-    setup_request_mail(request, actor: actor, recipient: request_supervisor(request))
+  # Student submit / resubmit → current reviewer (typically supervisor)
+  def submitted_to_supervisor(request, actor:, recipient: nil)
+    setup_request_mail(request, actor: actor, recipient: recipient || request.current_reviewer)
     fresh = request.current_version&.version_number.to_i <= 1
     subject = if fresh
       "New SCATS request awaiting your review"
@@ -11,9 +11,9 @@ class RequestMailer < ApplicationMailer
     mail(to: @recipient.email, subject: subject)
   end
 
-  # Path B supervisor raise → division dean
-  def raised_on_behalf(request, actor:)
-    setup_request_mail(request, actor: actor, recipient: request_dean(request))
+  # Path B supervisor raise → next reviewer (typically dean)
+  def raised_on_behalf(request, actor:, recipient: nil)
+    setup_request_mail(request, actor: actor, recipient: recipient || request.current_reviewer)
     mail(to: @recipient.email, subject: "Supervisor-raised SCATS request awaiting your review")
   end
 
@@ -23,10 +23,10 @@ class RequestMailer < ApplicationMailer
     mail(to: @recipient.email, subject: "A supervisor raised a SCATS request on your behalf")
   end
 
-  # Supervisor approve / reforward → dean
-  def forwarded_to_dean(request, actor:, is_reforward: false)
+  # Advance → next reviewer
+  def forwarded_to_dean(request, actor:, is_reforward: false, recipient: nil)
     @is_reforward = is_reforward
-    setup_request_mail(request, actor: actor, recipient: request_dean(request))
+    setup_request_mail(request, actor: actor, recipient: recipient || request.current_reviewer)
     subject = if is_reforward
       "Clarified SCATS request re-forwarded for your review"
     else
@@ -35,9 +35,11 @@ class RequestMailer < ApplicationMailer
     mail(to: @recipient.email, subject: subject)
   end
 
-  def reverted_to_supervisor(request, actor:, comment: nil)
-    setup_request_mail(request, actor: actor, recipient: request_supervisor(request), comment: comment)
-    mail(to: @recipient.email, subject: "Dean requested clarification on a SCATS request")
+  def reverted_to_supervisor(request, actor:, comment: nil, recipient: nil)
+    setup_request_mail(request, actor: actor,
+                       recipient: recipient || request.current_reviewer,
+                       comment: comment)
+    mail(to: @recipient.email, subject: "Clarification requested on a SCATS request")
   end
 
   def reverted_to_student(request, actor:, comment: nil)
@@ -67,21 +69,15 @@ class RequestMailer < ApplicationMailer
     @timeline_url = timeline_url_for(recipient, request)
   end
 
-  def request_supervisor(request)
-    request.category.sub_division.supervisor
-  end
-
-  def request_dean(request)
-    request.category.sub_division.division.dean
-  end
-
   def timeline_url_for(recipient, request)
     if recipient.id == request.student.user_id
       student_achievement_request_url(request)
-    elsif recipient.id == request.category.sub_division.supervisor_user_id
+    elsif recipient.role_assignments.joins(:review_role).merge(ReviewRole.scope_division).exists?
+      dean_achievement_request_url(request)
+    elsif recipient.role_assignments.joins(:review_role).merge(ReviewRole.scope_sub_division).exists?
       supervisor_achievement_request_url(request)
     else
-      dean_achievement_request_url(request)
+      faculty_root_url
     end
   end
 end
