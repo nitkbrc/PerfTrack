@@ -1,0 +1,48 @@
+require "rails_helper"
+
+RSpec.describe "Admin review roles", type: :request do
+  let(:admin) { create(:user, :admin) }
+
+  before { sign_in admin }
+
+  it "opens the new review role form inside the modal turbo frame" do
+    get "/admin/review_roles/new"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('id="modal"')
+    expect(response.body).to include('data-controller="modal"')
+    expect(response.body).to include("New review role")
+    expect(response.body).to include("Name")
+  end
+
+  it "opens the edit form inside the modal turbo frame" do
+    role = ReviewRole.supervisor
+
+    get "/admin/review_roles/#{role.id}/edit"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('id="modal"')
+    expect(response.body).to include("Edit review role")
+  end
+
+  it "creates a custom review role" do
+    expect {
+      post "/admin/review_roles", params: {
+        review_role: {
+          name: "Coordinator",
+          scope: "sub_division",
+          raiseable_on_behalf_eligible: "1"
+        }
+      }
+    }.to change(ReviewRole, :count).by(1)
+
+    expect(response).to redirect_to("/admin/review_roles")
+    expect(ReviewRole.find_by!(name: "Coordinator")).not_to be_system_role
+  end
+
+  it "returns not found for a bogus show-style path without an id" do
+    get "/admin/review_roles/edit"
+
+    expect(response).to have_http_status(:not_found)
+  end
+end

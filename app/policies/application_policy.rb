@@ -36,6 +36,18 @@ class ApplicationPolicy
     false
   end
 
+  # Unknown policy queries (e.g. custom controller actions) deny instead of
+  # raising Pundit::NotDefinedError and dumping a Rails error page.
+  def method_missing(method_name, *args, &block)
+    return false if query_method?(method_name)
+
+    super
+  end
+
+  def respond_to_missing?(method_name, include_private = false)
+    query_method?(method_name) || super
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user
@@ -49,5 +61,11 @@ class ApplicationPolicy
     private
 
     attr_reader :user, :scope
+  end
+
+  private
+
+  def query_method?(method_name)
+    method_name.to_s.end_with?("?")
   end
 end

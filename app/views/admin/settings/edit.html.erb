@@ -1,68 +1,26 @@
-<h1 class="mb-6 text-2xl font-bold text-text-main">Settings</h1>
+<div class="mx-auto w-full max-w-5xl space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-text-main">Settings</h1>
+    <p class="mt-1 text-sm text-text-muted">
+      Configure review workflow, profile permissions, and scoring.
+    </p>
+  </div>
 
-<%= form_with url: admin_settings_path, method: :put, class: "space-y-8" do %>
-  <div class="clay-card mx-auto max-w-lg p-6 sm:p-8">
-    <%= fields_for :setting, @setting do |f| %>
-      <%= render "admin/shared/error_messages", record: @setting %>
-
-      <div class="space-y-2">
-        <%= f.label :score_scale_k, "Score scale constant (k)", class: admin_label_classes %>
-        <%= f.number_field :score_scale_k, min: 1, class: "#{admin_input_classes} mt-0" %>
-        <div class="scats-callout scats-callout-warning mt-3" role="note">
-          <span class="scats-callout-icon material-symbols-outlined" aria-hidden="true">warning</span>
-          <div class="scats-callout-body">
-            <p class="scats-callout-title">Read before changing</p>
-            <p class="mt-1 leading-relaxed opacity-90">
-              Controls how steeply net points map to the 0–10 overall score. Smaller values
-              make scores react faster to points. Changing it immediately rescales every
-              student's displayed score — stored point history is never affected.
-            </p>
-          </div>
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <% settings_hub_cards.each do |card| %>
+      <%= link_to card[:path], class: "clay-card group flex flex-col gap-3 rounded-2xl p-5 transition hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40" do %>
+        <span class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition group-hover:bg-primary/10 group-hover:text-primary">
+          <span class="material-symbols-outlined text-xl" aria-hidden="true"><%= card[:icon] %></span>
+        </span>
+        <div>
+          <h2 class="text-base font-semibold text-text-main"><%= card[:title] %></h2>
+          <p class="mt-1 text-sm leading-relaxed text-text-muted"><%= card[:description] %></p>
         </div>
-      </div>
+        <span class="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary">
+          Open
+          <span class="material-symbols-outlined text-base transition group-hover:translate-x-0.5" aria-hidden="true">arrow_forward</span>
+        </span>
+      <% end %>
     <% end %>
   </div>
-
-  <div class="clay-card mx-auto max-w-3xl p-6 sm:p-8">
-    <h2 class="text-lg font-semibold text-text-main">Profile edit permissions</h2>
-    <p class="mt-1 text-sm text-text-muted">
-      Toggle which fields students and faculty may edit on their own profile. Admins are never gated.
-    </p>
-
-    <div class="mt-6 overflow-x-auto">
-      <table class="min-w-full text-left text-sm">
-        <thead>
-          <tr class="border-b border-border-subtle text-xs uppercase tracking-wide text-text-muted">
-            <th class="px-3 py-2 font-semibold">Action</th>
-            <th class="px-3 py-2 font-semibold">Student</th>
-            <th class="px-3 py-2 font-semibold">Faculty</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @permissions_by_action.each do |action, permissions| %>
-            <tr class="border-b border-border-subtle/70">
-              <td class="px-3 py-3 font-medium text-text-main"><%= action.humanize %></td>
-              <% %w[student faculty].each do |role| %>
-                <% permission = permissions.find { |p| p.role == role } %>
-                <td class="px-3 py-3">
-                  <% if permission %>
-                    <label class="inline-flex items-center gap-2">
-                      <%= hidden_field_tag "permissions[#{permission.id}][enabled]", "0" %>
-                      <%= check_box_tag "permissions[#{permission.id}][enabled]", "1", permission.enabled?,
-                            class: "rounded border-border-subtle text-primary focus:ring-secondary-container/40" %>
-                      <span class="text-text-muted"><%= permission.enabled? ? "On" : "Off" %></span>
-                    </label>
-                  <% end %>
-                </td>
-              <% end %>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="mx-auto max-w-3xl">
-    <%= submit_tag "Save settings", class: admin_primary_button_classes %>
-  </div>
-<% end %>
+</div>

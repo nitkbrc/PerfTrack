@@ -195,6 +195,15 @@ module ApplicationHelper
       return request.path.start_with?("/student/achievement_requests")
     end
 
+    # Settings hub and related configuration pages.
+    if path == edit_admin_settings_path
+      return request.path.start_with?("/admin/settings") ||
+             request.path.start_with?("/admin/review_roles") ||
+             request.path.start_with?("/admin/role_assignments") ||
+             request.path.start_with?("/admin/hierarchies") ||
+             request.path.match?(%r{\A/admin/(divisions|sub_divisions)/\d+/hierarchy_steps})
+    end
+
     request.path == path || (path != root_path && request.path.start_with?("#{path}/"))
   end
 
@@ -202,8 +211,6 @@ module ApplicationHelper
     [ [ "Dashboard", admin_root_path, "home" ],
       [ "Departments", admin_departments_path, "grid" ],
       [ "Divisions", admin_divisions_path, "layers" ],
-      [ "Review roles", admin_review_roles_path, "list" ],
-      [ "Assignments", admin_role_assignments_path, "users" ],
       [ "Reason templates", admin_reason_templates_path, "list" ],
       [ "Users", admin_users_path, "users" ],
       [ "Import users", new_admin_user_import_path, "upload" ],

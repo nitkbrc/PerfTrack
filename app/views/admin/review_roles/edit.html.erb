@@ -1,2 +1,8 @@
-<h1 class="mb-4 text-xl font-bold text-text-main">Edit review role</h1>
-<%= render "form", review_role: @review_role %>
+<% content_for :modal do %>
+  <%= turbo_frame_tag "modal" do %>
+    <%= render layout: "admin/shared/modal",
+               locals: { title: "Edit review role", return_url: admin_review_roles_path } do %>
+      <%= render "form", review_role: @review_role %>
+    <% end %>
+  <% end %>
+<% end %>

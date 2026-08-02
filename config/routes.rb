@@ -84,8 +84,8 @@ Rails.application.routes.draw do
 
     resources :departments, :reason_templates, :users
     resources :categories, concerns: :archivable
-    resources :review_roles
-    resources :role_assignments
+    resources :review_roles, except: :show
+    resources :role_assignments, except: :show
     resources :divisions, concerns: :archivable do
       resources :hierarchy_steps, only: [ :index, :create, :update, :destroy ] do
         member do
@@ -107,7 +107,11 @@ Rails.application.routes.draw do
     resources :user_imports, only: [ :new, :create ] do
       get :template, on: :collection
     end
-    resource :settings, only: [ :edit, :update ]
+    resources :hierarchies, only: [ :index ]
+    resource :settings, only: [ :edit, :update ] do
+      get :score_scale
+      get :profile_permissions
+    end
   end
 
   match "/404", to: "errors#not_found", via: :all

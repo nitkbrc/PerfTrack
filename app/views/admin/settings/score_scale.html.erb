@@ -1,0 +1,34 @@
+<div class="mx-auto w-full max-w-lg space-y-4">
+  <div>
+    <%= link_to edit_admin_settings_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
+      <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+      Settings
+    <% end %>
+    <h1 class="mt-2 text-2xl font-bold text-text-main">Score scale constant</h1>
+  </div>
+
+  <%= form_with url: admin_settings_path, method: :put, class: "clay-card space-y-5 p-6 sm:p-8" do %>
+    <%= hidden_field_tag :form, "score_scale" %>
+    <%= fields_for :setting, @setting do |f| %>
+      <%= render "admin/shared/error_messages", record: @setting %>
+
+      <div class="space-y-2">
+        <%= f.label :score_scale_k, "Score scale constant (k)", class: admin_label_classes %>
+        <%= f.number_field :score_scale_k, min: 1, class: "#{admin_input_classes} mt-0" %>
+        <div class="scats-callout scats-callout-warning mt-3" role="note">
+          <span class="scats-callout-icon material-symbols-outlined" aria-hidden="true">warning</span>
+          <div class="scats-callout-body">
+            <p class="scats-callout-title">Read before changing</p>
+            <p class="mt-1 leading-relaxed opacity-90">
+              Controls how steeply net points map to the 0–10 overall score. Smaller values
+              make scores react faster to points. Changing it immediately rescales every
+              student's displayed score — stored point history is never affected.
+            </p>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%= submit_tag "Save score scale", class: admin_primary_button_classes %>
+  <% end %>
+</div>

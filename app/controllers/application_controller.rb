@@ -11,6 +11,7 @@ class ApplicationController < ActionController::Base
   after_action :verify_authorized, unless: :devise_controller?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
+  rescue_from Pundit::NotDefinedError, with: :pundit_not_defined
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
   # Admin-created accounts must replace their temporary password before doing
@@ -26,6 +27,12 @@ class ApplicationController < ActionController::Base
   end
 
   def user_not_authorized
+    redirect_to root_path, alert: "You are not authorized to do that."
+  end
+
+  # Safety net if a policy query is still missing — never dump a Rails exception page.
+  def pundit_not_defined(exception)
+    Rails.logger.error("[pundit] #{exception.class}: #{exception.message}")
     redirect_to root_path, alert: "You are not authorized to do that."
   end
 

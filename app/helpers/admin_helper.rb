@@ -1,4 +1,39 @@
 module AdminHelper
+  def settings_hub_cards
+    [
+      {
+        title: "Review roles",
+        description: "Define system and custom roles used in review chains.",
+        path: admin_review_roles_path,
+        icon: "badge"
+      },
+      {
+        title: "Role assignments",
+        description: "Assign faculty to roles for each division or sub-division.",
+        path: admin_role_assignments_path,
+        icon: "group"
+      },
+      {
+        title: "Hierarchy",
+        description: "Order review steps for each division and sub-division.",
+        path: admin_hierarchies_path,
+        icon: "account_tree"
+      },
+      {
+        title: "Profile edit permissions",
+        description: "Control which profile fields students and faculty can edit.",
+        path: profile_permissions_admin_settings_path,
+        icon: "manage_accounts"
+      },
+      {
+        title: "Score scale constant",
+        description: "Adjust how net points map to the 0–10 overall score.",
+        path: score_scale_admin_settings_path,
+        icon: "tune"
+      }
+    ]
+  end
+
   def admin_modal_frame_data
     { turbo_frame: "modal" }
   end
@@ -68,6 +103,18 @@ module AdminHelper
     else
       tag.span division.div_type, class: "scats-badge scats-badge-danger"
     end
+  end
+
+  # Compact ordered role names for hierarchy previews, e.g. "Supervisor → Dean".
+  def hierarchy_step_labels(steps)
+    Array(steps).sort_by(&:position).map { |step| step.review_role&.name }.compact
+  end
+
+  def hierarchy_chain_summary(steps)
+    labels = hierarchy_step_labels(steps)
+    return "No steps configured" if labels.empty?
+
+    labels.join(" → ")
   end
 
   # Display labels for the admin users Role column. Faculty with dean/supervisor

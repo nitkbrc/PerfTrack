@@ -34,6 +34,17 @@ RSpec.describe AdminOnlyPolicy do
     end
   end
 
+  it "permits admins for unknown custom actions instead of raising NotDefinedError" do
+    policy = DivisionPolicy.new(admin, build_stubbed(:division))
+    expect(policy.public_send(:bulk_apply?)).to be true
+    expect(policy.public_send(:move_up?)).to be true
+  end
+
+  it "denies non-admins for unknown custom actions instead of raising NotDefinedError" do
+    policy = DivisionPolicy.new(faculty, build_stubbed(:division))
+    expect(policy.public_send(:bulk_apply?)).to be false
+  end
+
   it "backs all six admin-managed resources" do
     [ DivisionPolicy, SubDivisionPolicy, CategoryPolicy,
       DepartmentPolicy, ReasonTemplatePolicy, UserPolicy ].each do |policy|

@@ -30,6 +30,18 @@ class AdminOnlyPolicy < ApplicationPolicy
     user.admin?
   end
 
+  # Custom member/collection actions (move_up, bulk_apply, …) inherit admin gate
+  # so new routes don't crash with Pundit::NotDefinedError.
+  def method_missing(method_name, *args, &block)
+    return user.admin? if query_method?(method_name)
+
+    super
+  end
+
+  def respond_to_missing?(method_name, include_private = false)
+    query_method?(method_name) || super
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       user.admin? ? scope.all : scope.none

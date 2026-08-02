@@ -1,2 +1,8 @@
-<h1 class="mb-4 text-xl font-bold text-text-main">Edit assignment</h1>
-<%= render "form", assignment: @assignment %>
+<% content_for :modal do %>
+  <%= turbo_frame_tag "modal" do %>
+    <%= render layout: "admin/shared/modal",
+               locals: { title: "Edit assignment", return_url: admin_role_assignments_path } do %>
+      <%= render "form", assignment: @assignment %>
+    <% end %>
+  <% end %>
+<% end %>

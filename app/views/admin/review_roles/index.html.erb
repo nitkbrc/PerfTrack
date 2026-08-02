@@ -1,5 +1,11 @@
-<div class="mb-6 flex items-center justify-between">
-  <h1 class="text-2xl font-bold text-text-main">Review roles</h1>
+<div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+  <div>
+    <%= link_to edit_admin_settings_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
+      <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+      Settings
+    <% end %>
+    <h1 class="mt-2 text-2xl font-bold text-text-main">Review roles</h1>
+  </div>
   <%= link_to "New role", new_admin_review_role_path, class: admin_primary_button_classes, data: admin_modal_frame_data %>
 </div>
 

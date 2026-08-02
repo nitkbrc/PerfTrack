@@ -1,0 +1,50 @@
+<div class="mx-auto w-full max-w-3xl space-y-4">
+  <div>
+    <%= link_to edit_admin_settings_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
+      <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+      Settings
+    <% end %>
+    <h1 class="mt-2 text-2xl font-bold text-text-main">Profile edit permissions</h1>
+    <p class="mt-1 text-sm text-text-muted">
+      Toggle which fields students and faculty may edit on their own profile. Admins are never gated.
+    </p>
+  </div>
+
+  <%= form_with url: admin_settings_path, method: :put, class: "clay-card space-y-6 p-6 sm:p-8" do %>
+    <%= hidden_field_tag :form, "profile_permissions" %>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-border-subtle text-xs uppercase tracking-wide text-text-muted">
+            <th class="px-3 py-2 font-semibold">Action</th>
+            <th class="px-3 py-2 font-semibold">Student</th>
+            <th class="px-3 py-2 font-semibold">Faculty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @permissions_by_action.each do |action, permissions| %>
+            <tr class="border-b border-border-subtle/70">
+              <td class="px-3 py-3 font-medium text-text-main"><%= action.humanize %></td>
+              <% %w[student faculty].each do |role| %>
+                <% permission = permissions.find { |p| p.role == role } %>
+                <td class="px-3 py-3">
+                  <% if permission %>
+                    <label class="inline-flex items-center gap-2">
+                      <%= hidden_field_tag "permissions[#{permission.id}][enabled]", "0" %>
+                      <%= check_box_tag "permissions[#{permission.id}][enabled]", "1", permission.enabled?,
+                            class: "rounded border-border-subtle text-primary focus:ring-secondary-container/40" %>
+                      <span class="text-text-muted"><%= permission.enabled? ? "On" : "Off" %></span>
+                    </label>
+                  <% end %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%= submit_tag "Save permissions", class: admin_primary_button_classes %>
+  <% end %>
+</div>
