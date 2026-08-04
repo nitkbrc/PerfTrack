@@ -170,13 +170,11 @@ if legacy_assoc
   end
 end
 
-unless tech.hierarchy_steps.exists?(review_role: div_reviewer_role)
-  HierarchyStep.create!(
-    review_role: div_reviewer_role,
-    division: tech,
-    position: 1,
-    can_raise_on_behalf: false
-  )
+# Never hardcode position — Dean (or another step) may already own position 1.
+# Append at max+1, then normalize so Division Reviewer sits before Dean.
+tech.hierarchy_steps.find_or_create_by!(review_role: div_reviewer_role) do |step|
+  step.position = (tech.hierarchy_steps.maximum(:position) || 0) + 1
+  step.can_raise_on_behalf = false
 end
 HierarchyStep.normalize_positions_for!(tech)
 RoleAssignment.find_or_create_by!(review_role: div_reviewer_role, division: tech) do |a|
@@ -184,13 +182,10 @@ RoleAssignment.find_or_create_by!(review_role: div_reviewer_role, division: tech
 end
 
 coding = SubDivision.find_by!(name: "Coding & Hackathons", division: tech)
-unless coding.hierarchy_steps.exists?(review_role: coordinator_role)
-  HierarchyStep.create!(
-    review_role: coordinator_role,
-    sub_division: coding,
-    position: 2,
-    can_raise_on_behalf: false
-  )
+# Same pattern: Supervisor already owns position 1 on existing sub-divisions.
+coding.hierarchy_steps.find_or_create_by!(review_role: coordinator_role) do |step|
+  step.position = (coding.hierarchy_steps.maximum(:position) || 0) + 1
+  step.can_raise_on_behalf = false
 end
 HierarchyStep.normalize_positions_for!(coding)
 RoleAssignment.find_or_create_by!(review_role: coordinator_role, sub_division: coding) do |a|

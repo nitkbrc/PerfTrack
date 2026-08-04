@@ -117,15 +117,13 @@ module AdminHelper
     labels.join(" → ")
   end
 
-  # Display labels for the admin users Role column. Faculty with dean/supervisor
-  # assignments show those titles instead of plain "Faculty".
+  # Display labels for the admin users Role column. Faculty show actual
+  # ReviewRole names from assignments (Dean, Supervisor, or admin-created roles).
   def user_role_labels(user)
     return [ user.role.titleize ] unless user.faculty?
 
-    labels = []
-    labels << "Dean" if user.assigned_divisions.any?
-    labels << "Supervisor" if user.assigned_sub_divisions.any?
-    labels.presence || [ "Faculty" ]
+    names = user.role_assignments.filter_map { |a| a.review_role&.name }.uniq
+    names.presence || [ "Faculty" ]
   end
 
   def user_role_badge_classes(label = nil)

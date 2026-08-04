@@ -3,7 +3,7 @@ module Admin
     def index
       authorize User
       @users = User.with_attached_photo
-                   .includes(role_assignments: [ :division, :sub_division ], student_profile: :department)
+                   .includes(role_assignments: [ :review_role, :division, :sub_division ], student_profile: :department)
                    .order(:name)
       case params[:role]
       when "supervisor"
