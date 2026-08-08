@@ -5,7 +5,7 @@
     <p class="mt-1 text-sm text-text-muted">
       Dean: <%= @division.dean&.name.presence || @division.dean&.email || "Unassigned" %>
       ·
-      <%= link_to "Edit hierarchy", admin_division_hierarchy_steps_path(@division), class: admin_link_classes %>
+      <%= link_to "Edit hierarchy", admin_hierarchies_path, class: admin_link_classes %>
     </p>
   </div>
   <div class="flex items-center gap-4">
@@ -41,7 +41,6 @@
   <% unless @show_archived %>
     <%= link_to "+", new_admin_sub_division_path(division_id: @division.id),
           class: "scats-dashed-card min-h-44",
-          aria: { label: "Create sub-division" },
-          data: admin_modal_frame_data %>
+          aria: { label: "Create sub-division" } %>
   <% end %>
 </div>

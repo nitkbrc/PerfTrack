@@ -1,98 +1,118 @@
-<div class="mx-auto w-full max-w-5xl space-y-6">
-  <header class="flex flex-wrap items-end justify-between gap-4">
-    <div>
-      <%= link_to edit_admin_settings_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
-        <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
-        Settings
-      <% end %>
-      <h1 class="mt-2 text-2xl font-bold tracking-tight text-text-main">Review hierarchy</h1>
-      <p class="mt-1 max-w-2xl text-sm leading-relaxed text-text-muted">
-        Each division owns its own chain; each sub-division owns its own. At review time, a request
-        walks the sub-division steps first, then the division steps.
-      </p>
+<div class="w-full space-y-10 pb-28"
+     data-controller="hierarchy-templates"
+     data-hierarchy-templates-save-url-value="<%= bulk_save_admin_hierarchies_path %>">
+
+  <%# ── Page header ─────────────────────────────────────────────── %>
+  <header class="space-y-6">
+    <%= link_to edit_admin_settings_path, class: "inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
+      <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+      Settings
+    <% end %>
+
+    <div class="flex flex-wrap items-start justify-between gap-x-10 gap-y-5">
+      <div class="min-w-0 max-w-2xl">
+        <h1 class="text-[26px] font-semibold leading-tight tracking-tight text-slate-900">Hierarchy templates</h1>
+        <p class="mt-2.5 text-sm leading-relaxed text-slate-500">
+          Build a review chain once, then attach the divisions and sub-divisions that follow it.
+          The final approver sits at the top of each chain and the first reviewer at the bottom.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <%= link_to admin_role_assignments_path,
+              class: "inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50" do %>
+          <span class="material-symbols-outlined text-lg text-slate-400" aria-hidden="true">group</span>
+          Assign people
+        <% end %>
+        <button type="button"
+                data-action="hierarchy-templates#save"
+                class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-secondary-container focus:ring-offset-2">
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">save</span>
+          Save changes
+        </button>
+      </div>
     </div>
-    <p class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
-      <%= pluralize(@divisions.size, "division") %>
-    </p>
   </header>
 
-  <% if @divisions.empty? %>
-    <div class="clay-card px-8 py-12 text-center">
-      <span class="material-symbols-outlined mb-3 text-3xl text-slate-400" aria-hidden="true">account_tree</span>
-      <p class="text-sm font-medium text-text-main">No active divisions yet</p>
-      <p class="mt-1 text-sm text-text-muted">
-        <%= link_to "Create a division", admin_divisions_path, class: admin_link_classes %>
-        to start configuring review chains.
-      </p>
+  <%# ── Overview ───────────────────────────────────────────────── %>
+  <div class="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 lg:grid-cols-4">
+    <% [
+         { label: "Templates", value: @stats[:templates], hint: "across both scopes" },
+         { label: "Attached units", value: @stats[:attached], hint: "divisions and sub-divisions" },
+         { label: "Unstaffed", value: @stats[:unstaffed], hint: "cannot accept new requests", tone: :danger },
+         { label: "Not on a template", value: @stats[:unattached], hint: "waiting to be assigned", tone: :warning }
+       ].each do |stat| %>
+      <div class="bg-white px-6 py-5">
+        <p class="text-xs font-medium uppercase tracking-[0.1em] text-slate-400"><%= stat[:label] %></p>
+        <p class="mt-2.5 text-3xl font-semibold tracking-tight
+                  <%= if stat[:value].to_i.zero?
+                        "text-slate-900"
+                      elsif stat[:tone] == :danger
+                        "text-red-600"
+                      elsif stat[:tone] == :warning
+                        "text-amber-600"
+                      else
+                        "text-slate-900"
+                      end %>">
+          <%= stat[:value] %>
+        </p>
+        <p class="mt-1.5 text-xs leading-relaxed text-slate-400"><%= stat[:hint] %></p>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Flash banners come from the admin layout. %>
+
+  <%# ── Template rails ─────────────────────────────────────────── %>
+  <div class="space-y-12">
+    <%= render "admin/hierarchies/scope_section",
+               title: "Division hierarchies",
+               subtitle: "Run after a sub-division finishes its review.",
+               icon: "layers",
+               scope: "division",
+               hierarchies: @division_hierarchies,
+               available_roles: @division_roles,
+               unassigned_owners: @unassigned_divisions %>
+
+    <%= render "admin/hierarchies/scope_section",
+               title: "Sub-division hierarchies",
+               subtitle: "First-line review chains attached to individual sub-divisions.",
+               icon: "folder",
+               scope: "sub_division",
+               hierarchies: @sub_division_hierarchies,
+               available_roles: @sub_division_roles,
+               unassigned_owners: @unassigned_sub_divisions %>
+  </div>
+
+  <%# ── Unsaved changes bar (revealed once something is edited) ──── %>
+  <div class="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden px-4 pb-5" data-unsaved-bar>
+    <div class="pointer-events-auto mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/95 px-5 py-4 shadow-lg backdrop-blur">
+      <div class="flex items-center gap-3">
+        <span class="relative flex h-2.5 w-2.5 shrink-0">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+          <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+        </span>
+        <div>
+          <p class="text-sm font-semibold text-slate-900">Unsaved changes</p>
+          <p class="mt-0.5 text-xs leading-relaxed text-slate-500">Structure saves even if some units are still unstaffed.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <%= link_to "Discard", admin_hierarchies_path,
+              data: { turbo: false },
+              class: "rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" %>
+        <button type="button"
+                data-action="hierarchy-templates#save"
+                class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-secondary-container focus:ring-offset-2">
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">save</span>
+          Save changes
+        </button>
+      </div>
     </div>
-  <% else %>
-    <div class="space-y-4">
-      <% @divisions.each do |division| %>
-        <% active_subs = division.sub_divisions.select { |sd| sd.archived_at.blank? }.sort_by(&:name) %>
-        <% division_steps = division.hierarchy_steps.sort_by(&:position) %>
+  </div>
 
-        <section class="clay-card overflow-hidden" aria-label="<%= division.name %>">
-          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle/70 bg-slate-50/50 px-5 py-4 sm:px-6">
-            <div class="flex min-w-0 items-start gap-3">
-              <span class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 ring-1 ring-slate-200/90 shadow-sm">
-                <span class="material-symbols-outlined text-xl" aria-hidden="true">layers</span>
-              </span>
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <h2 class="text-lg font-semibold text-text-main"><%= division.name %></h2>
-                  <%= division_type_badge(division) %>
-                  <span class="text-xs text-text-muted">Division</span>
-                </div>
-                <p class="mt-1 text-sm text-text-muted">
-                  <span class="font-medium text-text-main/80">Chain:</span>
-                  <%= hierarchy_chain_summary(division_steps) %>
-                </p>
-              </div>
-            </div>
-            <%= link_to admin_division_hierarchy_steps_path(division), class: "#{admin_secondary_button_classes} gap-1" do %>
-              Configure
-              <span class="material-symbols-outlined text-base" aria-hidden="true">chevron_right</span>
-            <% end %>
-          </div>
-
-          <div class="px-5 py-4 sm:px-6">
-            <p class="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Sub-divisions
-            </p>
-
-            <% if active_subs.any? %>
-              <ul class="relative space-y-0 border-l border-slate-200 ml-3 sm:ml-4" role="tree">
-                <% active_subs.each_with_index do |sub_division, index| %>
-                  <% last = index == active_subs.size - 1 %>
-                  <% sub_steps = sub_division.hierarchy_steps.sort_by(&:position) %>
-                  <li class="relative <%= last ? 'pb-0' : 'pb-3' %>" role="treeitem">
-                    <span class="absolute -left-px top-5 h-px w-4 bg-slate-200 sm:w-5" aria-hidden="true"></span>
-                    <div class="ml-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-white px-4 py-3 shadow-sm sm:ml-5">
-                      <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="material-symbols-outlined text-base text-slate-400" aria-hidden="true">folder</span>
-                          <p class="truncate text-sm font-semibold text-text-main"><%= sub_division.name %></p>
-                          <span class="scats-badge scats-badge-neutral"><%= pluralize(sub_steps.size, "step") %></span>
-                        </div>
-                        <p class="mt-1 pl-6 text-xs leading-relaxed text-text-muted">
-                          <%= hierarchy_chain_summary(sub_steps) %>
-                        </p>
-                      </div>
-                      <%= link_to "Configure", admin_sub_division_hierarchy_steps_path(sub_division), class: admin_link_classes %>
-                    </div>
-                  </li>
-                <% end %>
-              </ul>
-            <% else %>
-              <p class="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-text-muted">
-                No active sub-divisions. Add one under
-                <%= link_to division.name, admin_division_path(division), class: admin_link_classes %>
-                first.
-              </p>
-            <% end %>
-          </div>
-        </section>
-      <% end %>
-    </div>
-  <% end %>
+  <form data-hierarchy-templates-target="form" method="post" action="<%= bulk_save_admin_hierarchies_path %>" class="hidden">
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+    <input type="hidden" name="payload" data-hierarchy-templates-target="payload">
+  </form>
 </div>

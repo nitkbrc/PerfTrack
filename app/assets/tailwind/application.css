@@ -139,6 +139,31 @@ html.sidebar-open .scats-sidebar-scrim {
   display: none;
 }
 
+/* Slim scrollbar for the side-by-side card rail; layout utilities stay on the markup. */
+.scats-card-rail {
+  scroll-padding-inline: 0.25rem;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.scats-card-rail::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scats-card-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scats-card-rail::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: rgb(203 213 225);
+}
+
+.scats-card-rail::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184);
+}
+
 .scats-nav-icon {
   @apply flex h-6 w-6 shrink-0 items-center justify-center text-current;
 }

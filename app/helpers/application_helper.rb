@@ -200,8 +200,7 @@ module ApplicationHelper
       return request.path.start_with?("/admin/settings") ||
              request.path.start_with?("/admin/review_roles") ||
              request.path.start_with?("/admin/role_assignments") ||
-             request.path.start_with?("/admin/hierarchies") ||
-             request.path.match?(%r{\A/admin/(divisions|sub_divisions)/\d+/hierarchy_steps})
+             request.path.start_with?("/admin/hierarchies")
     end
 
     request.path == path || (path != root_path && request.path.start_with?("#{path}/"))

@@ -12,13 +12,15 @@
           class: admin_input_classes, disabled: review_role.system_role? %>
   </div>
 
-  <div class="flex items-start gap-2">
-    <%= f.check_box :raiseable_on_behalf_eligible, class: "mt-1" %>
-    <div>
-      <%= f.label :raiseable_on_behalf_eligible, "Eligible to raise on behalf", class: admin_label_classes %>
-      <p class="text-xs text-slate-500">Only meaningful for sub-division scoped roles (e.g. Supervisor).</p>
+  <% if review_role.new_record? %>
+    <div class="flex items-start gap-2">
+      <%= f.check_box :raiseable_on_behalf_eligible, class: "mt-1" %>
+      <div>
+        <%= f.label :raiseable_on_behalf_eligible, "Eligible to raise on behalf", class: admin_label_classes %>
+        <p class="text-xs text-slate-500">Only for sub-division roles. You can also toggle this later from the roles list.</p>
+      </div>
     </div>
-  </div>
+  <% end %>
 
   <div class="flex items-center gap-4">
     <%= f.submit review_role.persisted? ? "Save role" : "Create role", class: admin_primary_button_classes %>

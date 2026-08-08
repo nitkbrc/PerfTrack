@@ -84,30 +84,23 @@ Rails.application.routes.draw do
 
     resources :departments, :reason_templates, :users
     resources :categories, concerns: :archivable
-    resources :review_roles, except: :show
+    resources :review_roles, except: :show do
+      collection do
+        post :bulk_save
+      end
+    end
     resources :role_assignments, except: :show
-    resources :divisions, concerns: :archivable do
-      resources :hierarchy_steps, only: [ :index, :create, :update, :destroy ] do
-        member do
-          patch :move_up
-          patch :move_down
-        end
-        collection { post :bulk_apply }
+    resources :hierarchies, only: [ :index, :create, :destroy ] do
+      collection do
+        post :bulk_save
+        post :create_role
       end
     end
-    resources :sub_divisions, concerns: :archivable do
-      resources :hierarchy_steps, only: [ :index, :create, :update, :destroy ] do
-        member do
-          patch :move_up
-          patch :move_down
-        end
-        collection { post :bulk_apply }
-      end
-    end
+    resources :divisions, concerns: :archivable
+    resources :sub_divisions, concerns: :archivable
     resources :user_imports, only: [ :new, :create ] do
       get :template, on: :collection
     end
-    resources :hierarchies, only: [ :index ]
     resource :settings, only: [ :edit, :update ] do
       get :score_scale
       get :profile_permissions
@@ -118,5 +111,8 @@ Rails.application.routes.draw do
   match "/422", to: "errors#unprocessable", via: :all
   match "/500", to: "errors#internal_server_error", via: :all
 
-  match "*unmatched", to: "errors#not_found", via: :all
+  # Engine routes (Active Storage blobs, Action Mailbox) are appended after the
+  # application's, so the catch-all has to let /rails/* through or it wins first.
+  match "*unmatched", to: "errors#not_found", via: :all,
+        constraints: ->(request) { !request.path.start_with?("/rails/") }
 end

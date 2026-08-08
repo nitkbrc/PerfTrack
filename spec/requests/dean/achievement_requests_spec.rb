@@ -75,7 +75,7 @@ RSpec.describe "Dean decision flow", type: :request do
     end
 
     it "refuses requests not at the dean step" do
-      request_record.update_columns(current_step_id: category.sub_division.hierarchy_steps.ordered.first.id)
+      request_record.update_columns(current_review_role_id: ReviewRole.supervisor.id)
 
       patch approve_dean_achievement_request_path(request_record)
 

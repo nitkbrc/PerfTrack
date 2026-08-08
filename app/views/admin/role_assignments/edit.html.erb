@@ -1,7 +1,7 @@
 <% content_for :modal do %>
   <%= turbo_frame_tag "modal" do %>
     <%= render layout: "admin/shared/modal",
-               locals: { title: "Edit assignment", return_url: admin_role_assignments_path } do %>
+               locals: { title: "Change assignment", return_url: admin_role_assignments_path } do %>
       <%= render "form", assignment: @assignment %>
     <% end %>
   <% end %>

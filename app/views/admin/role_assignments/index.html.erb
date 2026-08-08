@@ -1,44 +1,92 @@
-<div class="mb-6 flex flex-wrap items-end justify-between gap-3">
-  <div>
-    <%= link_to edit_admin_settings_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
+<div class="mx-auto w-full max-w-5xl space-y-8 pb-10">
+  <header class="space-y-4">
+    <%= link_to edit_admin_settings_path, class: "inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
       <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
       Settings
     <% end %>
-    <h1 class="mt-2 text-2xl font-bold text-text-main">Role assignments</h1>
-  </div>
-  <%= link_to "Assign role", new_admin_role_assignment_path, class: admin_primary_button_classes, data: admin_modal_frame_data %>
-</div>
 
-<div class="clay-card scats-list-shell">
-  <table class="w-full text-left text-sm">
-    <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
-      <tr>
-        <th class="px-4 py-3">User</th>
-        <th class="px-4 py-3">Role</th>
-        <th class="px-4 py-3">Scope owner</th>
-        <th class="px-4 py-3 text-right">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="scats-list">
-      <% @assignments.each do |assignment| %>
-        <tr class="scats-row">
-          <td class="px-4 py-3"><%= assignment.user.name.presence || assignment.user.email %></td>
-          <td class="px-4 py-3"><%= assignment.review_role.name %></td>
-          <td class="px-4 py-3">
-            <% if assignment.division %>
-              Division: <%= assignment.division.name %>
-            <% else %>
-              Sub-division: <%= assignment.sub_division.name %>
-            <% end %>
-          </td>
-          <td class="px-4 py-3 text-right">
-            <%= link_to admin_edit_action_label, edit_admin_role_assignment_path(assignment), class: admin_secondary_button_classes, data: admin_modal_frame_data %>
-            <%= button_to "Remove", admin_role_assignment_path(assignment), method: :delete,
-                  form: { data: { turbo_confirm: "Remove this assignment?" } },
-                  class: admin_delete_classes %>
-          </td>
-        </tr>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="min-w-0 max-w-2xl">
+        <h1 class="text-[26px] font-semibold leading-tight tracking-tight text-slate-900">Role assignments</h1>
+        <p class="mt-2 text-sm leading-relaxed text-slate-500">
+          Every role on a hierarchy template is a slot here. Fill vacant slots so requests can move through the chain.
+        </p>
+      </div>
+      <%= link_to admin_hierarchies_path,
+            class: "inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50" do %>
+        <span class="material-symbols-outlined text-lg text-slate-400" aria-hidden="true">account_tree</span>
+        Hierarchy templates
       <% end %>
-    </tbody>
-  </table>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 lg:grid-cols-4">
+    <% [
+         { label: "Slots", value: @stats[:total_slots], hint: "across all templates" },
+         { label: "Staffed", value: @stats[:staffed], hint: "people assigned" },
+         { label: "Vacant", value: @stats[:vacant], hint: "need someone", tone: :danger },
+         { label: "No template", value: @stats[:no_template], hint: "owners without a chain", tone: :warning }
+       ].each do |stat| %>
+      <div class="bg-white px-5 py-4">
+        <p class="text-xs font-medium uppercase tracking-[0.1em] text-slate-400"><%= stat[:label] %></p>
+        <p class="mt-2 text-2xl font-semibold tracking-tight
+                  <%= if stat[:value].to_i.zero?
+                        "text-slate-900"
+                      elsif stat[:tone] == :danger
+                        "text-red-600"
+                      elsif stat[:tone] == :warning
+                        "text-amber-600"
+                      else
+                        "text-slate-900"
+                      end %>">
+          <%= stat[:value] %>
+        </p>
+        <p class="mt-1 text-xs text-slate-400"><%= stat[:hint] %></p>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @divisions.empty? %>
+    <div class="clay-card px-8 py-12 text-center">
+      <span class="material-symbols-outlined mb-3 text-3xl text-slate-400" aria-hidden="true">account_tree</span>
+      <p class="text-sm font-medium text-text-main">No active divisions yet</p>
+      <p class="mt-1 text-sm text-text-muted">
+        <%= link_to "Create a division", admin_divisions_path, class: admin_link_classes %>
+        before assigning review roles.
+      </p>
+    </div>
+  <% else %>
+    <section data-controller="tree vacancy-filter">
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-sm font-semibold text-text-main">Divisions</h2>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button"
+                  class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  data-vacancy-filter-target="toggle"
+                  data-action="vacancy-filter#toggle"
+                  aria-pressed="false">
+            <span data-vacancy-filter-target="label">Only vacancies</span>
+          </button>
+          <button type="button"
+                  class="scats-ghost-button !px-3 !py-1.5 text-xs"
+                  data-action="tree#expandAll">
+            Expand all
+          </button>
+          <button type="button"
+                  class="scats-ghost-button !px-3 !py-1.5 text-xs"
+                  data-action="tree#collapseAll">
+            Collapse all
+          </button>
+        </div>
+      </div>
+
+      <div class="clay-card rounded-2xl p-4 sm:p-5">
+        <ul class="space-y-3" role="tree">
+          <% @divisions.each do |division| %>
+            <%= render "admin/role_assignments/division_branch", division: division %>
+          <% end %>
+        </ul>
+      </div>
+    </section>
+  <% end %>
 </div>

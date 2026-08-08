@@ -1,13 +1,16 @@
 class Division < ApplicationRecord
   include Archivable
 
+  belongs_to :hierarchy, optional: true
+
   has_many :sub_divisions
-  has_many :hierarchy_steps, dependent: :destroy
   has_many :role_assignments, dependent: :destroy
 
   enum :div_type, { positive: "positive", negative: "negative" }
 
-  after_create :ensure_default_dean_step!
+  before_validation :assign_default_hierarchy, on: :create
+
+  validate :hierarchy_scope_must_be_division
 
   def dean
     RoleAssignment.holder_for(review_role: ReviewRole.dean, division: self)
@@ -17,9 +20,22 @@ class Division < ApplicationRecord
     role_assignments.find_by(review_role: ReviewRole.dean)
   end
 
-  # The whole cascade shares one timestamp so restore! can tell which children
-  # were archived by this cascade (and must come back) from children that were
-  # archived individually beforehand (and must stay archived).
+  def hierarchy_staffed?
+    return false if hierarchy.blank?
+
+    assigned_review_role_ids = role_assignments.map(&:review_role_id)
+    hierarchy.hierarchy_roles.all? { |hr| assigned_review_role_ids.include?(hr.review_role_id) }
+  end
+
+  def unstaffed_review_roles
+    return [] if hierarchy.blank?
+
+    assigned_review_role_ids = role_assignments.map(&:review_role_id)
+    hierarchy.hierarchy_roles.filter_map do |hr|
+      hr.review_role unless assigned_review_role_ids.include?(hr.review_role_id)
+    end
+  end
+
   def archive!(stamp = Time.current, actor: nil)
     transaction do
       update!(archived_at: stamp)
@@ -37,11 +53,16 @@ class Division < ApplicationRecord
 
   private
 
-  def ensure_default_dean_step!
-    ReviewRole.ensure_system_roles!
-    hierarchy_steps.find_or_create_by!(review_role: ReviewRole.dean) do |step|
-      step.position = 1
-      step.can_raise_on_behalf = false
-    end
+  def assign_default_hierarchy
+    return if hierarchy_id.present?
+
+    self.hierarchy = Hierarchy.default_for("division")
+  end
+
+  def hierarchy_scope_must_be_division
+    return if hierarchy.blank?
+    return if hierarchy.scope_division?
+
+    errors.add(:hierarchy, "must be a division-scoped hierarchy")
   end
 end

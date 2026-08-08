@@ -1,0 +1,40 @@
+<% vacant = slot.vacant? %>
+<li class="<%= vacant ? "border-red-200 bg-red-50/60" : "border-slate-200 bg-white" %> flex flex-wrap items-center justify-between gap-3 rounded-xl border px-3 py-2.5"
+    data-vacancy-filter-target="slot"
+    data-vacant="<%= vacant %>">
+  <div class="flex min-w-0 items-center gap-3">
+    <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-[11px] font-semibold text-slate-500"
+          title="Review step <%= slot.step %>"><%= slot.step %></span>
+    <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tracking-wide <%= review_role_badge_classes(slot.review_role.name) %>">
+      <%= review_role_initials(slot.review_role.name) %>
+    </span>
+    <div class="min-w-0">
+      <p class="truncate text-sm font-semibold text-slate-900"><%= slot.review_role.name %></p>
+      <% if vacant %>
+        <p class="mt-0.5 flex items-center gap-1 text-xs font-medium text-red-700">
+          <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
+          Vacant
+        </p>
+      <% else %>
+        <p class="mt-0.5 truncate text-xs text-slate-500">
+          <%= slot.holder.name.presence || slot.holder.email %>
+        </p>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+    <% if vacant %>
+      <%= link_to "Assign", role_slot_assign_path(slot),
+            class: "#{admin_primary_button_classes} !px-3 !py-1.5 text-xs",
+            data: admin_modal_frame_data %>
+    <% else %>
+      <%= link_to admin_edit_action_label, edit_admin_role_assignment_path(slot.assignment),
+            class: "#{admin_secondary_button_classes} !px-3 !py-1.5 text-xs",
+            data: admin_modal_frame_data %>
+      <%= button_to "Remove", admin_role_assignment_path(slot.assignment), method: :delete,
+            form: { data: { turbo_confirm: "Remove this assignment?" } },
+            class: "#{admin_delete_classes} !px-3 !py-1.5 text-xs" %>
+    <% end %>
+  </div>
+</li>

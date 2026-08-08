@@ -8,7 +8,7 @@ module Deans
       @achievement_request = AchievementRequest
         .includes(request_versions: [ :proofs_attachments, { req_histories: :actor } ],
                   category: { sub_division: :division },
-                  student: {}, current_step: :review_role)
+                  student: {}, current_review_role: {})
         .find(@achievement_request.id)
       @histories = @achievement_request.req_histories.includes(:actor).order(:created_at)
       @reason_templates = ReasonTemplate.order(:created_at)

@@ -14,8 +14,8 @@ module AdminHelper
         icon: "group"
       },
       {
-        title: "Hierarchy",
-        description: "Order review steps for each division and sub-division.",
+        title: "Hierarchy templates",
+        description: "Shared review chains for divisions and sub-divisions.",
         path: admin_hierarchies_path,
         icon: "account_tree"
       },
@@ -102,6 +102,40 @@ module AdminHelper
       tag.span division.div_type, class: "scats-badge scats-badge-success"
     else
       tag.span division.div_type, class: "scats-badge scats-badge-danger"
+    end
+  end
+
+  REVIEW_ROLE_BADGE_PALETTE = [
+    "bg-slate-800 text-white",
+    "bg-blue-600 text-white",
+    "bg-teal-700 text-white",
+    "bg-indigo-600 text-white",
+    "bg-cyan-700 text-white",
+    "bg-violet-600 text-white"
+  ].freeze
+
+  REVIEW_ROLE_BADGE_KNOWN = {
+    "Dean" => "bg-blue-600 text-white",
+    "Supervisor" => "bg-teal-700 text-white",
+    "Associate Dean" => "bg-indigo-600 text-white"
+  }.freeze
+
+  def review_role_initials(name)
+    parts = name.to_s.split.reject(&:blank?)
+    return "?" if parts.empty?
+
+    if parts.length == 1
+      parts.first.first(2).upcase
+    else
+      "#{parts.first[0]}#{parts.last[0]}".upcase
+    end
+  end
+
+  def review_role_badge_classes(name)
+    key = name.to_s.strip
+    REVIEW_ROLE_BADGE_KNOWN.fetch(key) do
+      digest = key.each_byte.sum
+      REVIEW_ROLE_BADGE_PALETTE[digest % REVIEW_ROLE_BADGE_PALETTE.size]
     end
   end
 

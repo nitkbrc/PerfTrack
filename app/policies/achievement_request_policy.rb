@@ -22,14 +22,21 @@ class AchievementRequestPolicy < ApplicationPolicy
   end
 
   def initiate?
-    user.faculty? && raiseable_assignments.exists?
+    return false unless user.faculty?
+
+    user.role_assignments.includes(:review_role, :sub_division).any? do |assignment|
+      next false unless assignment.sub_division_id.present?
+      next false unless assignment.review_role.raiseable_on_behalf_eligible?
+
+      assignment.sub_division.effective_can_raise_on_behalf?(assignment.review_role)
+    end
   end
 
   def dean_queue?
     user.faculty? && division_role_assignments.exists?
   end
 
-  # Current reviewer for this request's live current_step.
+  # Current reviewer for this request's live current_review_role.
   def review?
     user.faculty? && record.in_review? && record.current_reviewer&.id == user.id
   end
@@ -72,11 +79,6 @@ class AchievementRequestPolicy < ApplicationPolicy
     div_id = record.category.sub_division.division_id
     user.role_assignments.exists?(sub_division_id: sub_id) ||
       user.role_assignments.exists?(division_id: div_id)
-  end
-
-  def raiseable_assignments
-    user.role_assignments.joins(:review_role)
-        .where(review_roles: { raiseable_on_behalf_eligible: true })
   end
 
   def division_role_assignments

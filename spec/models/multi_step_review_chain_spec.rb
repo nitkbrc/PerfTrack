@@ -26,6 +26,7 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
   # Builds Supervisor → Coordinator → Division Reviewer → Dean (4 assigned steps).
   def build_four_step_world
     ReviewRole.ensure_system_roles!
+    Hierarchy.ensure_defaults!
 
     dean_user = create(:user, :faculty)
     mid_div_user = create(:user, :faculty)
@@ -35,33 +36,23 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
     coordinator_role = custom_sub_division_role
     mid_div_role = custom_division_role
 
+    div_hierarchy = Hierarchy.create!(name: "Spec Div #{SecureRandom.hex(4)}", scope: "division")
+    div_hierarchy.hierarchy_roles.create!(review_role: mid_div_role, position: 1, can_raise_on_behalf: false)
+    div_hierarchy.hierarchy_roles.create!(review_role: ReviewRole.dean, position: 2, can_raise_on_behalf: false)
+    div_hierarchy.normalize_positions!
+
+    sub_hierarchy = Hierarchy.create!(name: "Spec Sub #{SecureRandom.hex(4)}", scope: "sub_division")
+    sub_hierarchy.hierarchy_roles.create!(review_role: ReviewRole.supervisor, position: 1, can_raise_on_behalf: true)
+    sub_hierarchy.hierarchy_roles.create!(review_role: coordinator_role, position: 2, can_raise_on_behalf: false)
+    sub_hierarchy.normalize_positions!
+
     division = create(:division, dean: dean_user)
-    HierarchyStep.create!(
-      review_role: mid_div_role,
-      division: division,
-      position: (division.hierarchy_steps.maximum(:position) || 0) + 1,
-      can_raise_on_behalf: false
-    )
-    HierarchyStep.normalize_positions_for!(division)
-    RoleAssignment.create!(
-      user: mid_div_user,
-      review_role: mid_div_role,
-      division: division
-    )
+    division.update!(hierarchy: div_hierarchy)
+    RoleAssignment.create!(user: mid_div_user, review_role: mid_div_role, division: division)
 
     sub_division = create(:sub_division, division: division, supervisor: supervisor_user)
-    HierarchyStep.create!(
-      review_role: coordinator_role,
-      sub_division: sub_division,
-      position: (sub_division.hierarchy_steps.maximum(:position) || 0) + 1,
-      can_raise_on_behalf: false
-    )
-    HierarchyStep.normalize_positions_for!(sub_division)
-    RoleAssignment.create!(
-      user: coordinator_user,
-      review_role: coordinator_role,
-      sub_division: sub_division
-    )
+    sub_division.update!(hierarchy: sub_hierarchy)
+    RoleAssignment.create!(user: coordinator_user, review_role: coordinator_role, sub_division: sub_division)
 
     category = create(:category, sub_division: sub_division, points: 30)
     student = create(:student)
@@ -93,25 +84,25 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
       }
     )
 
-    expect(request.current_step.review_role.name).to eq(ReviewRole::SUPERVISOR)
+    expect(request.current_review_role.name).to eq(ReviewRole::SUPERVISOR)
     expect(request.current_reviewer).to eq(world[:supervisor_user])
 
     request.advance!(actor: world[:supervisor_user])
-    expect(request.reload.current_step.review_role.name).to eq("Coordinator")
+    expect(request.reload.current_review_role.name).to eq("Coordinator")
     expect(request.current_reviewer).to eq(world[:coordinator_user])
 
     request.advance!(actor: world[:coordinator_user])
-    expect(request.reload.current_step.review_role.name).to eq("Division Reviewer")
+    expect(request.reload.current_review_role.name).to eq("Division Reviewer")
     expect(request.current_reviewer).to eq(world[:mid_div_user])
 
     request.advance!(actor: world[:mid_div_user])
-    expect(request.reload.current_step.review_role.name).to eq(ReviewRole::DEAN)
+    expect(request.reload.current_review_role.name).to eq(ReviewRole::DEAN)
     expect(request.current_reviewer).to eq(world[:dean_user])
 
     request.advance!(actor: world[:dean_user])
     expect(request.reload).to be_approved
     expect(request.points_awarded).to eq(30)
-    expect(request.current_step_id).to be_nil
+    expect(request.current_review_role_id).to be_nil
   end
 
   it "reverts exactly one step from Division Reviewer back to Coordinator" do
@@ -132,7 +123,7 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
     request.revert!(actor: world[:mid_div_user], comment: "Need more detail before I can advance.")
 
     expect(request.reload).to be_in_review
-    expect(request.current_step.review_role.name).to eq("Coordinator")
+    expect(request.current_review_role.name).to eq("Coordinator")
     expect(request.current_reviewer).to eq(world[:coordinator_user])
   end
 
@@ -158,11 +149,6 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
 
   it "skips an unassigned Coordinator step when resolving the live chain" do
     world = build_four_step_world
-    RoleAssignment.where(
-      review_role: world[:coordinator_role],
-      sub_division: world[:sub_division]
-    ).delete_all
-
     request = AchievementRequest.submit!(
       student: world[:student],
       actor: world[:student].user,
@@ -174,6 +160,11 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
       }
     )
 
+    RoleAssignment.where(
+      review_role: world[:coordinator_role],
+      sub_division: world[:sub_division]
+    ).delete_all
+
     chain_names = ReviewChainResolver.new(request).review_chain.map { |entry| entry.review_role.name }
     expect(chain_names).to eq([
       ReviewRole::SUPERVISOR,
@@ -182,7 +173,7 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
     ])
 
     request.advance!(actor: world[:supervisor_user])
-    expect(request.reload.current_step.review_role.name).to eq("Division Reviewer")
+    expect(request.reload.current_review_role.name).to eq("Division Reviewer")
     expect(request.current_reviewer).to eq(world[:mid_div_user])
   end
 
@@ -200,7 +191,7 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
     )
 
     expect(request).to be_in_review
-    expect(request.current_step.review_role.name).to eq("Coordinator")
+    expect(request.current_review_role.name).to eq("Coordinator")
     expect(request.current_reviewer).to eq(world[:coordinator_user])
   end
 
@@ -226,22 +217,18 @@ RSpec.describe "Multi-step review chain lifecycle", type: :model do
 
   it "allows a division hierarchy with only a custom role (no Dean)" do
     ReviewRole.ensure_system_roles!
+    Hierarchy.ensure_defaults!
     mid_role = custom_division_role("Only Custom Div Role")
     user = create(:user, :faculty)
+    hierarchy = Hierarchy.create!(name: "Custom only #{SecureRandom.hex(4)}", scope: "division")
+    hierarchy.hierarchy_roles.create!(review_role: mid_role, position: 1, can_raise_on_behalf: false)
+
     division = create(:division)
-    HierarchyStep.create!(
-      review_role: mid_role,
-      division: division,
-      position: (division.hierarchy_steps.maximum(:position) || 0) + 1
-    )
+    division.update!(hierarchy: hierarchy)
+    RoleAssignment.where(division: division, review_role: ReviewRole.dean).delete_all
     RoleAssignment.create!(user: user, review_role: mid_role, division: division)
-    HierarchyStep.normalize_positions_for!(division)
 
-    dean_step = division.hierarchy_steps.find_by!(review_role: ReviewRole.dean)
-    expect(dean_step.destroy).to be_truthy
-    HierarchyStep.normalize_positions_for!(division)
-
-    expect(division.hierarchy_steps.count).to eq(1)
-    expect(division.hierarchy_steps.first.review_role.name).to eq("Only Custom Div Role")
+    expect(division.hierarchy.hierarchy_roles.map { |hr| hr.review_role.name }).to eq([ "Only Custom Div Role" ])
+    expect(RoleAssignment.holder_for(review_role: mid_role, division: division)).to eq(user)
   end
 end

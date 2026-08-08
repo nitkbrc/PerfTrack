@@ -1,31 +1,34 @@
 <%= form_with model: [ :admin, assignment ], class: "space-y-5" do |f| %>
   <%= render "admin/shared/error_messages", record: assignment %>
 
-  <div>
-    <%= f.label :review_role_id, "Review role", class: admin_label_classes %>
-    <%= f.collection_select :review_role_id, @review_roles, :id, :name, { prompt: "Select role" }, class: admin_input_classes %>
+  <%= f.hidden_field :review_role_id %>
+  <%= f.hidden_field :division_id %>
+  <%= f.hidden_field :sub_division_id %>
+
+  <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Assigning</p>
+    <p class="mt-1 text-sm font-semibold text-slate-900">
+      <%= @review_role&.name || "Unknown role" %>
+      <span class="font-normal text-slate-400">—</span>
+      <%= @owner ? role_slot_owner_label(@owner) : "Unknown owner" %>
+    </p>
   </div>
 
   <div>
     <%= f.label :user_id, "Faculty", class: admin_label_classes %>
-    <%= f.collection_select :user_id, @eligible_users, :id, ->(u) { u.name.presence || u.email },
-          { prompt: "Select faculty" }, class: admin_input_classes %>
-  </div>
-
-  <div>
-    <%= f.label :division_id, "Division (for division-scoped roles)", class: admin_label_classes %>
-    <%= f.collection_select :division_id, @divisions, :id, :name, { include_blank: "—" }, class: admin_input_classes %>
-  </div>
-
-  <div>
-    <%= f.label :sub_division_id, "Sub-division (for sub-division-scoped roles)", class: admin_label_classes %>
-    <%= f.collection_select :sub_division_id, @sub_divisions, :id,
-          ->(sd) { "#{sd.division.name} / #{sd.name}" },
-          { include_blank: "—" }, class: admin_input_classes %>
+    <% if @eligible_users.any? %>
+      <%= f.collection_select :user_id, @eligible_users, :id, ->(u) { u.name.presence || u.email },
+            { prompt: "Select faculty" }, class: admin_input_classes %>
+    <% else %>
+      <p class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+        No eligible faculty for this role. Division-scoped roles need faculty who hold no other review role;
+        sub-division roles need faculty who do not already hold a different role type.
+      </p>
+    <% end %>
   </div>
 
   <div class="flex items-center gap-4">
-    <%= f.submit class: admin_primary_button_classes %>
+    <%= f.submit class: admin_primary_button_classes, disabled: @eligible_users.empty? %>
     <button type="button" data-action="modal#close" class="<%= admin_link_classes %>">Cancel</button>
   </div>
 <% end %>

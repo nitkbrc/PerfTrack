@@ -1,7 +1,7 @@
 class AchievementRequest < ApplicationRecord
   belongs_to :student
   belongs_to :category
-  belongs_to :current_step, class_name: "HierarchyStep", optional: true
+  belongs_to :current_review_role, class_name: "ReviewRole", optional: true
 
   # Histories must go before versions: versions restrict destroy while histories remain.
   has_many :req_histories, dependent: :destroy
@@ -13,6 +13,7 @@ class AchievementRequest < ApplicationRecord
   # Backend guard behind the picker filtering: archived (soft-deleted)
   # categories keep their existing requests but never accept new ones.
   validate :category_is_not_archived, on: :create
+  validate :hierarchy_must_be_staffed, on: :create
 
   enum :status, {
     in_review: "in_review",
@@ -23,16 +24,16 @@ class AchievementRequest < ApplicationRecord
 
   scope :for_current_reviewer, ->(user) {
     in_review
-      .joins("INNER JOIN hierarchy_steps ON hierarchy_steps.id = achievement_requests.current_step_id")
+      .joins(category: { sub_division: :division })
       .joins(<<~SQL.squish)
-        INNER JOIN role_assignments ON role_assignments.review_role_id = hierarchy_steps.review_role_id
+        INNER JOIN role_assignments ON role_assignments.review_role_id = achievement_requests.current_review_role_id
+          AND role_assignments.user_id = #{user.id.to_i}
           AND (
-            (hierarchy_steps.division_id IS NOT NULL AND role_assignments.division_id = hierarchy_steps.division_id)
+            (role_assignments.sub_division_id IS NOT NULL AND role_assignments.sub_division_id = sub_divisions.id)
             OR
-            (hierarchy_steps.sub_division_id IS NOT NULL AND role_assignments.sub_division_id = hierarchy_steps.sub_division_id)
+            (role_assignments.division_id IS NOT NULL AND role_assignments.division_id = divisions.id)
           )
       SQL
-      .where(role_assignments: { user_id: user.id })
   }
 
   # Actions that lock a version as sent (immutable snapshot). Edits after that
@@ -78,7 +79,7 @@ class AchievementRequest < ApplicationRecord
         raise ActiveRecord::RecordInvalid, created
       end
 
-      created.update!(current_step: entry.step)
+      created.update!(current_review_role: entry.review_role)
       version = created.create_version!(version_number: 1, proofs: proofs)
       created.req_histories.create!(actor: actor, action: "submit", to_status: "in_review",
                                     request_version: version)
@@ -102,7 +103,7 @@ class AchievementRequest < ApplicationRecord
       entry = created.review_chain_resolver.entry_step_for_raise_on_behalf(actor: actor)
       raise ActiveRecord::RecordInvalid, created unless entry
 
-      created.update!(current_step: entry.step)
+      created.update!(current_review_role: entry.review_role)
       version = created.create_version!(version_number: 1, proofs: proofs)
       created.req_histories.create!(actor: actor, action: "supervisor_initiate",
                                     to_status: "in_review",
@@ -128,7 +129,7 @@ class AchievementRequest < ApplicationRecord
       from = status
       entry = review_chain_resolver.entry_step_for_submit
       update!(title: version.title, description: version.description,
-              status: :in_review, current_step: entry&.step)
+              status: :in_review, current_review_role: entry&.review_role)
       req_histories.create!(actor: actor, action: "resubmit",
                             from_status: from, to_status: "in_review",
                             request_version: version)
@@ -180,7 +181,7 @@ class AchievementRequest < ApplicationRecord
     if nxt
       transaction do
         from = status
-        update!(current_step: nxt.step, status: :in_review)
+        update!(current_review_role: nxt.review_role, status: :in_review)
         req_histories.create!(actor: actor, action: "advance", comment: comment,
                               from_status: from, to_status: "in_review",
                               request_version: current_version)
@@ -201,12 +202,12 @@ class AchievementRequest < ApplicationRecord
     transaction do
       from = status
       if prev
-        update!(current_step: prev.step, status: :in_review)
+        update!(current_review_role: prev.review_role, status: :in_review)
         req_histories.create!(actor: actor, action: "revert", comment: comment,
                               from_status: from, to_status: "in_review",
                               request_version: current_version)
       else
-        update!(current_step: nil, status: :reverted)
+        update!(current_review_role: nil, status: :reverted)
         req_histories.create!(actor: actor, action: "revert", comment: comment,
                               from_status: from, to_status: "reverted",
                               request_version: current_version)
@@ -223,7 +224,7 @@ class AchievementRequest < ApplicationRecord
   def reject!(actor:, comment:, reason_template: nil, action: "reject")
     transaction do
       from = status
-      update!(status: :rejected, current_step: nil)
+      update!(status: :rejected, current_review_role: nil)
       req_histories.create!(actor: actor, action: action, comment: comment,
                             reason_template: reason_template,
                             from_status: from, to_status: "rejected",
@@ -318,7 +319,10 @@ class AchievementRequest < ApplicationRecord
 
   # True when the request sits at a raiseable-on-behalf step (Path B edit window).
   def awaiting_raiseable_revision?
-    in_review? && current_step&.can_raise_on_behalf? && !student_initiated?
+    return false unless in_review? && current_review_role_id.present? && !student_initiated?
+
+    resolved = review_chain_resolver.current_resolved_step
+    resolved&.can_raise_on_behalf?
   end
 
   private
@@ -327,7 +331,7 @@ class AchievementRequest < ApplicationRecord
     transaction do
       sign = category.sub_division.division.positive? ? 1 : -1
       from = status
-      update!(status: :approved, current_step: nil, points_awarded: category.points * sign)
+      update!(status: :approved, current_review_role: nil, points_awarded: category.points * sign)
       req_histories.create!(actor: actor, action: "approve",
                             from_status: from, to_status: "approved",
                             request_version: current_version)
@@ -391,6 +395,19 @@ class AchievementRequest < ApplicationRecord
   def category_is_not_archived
     if category&.archived?
       errors.add(:category, "has been archived and no longer accepts new requests")
+    end
+  end
+
+  def hierarchy_must_be_staffed
+    return if category.blank?
+
+    sub = category.sub_division
+    div = sub&.division
+    unless sub&.hierarchy_staffed?
+      errors.add(:base, "This sub-division's review hierarchy is incomplete — assign all roles before submitting")
+    end
+    unless div&.hierarchy_staffed?
+      errors.add(:base, "This division's review hierarchy is incomplete — assign all roles before submitting")
     end
   end
 end

@@ -1,10 +1,11 @@
 require "rails_helper"
 
 RSpec.describe Division, type: :model do
-  it "creates a default Dean hierarchy step" do
+  it "assigns the default division hierarchy and a Dean assignment" do
     division = create(:division)
-    expect(division.hierarchy_steps.count).to eq(1)
-    expect(division.hierarchy_steps.first.review_role.name).to eq(ReviewRole::DEAN)
+    expect(division.hierarchy).to be_present
+    expect(division.hierarchy.hierarchy_roles.map { |hr| hr.review_role.name }).to include(ReviewRole::DEAN)
     expect(division.dean).to be_present
+    expect(division).to be_hierarchy_staffed
   end
 end

@@ -1,0 +1,88 @@
+<%
+  slots = role_slots_for(division)
+  active_subs = division.sub_divisions.select { |sd| sd.archived_at.blank? }.sort_by(&:name)
+  vacant_count = slots.count(&:vacant?)
+  sub_vacant = active_subs.sum do |sub|
+    next 0 if sub.hierarchy_id.blank?
+    role_slots_for(sub).count(&:vacant?)
+  end
+  total_vacant = vacant_count + sub_vacant
+  has_template = division.hierarchy_id.present?
+  open_branch = total_vacant.positive? || !has_template || active_subs.any? { |s| s.hierarchy_id.blank? }
+%>
+<li role="treeitem"
+    class="rounded-xl border border-border-subtle bg-surface-white p-2 sm:p-3"
+    data-vacancy-filter-target="branch"
+    data-vacant-count="<%= total_vacant %>"
+    data-no-template="<%= !has_template %>">
+  <details class="group/branch" data-tree-target="node" <%= "open" if open_branch %>>
+    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-2 transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+      <span class="material-symbols-outlined shrink-0 text-base text-slate-400 transition group-open/branch:rotate-90"
+            aria-hidden="true">chevron_right</span>
+      <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+        <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1" aria-hidden="true">layers</span>
+      </span>
+      <span class="min-w-0 flex-1">
+        <span class="flex flex-wrap items-center gap-2">
+          <span class="text-sm font-semibold text-text-main"><%= division.name %></span>
+          <%= division_type_badge(division) %>
+        </span>
+        <span class="block text-xs text-text-muted">
+          <% if has_template %>
+            <%= role_slots_staffed_summary(slots) %>
+            <% if active_subs.any? %>
+              · <%= pluralize(active_subs.size, "sub-division") %>
+            <% end %>
+          <% else %>
+            No template attached
+          <% end %>
+        </span>
+      </span>
+      <% if total_vacant.positive? %>
+        <span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-700">
+          <%= pluralize(total_vacant, "vacant") %>
+        </span>
+      <% end %>
+    </summary>
+
+    <div class="mt-2 space-y-4 px-1 pb-1 sm:px-2">
+      <div>
+        <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+          Division roles
+        </p>
+        <% if has_template %>
+          <ul class="space-y-2" role="group">
+            <% slots.each do |slot| %>
+              <%= render "admin/role_assignments/role_slot", slot: slot %>
+            <% end %>
+          </ul>
+        <% else %>
+          <div class="rounded-xl border border-dashed border-amber-200 bg-amber-50/50 px-4 py-4 text-sm text-amber-900">
+            Attach a division hierarchy template on the
+            <%= link_to "Hierarchy templates", admin_hierarchies_path, class: admin_link_classes %>
+            page before assigning people here.
+          </div>
+        <% end %>
+      </div>
+
+      <div>
+        <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+          Sub-divisions
+        </p>
+        <% if active_subs.any? %>
+          <ul class="space-y-2" role="group">
+            <% active_subs.each do |sub_division| %>
+              <%= render "admin/role_assignments/sub_division_branch", sub_division: sub_division %>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-5 text-center text-sm text-text-muted">
+            No active sub-divisions. Add one under
+            <%= link_to division.name, admin_division_path(division), class: admin_link_classes %>
+            first.
+          </p>
+        <% end %>
+      </div>
+    </div>
+  </details>
+</li>

@@ -4,7 +4,7 @@
     <p class="mt-1 text-sm text-text-muted">
       Supervisor: <%= @sub_division.supervisor&.name.presence || @sub_division.supervisor&.email || "Unassigned" %>
       ·
-      <%= link_to "Edit hierarchy", admin_sub_division_hierarchy_steps_path(@sub_division), class: admin_link_classes %>
+      <%= link_to "Edit hierarchy", admin_hierarchies_path, class: admin_link_classes %>
     </p>
   </div>
   <div class="flex items-center gap-4">

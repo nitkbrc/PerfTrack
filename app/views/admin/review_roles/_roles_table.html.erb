@@ -1,0 +1,93 @@
+<% if roles.empty? %>
+  <p class="px-5 py-10 text-center text-sm text-slate-500">No roles in this scope yet.</p>
+<% else %>
+  <table class="w-full text-left text-sm">
+    <thead>
+      <tr class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+        <th class="px-5 py-3 font-semibold">Role</th>
+        <th class="w-44 px-5 py-3 font-semibold">Raise on behalf</th>
+        <th class="w-28 px-5 py-3 font-semibold">Type</th>
+        <th class="w-24 px-5 py-3 text-right font-semibold">
+          <span class="sr-only">Actions</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody class="scats-list">
+      <% roles.each do |role| %>
+        <tr class="scats-row group/row">
+          <td class="px-5 py-3.5">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tracking-wide <%= review_role_badge_classes(role.name) %>">
+                <%= review_role_initials(role.name) %>
+              </span>
+              <p class="truncate font-semibold text-slate-900"><%= role.name %></p>
+            </div>
+          </td>
+
+          <td class="px-5 py-3.5">
+            <% if role.scope_sub_division? %>
+              <label class="inline-flex cursor-pointer items-center gap-2.5">
+                <input type="checkbox"
+                       class="peer sr-only"
+                       data-raiseable-toggle
+                       data-role-id="<%= role.id %>"
+                       data-action="change->review-roles#toggleChanged"
+                       <%= "checked" if role.raiseable_on_behalf_eligible? %>
+                       aria-label="Eligible to raise on behalf for <%= role.name %>">
+                <span class="relative h-5 w-9 shrink-0 rounded-full bg-slate-200 transition peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-secondary-container/50 peer-focus-visible:ring-offset-1 after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-4"
+                      aria-hidden="true"></span>
+                <span class="text-xs font-medium <%= role.raiseable_on_behalf_eligible? ? "text-slate-700" : "text-slate-400" %>"
+                      data-raiseable-status>
+                  <%= role.raiseable_on_behalf_eligible? ? "On" : "Off" %>
+                </span>
+              </label>
+            <% else %>
+              <span class="text-xs text-slate-400" title="Only sub-division roles can raise on behalf">—</span>
+            <% end %>
+          </td>
+
+          <td class="px-5 py-3.5">
+            <% if role.system_role? %>
+              <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                System
+              </span>
+            <% else %>
+              <span class="inline-flex items-center rounded-md bg-primary/[0.06] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                Custom
+              </span>
+            <% end %>
+          </td>
+
+          <td class="scats-row-actions px-5 py-3.5 text-right">
+            <div class="inline-flex items-center justify-end gap-0.5 opacity-70 transition group-hover/row:opacity-100">
+              <%= link_to edit_admin_review_role_path(role),
+                    class: "inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white hover:text-slate-700 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary-container/40",
+                    data: admin_modal_frame_data,
+                    title: "Edit #{role.name}",
+                    aria: { label: "Edit #{role.name}" } do %>
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
+              <% end %>
+
+              <% if role.system_role? %>
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300"
+                      title="System roles cannot be deleted">
+                  <span class="material-symbols-outlined text-[18px]" aria-hidden="true">lock</span>
+                  <span class="sr-only">System roles cannot be deleted</span>
+                </span>
+              <% else %>
+                <%= button_to admin_review_role_path(role),
+                      method: :delete,
+                      form: { data: { turbo_confirm: "Delete “#{role.name}”? Hierarchies using it must be updated first." } },
+                      class: "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-white hover:text-red-600 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-200",
+                      title: "Delete #{role.name}",
+                      aria: { label: "Delete #{role.name}" } do %>
+                  <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+                <% end %>
+              <% end %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

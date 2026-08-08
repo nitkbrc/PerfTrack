@@ -39,7 +39,6 @@
   <% unless @show_archived %>
     <%= link_to new_admin_division_path,
           class: "scats-dashed-card",
-          aria: { label: "Create division" },
-          data: admin_modal_frame_data do %>+<% end %>
+          aria: { label: "Create division" } do %>+<% end %>
   <% end %>
 </div>

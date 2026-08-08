@@ -1,0 +1,224 @@
+<%
+  roles_display = hierarchy.hierarchy_roles.sort_by(&:position).reverse
+  all_owners = hierarchy.owners
+  owners = all_owners.reject(&:archived?).sort_by { |owner| owner.name.to_s.downcase }
+  used_role_ids = roles_display.map(&:review_role_id)
+  addable_roles = available_roles.reject { |role| used_role_ids.include?(role.id) }
+  unstaffed_count = owners.count { |owner| !owner.hierarchy_staffed? }
+  owner_noun = hierarchy.scope_division? ? "division" : "sub-division"
+  # Mirrors Hierarchy#in_use? (archived owners still block deletion) without a COUNT per card.
+  can_delete = !hierarchy.is_default? && all_owners.empty?
+%>
+
+<article class="flex w-[23rem] shrink-0 snap-start flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md"
+         data-hierarchy-card
+         data-hierarchy-id="<%= hierarchy.id %>"
+         data-hierarchy-scope="<%= hierarchy.scope %>"
+         data-hierarchy-default="<%= hierarchy.is_default? %>"
+         data-hierarchy-name="<%= hierarchy.name %>">
+
+  <%# ── Header ─────────────────────────────────────────────────── %>
+  <div class="flex items-start justify-between gap-3 px-6 pb-5 pt-6">
+    <div class="min-w-0">
+      <div class="flex items-center gap-2">
+        <h3 class="truncate text-base font-semibold tracking-tight text-slate-900"><%= hierarchy.name %></h3>
+        <% if hierarchy.is_default? %>
+          <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Default</span>
+        <% end %>
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
+        <span><%= pluralize(roles_display.size, "role") %></span>
+        <span aria-hidden="true">·</span>
+        <span><%= pluralize(owners.size, owner_noun) %></span>
+        <% if unstaffed_count.positive? %>
+          <span class="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 font-semibold text-red-600">
+            <%= unstaffed_count %> unstaffed
+          </span>
+        <% end %>
+      </div>
+    </div>
+
+    <details class="relative shrink-0" data-card-menu>
+      <summary class="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 [&::-webkit-details-marker]:hidden">
+        <span class="material-symbols-outlined text-xl" aria-hidden="true">more_vert</span>
+        <span class="sr-only">Template actions</span>
+      </summary>
+      <div class="absolute right-0 z-20 mt-1.5 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl">
+        <%= link_to admin_role_assignments_path,
+              class: "flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50" do %>
+          <span class="material-symbols-outlined text-lg text-slate-400" aria-hidden="true">group</span>
+          Assign people
+        <% end %>
+        <% if can_delete %>
+          <%= button_to admin_hierarchy_path(hierarchy), method: :delete,
+                form: { data: { turbo_confirm: "Delete “#{hierarchy.name}”? This template is not in use." } },
+                class: "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50" do %>
+            <span class="material-symbols-outlined text-lg" aria-hidden="true">delete</span>
+            Delete template
+          <% end %>
+        <% else %>
+          <p class="px-4 py-2.5 text-xs leading-relaxed text-slate-400">
+            <%= hierarchy.is_default? ? "Default templates cannot be deleted." : "Move every #{owner_noun} off this template to delete it." %>
+          </p>
+        <% end %>
+      </div>
+    </details>
+  </div>
+
+  <%# ── Approval chain ─────────────────────────────────────────── %>
+  <div class="border-t border-slate-100 px-6 py-6">
+    <div class="mb-4 flex items-baseline justify-between gap-3">
+      <h4 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Approval chain</h4>
+      <span class="text-[11px] text-slate-400">Final → first</span>
+    </div>
+
+    <div class="rounded-xl bg-slate-50/70 p-4">
+      <ul class="space-y-0" data-role-list data-action="dragover->hierarchy-templates#roleDragOver drop->hierarchy-templates#roleDrop">
+        <% roles_display.each_with_index do |hierarchy_role, index| %>
+          <% role_name = hierarchy_role.review_role.name %>
+          <% last = index == roles_display.size - 1 %>
+          <li class="group relative <%= last ? "" : "pb-3" %>"
+              draggable="true"
+              data-role-id="<%= hierarchy_role.review_role_id %>"
+              data-role-name="<%= role_name %>"
+              data-review-position="<%= hierarchy_role.position %>"
+              data-can-raise="<%= hierarchy_role.can_raise_on_behalf? %>"
+              data-action="dragstart->hierarchy-templates#roleDragStart dragend->hierarchy-templates#roleDragEnd">
+            <% unless last %>
+              <span class="pointer-events-none absolute bottom-0 left-[61px] top-[54px] w-px bg-slate-300" data-role-connector aria-hidden="true"></span>
+            <% end %>
+            <div class="relative flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition group-hover:border-slate-300 group-hover:shadow-sm">
+              <span class="material-symbols-outlined w-5 shrink-0 cursor-grab text-center text-[20px] leading-none text-slate-300 transition group-hover:text-slate-400" aria-hidden="true">drag_indicator</span>
+              <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tracking-wide <%= review_role_badge_classes(role_name) %>"
+                    data-role-badge>
+                <%= review_role_initials(role_name) %>
+              </span>
+              <p class="min-w-0 flex-1 truncate text-sm font-medium text-slate-800" data-role-label><%= role_name %></p>
+              <button type="button"
+                      class="rounded-md p-1 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                      data-action="hierarchy-templates#removeRole"
+                      aria-label="Remove <%= role_name %>">
+                <span class="material-symbols-outlined text-lg" aria-hidden="true">close</span>
+              </button>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+
+      <div class="mt-3 border-t border-dashed border-slate-300/80 pt-3" data-add-role-panel>
+        <button type="button"
+                class="flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-primary"
+                data-action="hierarchy-templates#toggleAddRole"
+                data-add-role-toggle>
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+          Add role
+        </button>
+
+        <div class="mt-3 hidden space-y-3 rounded-xl border border-slate-200 bg-white p-4" data-add-role-form>
+          <% if addable_roles.any? %>
+            <select class="<%= admin_input_classes %> w-full text-sm"
+                    data-add-role-select
+                    data-action="change->hierarchy-templates#addRole">
+              <option value="">Choose a role…</option>
+              <% addable_roles.each do |role| %>
+                <option value="<%= role.id %>"
+                        data-name="<%= role.name %>"
+                        data-raiseable="<%= role.raiseable_on_behalf_eligible? %>">
+                  <%= role.name %>
+                </option>
+              <% end %>
+            </select>
+          <% else %>
+            <p class="text-xs leading-relaxed text-slate-400" data-no-roles>
+              Every <%= scope.tr("_", "-") %>-scoped role is already in this chain.
+            </p>
+          <% end %>
+
+          <details class="group/details">
+            <summary class="flex cursor-pointer list-none items-center gap-1 text-xs font-semibold text-primary">
+              <span class="material-symbols-outlined text-base transition group-open/details:rotate-90" aria-hidden="true">chevron_right</span>
+              Create a new role
+            </summary>
+            <%= form_with url: create_role_admin_hierarchies_path, class: "mt-3 space-y-2.5" do %>
+              <input type="hidden" name="scope" value="<%= scope %>">
+              <input type="text" name="name" placeholder="Role name" required class="<%= admin_input_classes %> w-full text-sm">
+              <% if scope == "sub_division" %>
+                <label class="flex items-center gap-2 text-xs text-slate-500">
+                  <input type="checkbox" name="raiseable_on_behalf_eligible" value="1" class="rounded border-slate-300">
+                  Eligible to raise on behalf
+                </label>
+              <% end %>
+              <button type="submit" class="<%= admin_secondary_button_classes %> w-full">Create role</button>
+            <% end %>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Attached owners ────────────────────────────────────────── %>
+  <div class="mt-auto border-t border-slate-100 px-6 py-6" data-owner-panel>
+    <div class="mb-4 flex items-baseline justify-between gap-3">
+      <h4 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+        Assigned <%= owner_noun.pluralize %>
+      </h4>
+      <span class="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-500"
+            data-owner-count><%= owners.size %></span>
+    </div>
+
+    <ul class="space-y-2.5"
+        data-owner-list
+        data-hierarchy-id="<%= hierarchy.id %>"
+        data-action="dragover->hierarchy-templates#ownerDragOver drop->hierarchy-templates#ownerDrop">
+      <% if owners.any? %>
+        <% owners.each do |owner| %>
+          <% staffed = owner.hierarchy_staffed? %>
+          <li class="flex cursor-grab items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition
+                <%= staffed ? "border-slate-200 bg-white text-slate-800 hover:border-slate-300" : "border-red-200 bg-red-50/50 text-red-700" %>"
+              draggable="true"
+              data-owner-id="<%= owner.id %>"
+              data-owner-type="<%= owner.class.name %>"
+              data-action="dragstart->hierarchy-templates#ownerDragStart dragend->hierarchy-templates#ownerDragEnd">
+            <span class="material-symbols-outlined w-5 shrink-0 text-center text-[20px] leading-none <%= staffed ? "text-slate-300" : "text-red-300" %>" aria-hidden="true">drag_indicator</span>
+            <span class="min-w-0 flex-1 truncate font-medium" data-owner-label>
+              <% if owner.is_a?(SubDivision) %>
+                <span class="<%= staffed ? "text-slate-400" : "text-red-400" %>"><%= owner.division.name %></span>
+                <span class="text-slate-300">/</span>
+                <%= owner.name %>
+              <% else %>
+                <%= owner.name %>
+              <% end %>
+            </span>
+            <% unless staffed %>
+              <span class="material-symbols-outlined shrink-0 text-lg text-red-500" aria-hidden="true" title="Roles still need people">warning</span>
+            <% end %>
+          </li>
+        <% end %>
+      <% else %>
+        <li class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-xs leading-relaxed text-slate-400" data-empty-owners>
+          Nothing attached yet. Drag a <%= owner_noun %> here or use Assign below.
+        </li>
+      <% end %>
+    </ul>
+
+    <div class="mt-4" data-assign-owner-panel>
+      <button type="button"
+              class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 transition hover:border-primary/40 hover:bg-slate-50 hover:text-primary"
+              data-action="hierarchy-templates#toggleAssignOwner">
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">add_link</span>
+        Assign <%= owner_noun %>
+      </button>
+
+      <div class="mt-3 hidden space-y-2.5 rounded-xl border border-slate-200 bg-white p-4" data-assign-owner-form>
+        <select class="<%= admin_input_classes %> w-full text-sm"
+                data-assign-owner-select
+                data-action="change->hierarchy-templates#assignOwner">
+          <option value="">Choose a <%= owner_noun %>…</option>
+        </select>
+        <p class="text-[11px] leading-relaxed text-slate-400">
+          Roles missing from this chain are dropped from that <%= owner_noun %> when you save.
+        </p>
+      </div>
+    </div>
+  </div>
+</article>

@@ -52,6 +52,6 @@ RSpec.describe "Admin settings", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(division.name)
-    expect(response.body).to include(admin_division_hierarchy_steps_path(division))
+    expect(response.body).to include("Hierarchy templates")
   end
 end

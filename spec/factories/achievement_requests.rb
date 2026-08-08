@@ -9,26 +9,27 @@ FactoryBot.define do
     transient do
       with_proof { true }
       with_version { true }
-      at_step { nil } # :supervisor, :dean, or a HierarchyStep
+      at_step { nil } # :supervisor, :dean, or a ReviewRole
     end
 
     trait :reverted do
       status { "reverted" }
-      current_step { nil }
+      current_review_role { nil }
     end
 
     trait :approved do
       status { "approved" }
-      current_step { nil }
+      current_review_role { nil }
       points_awarded { 10 }
     end
 
     trait :rejected do
       status { "rejected" }
-      current_step { nil }
+      current_review_role { nil }
     end
 
     after(:create) do |request, evaluator|
+      Hierarchy.ensure_defaults!
       if evaluator.with_version && !request.request_versions.exists?
         version = request.request_versions.build(
           version_number: 1,
@@ -46,19 +47,19 @@ FactoryBot.define do
         version.save!(validate: evaluator.with_proof)
       end
 
-      step = case evaluator.at_step
+      role = case evaluator.at_step
       when :supervisor
-        request.category.sub_division.hierarchy_steps.ordered.first
+        ReviewRole.supervisor
       when :dean
-        request.category.sub_division.division.hierarchy_steps.ordered.first
-      when HierarchyStep
+        ReviewRole.dean
+      when ReviewRole
         evaluator.at_step
       when nil
-        if request.in_review? && request.current_step_id.blank?
-          request.category.sub_division.hierarchy_steps.ordered.first
+        if request.in_review? && request.current_review_role_id.blank?
+          ReviewRole.supervisor
         end
       end
-      request.update_columns(current_step_id: step.id) if step
+      request.update_columns(current_review_role_id: role.id) if role
     end
   end
 end

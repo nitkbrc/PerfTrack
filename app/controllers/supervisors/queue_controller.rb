@@ -8,7 +8,7 @@ module Supervisors
       end
 
       scope = AchievementRequest.for_current_reviewer(current_user)
-                                .includes(:student, :current_step, category: :sub_division, req_histories: :actor)
+                                .includes(:student, :current_review_role, category: :sub_division, req_histories: :actor)
                                 .order(created_at: :desc)
       if @selected_sub_division
         scope = scope.joins(category: :sub_division)

@@ -18,15 +18,40 @@ module Admin
 
     def new
       @division = authorize Division.new
+      load_wizard_collections
     end
 
     def create
       @division = authorize Division.new(division_params)
-      if @division.save
-        redirect_to admin_divisions_path, notice: "Division created."
-      else
+      load_wizard_collections
+
+      assignments = params[:assignments]
+      assignments = assignments.respond_to?(:permit!) ? assignments.permit!.to_h : {}
+      unless wizard_assignments_complete?(@division.hierarchy, assignments)
+        @division.errors.add(:base, "Assign a person to every role in the hierarchy")
         render :new, status: :unprocessable_entity
+        return
       end
+
+      ActiveRecord::Base.transaction do
+        @division.save!
+        @division.hierarchy.hierarchy_roles.each do |hr|
+          user_id = assignments[hr.review_role_id.to_s]
+          RoleAssignment.create!(
+            user_id: user_id,
+            review_role: hr.review_role,
+            division: @division
+          )
+        end
+      end
+
+      redirect_to admin_divisions_path, notice: "Division created."
+    rescue ActiveRecord::RecordInvalid => e
+      @division = e.record if e.record.is_a?(Division)
+      @division ||= Division.new(division_params)
+      @division.errors.merge!(e.record.errors) unless e.record.is_a?(Division)
+      load_wizard_collections
+      render :new, status: :unprocessable_entity
     end
 
     def edit
@@ -35,7 +60,7 @@ module Admin
 
     def update
       @division = authorize Division.find(params[:id])
-      if @division.update(division_params)
+      if @division.update(division_params.slice(:name, :div_type))
         redirect_to admin_divisions_path, notice: "Division updated."
       else
         render :edit, status: :unprocessable_entity
@@ -64,7 +89,42 @@ module Admin
     private
 
     def division_params
-      params.expect(division: [ :name, :div_type ])
+      params.expect(division: [ :name, :div_type, :hierarchy_id ])
+    end
+
+    def load_wizard_collections
+      Hierarchy.ensure_defaults!
+      @hierarchies = Hierarchy.scope_division.includes(hierarchy_roles: :review_role).order(:name)
+      @hierarchy_options = @hierarchies.map { |h| hierarchy_option_payload(h, :division) }
+    end
+
+    def hierarchy_option_payload(hierarchy, kind)
+      roles = hierarchy.hierarchy_roles.includes(:review_role).map do |hr|
+        eligible =
+          if kind == :division
+            User.eligible_for_role(hr.review_role).order(:name)
+          else
+            User.eligible_for_role(hr.review_role).order(:name)
+          end
+        {
+          id: hr.review_role_id,
+          name: hr.review_role.name,
+          eligible: eligible.map { |u| { id: u.id, label: u.name.presence || u.email } }
+        }
+      end
+      {
+        id: hierarchy.id,
+        name: hierarchy.name,
+        usage: hierarchy.usage_count,
+        is_default: hierarchy.is_default?,
+        roles: roles
+      }
+    end
+
+    def wizard_assignments_complete?(hierarchy, assignments)
+      return false if hierarchy.blank?
+
+      hierarchy.hierarchy_roles.all? { |hr| assignments[hr.review_role_id.to_s].present? }
     end
   end
 end

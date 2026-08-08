@@ -43,6 +43,7 @@ Permission.ensure_defaults!
 
 puts "Seeding system review roles..."
 ReviewRole.ensure_system_roles!
+Hierarchy.ensure_defaults!
 
 puts "Seeding custom Coordinator role..."
 coordinator_role = ReviewRole.find_or_create_by!(name: "Coordinator") do |role|
@@ -147,20 +148,9 @@ div_reviewer_role.update!(system_role: false) if div_reviewer_role.system_role?
 
 tech = Division.find_by!(name: "Technical")
 
-# Demote leftover Associate Dean (historical name) and remount Technical steps/assignments
-# onto Division Reviewer so reseed stays idempotent after the system-role change.
 legacy_assoc = ReviewRole.find_by(name: ReviewRole::ASSOCIATE_DEAN)
 if legacy_assoc
   legacy_assoc.update!(system_role: false) if legacy_assoc.system_role?
-
-  HierarchyStep.where(review_role: legacy_assoc, division_id: tech.id).find_each do |step|
-    if tech.hierarchy_steps.exists?(review_role: div_reviewer_role)
-      step.delete
-    else
-      step.update!(review_role: div_reviewer_role)
-    end
-  end
-
   RoleAssignment.where(review_role: legacy_assoc, division_id: tech.id).find_each do |assignment|
     if RoleAssignment.exists?(review_role: div_reviewer_role, division_id: tech.id)
       assignment.destroy!
@@ -170,24 +160,38 @@ if legacy_assoc
   end
 end
 
-# Never hardcode position — Dean (or another step) may already own position 1.
-# Append at max+1, then normalize so Division Reviewer sits before Dean.
-tech.hierarchy_steps.find_or_create_by!(review_role: div_reviewer_role) do |step|
-  step.position = (tech.hierarchy_steps.maximum(:position) || 0) + 1
-  step.can_raise_on_behalf = false
+tech_div_hierarchy = Hierarchy.find_or_create_by!(name: "Technical Division Chain") do |h|
+  h.scope = "division"
+  h.is_default = false
 end
-HierarchyStep.normalize_positions_for!(tech)
+unless tech_div_hierarchy.hierarchy_roles.exists?(review_role: div_reviewer_role)
+  tech_div_hierarchy.insert_role!(div_reviewer_role)
+end
+unless tech_div_hierarchy.hierarchy_roles.exists?(review_role: ReviewRole.dean)
+  tech_div_hierarchy.hierarchy_roles.create!(review_role: ReviewRole.dean, position: 99, can_raise_on_behalf: false)
+  tech_div_hierarchy.normalize_positions!
+end
+tech.update!(hierarchy: tech_div_hierarchy)
+
 RoleAssignment.find_or_create_by!(review_role: div_reviewer_role, division: tech) do |a|
   a.user = assoc_tech
 end
 
 coding = SubDivision.find_by!(name: "Coding & Hackathons", division: tech)
-# Same pattern: Supervisor already owns position 1 on existing sub-divisions.
-coding.hierarchy_steps.find_or_create_by!(review_role: coordinator_role) do |step|
-  step.position = (coding.hierarchy_steps.maximum(:position) || 0) + 1
-  step.can_raise_on_behalf = false
+coding_hierarchy = Hierarchy.find_or_create_by!(name: "Coding Sub-division Chain") do |h|
+  h.scope = "sub_division"
+  h.is_default = false
 end
-HierarchyStep.normalize_positions_for!(coding)
+unless coding_hierarchy.hierarchy_roles.exists?(review_role: ReviewRole.supervisor)
+  coding_hierarchy.hierarchy_roles.create!(
+    review_role: ReviewRole.supervisor, position: 1, can_raise_on_behalf: true
+  )
+end
+unless coding_hierarchy.hierarchy_roles.exists?(review_role: coordinator_role)
+  coding_hierarchy.insert_role!(coordinator_role)
+end
+coding.update!(hierarchy: coding_hierarchy)
+
 RoleAssignment.find_or_create_by!(review_role: coordinator_role, sub_division: coding) do |a|
   a.user = coord_coding
 end

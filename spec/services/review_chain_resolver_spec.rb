@@ -9,7 +9,6 @@ RSpec.describe ReviewChainResolver do
 
   let(:dean) { create(:user, :faculty) }
   let(:supervisor) { create(:user, :faculty) }
-  let(:other_supervisor) { create(:user, :faculty) }
   let(:division) { create(:division, dean: dean) }
   let(:sub_division) { create(:sub_division, division: division, supervisor: supervisor) }
   let(:category) { create(:category, sub_division: sub_division) }
@@ -23,10 +22,10 @@ RSpec.describe ReviewChainResolver do
     )
   end
 
-  before { ReviewRole.ensure_system_roles! }
+  before { ReviewRole.ensure_system_roles!; Hierarchy.ensure_defaults! }
 
   describe "#review_chain" do
-    it "returns sub-division steps then division steps with assigned users" do
+    it "returns sub-division roles then division roles with assigned users" do
       resolver = described_class.new(request)
       chain = resolver.review_chain
 
@@ -34,10 +33,11 @@ RSpec.describe ReviewChainResolver do
       expect(chain.map(&:user)).to eq([ supervisor, dean ])
     end
 
-    it "skips steps with no RoleAssignment" do
+    it "skips roles with no RoleAssignment" do
+      submitted = request # create while hierarchy is still staffed
       RoleAssignment.where(sub_division: sub_division).delete_all
 
-      chain = described_class.new(request).review_chain
+      chain = described_class.new(submitted).review_chain
 
       expect(chain.map { |r| r.review_role.name }).to eq([ ReviewRole::DEAN ])
       expect(chain.first.user).to eq(dean)
@@ -57,16 +57,15 @@ RSpec.describe ReviewChainResolver do
 
       expect(first.user).to eq(supervisor)
       expect(second.user).to eq(supervisor)
-      expect(first.step.sub_division_id).to eq(sub_division.id)
-      expect(second.step.sub_division_id).to eq(other_sub.id)
+      expect(first.scope_owner).to eq(sub_division)
+      expect(second.scope_owner).to eq(other_sub)
     end
   end
 
   describe "mid-flight hierarchy edits" do
     it "changes next_step and previous_step without mutating the request" do
-      supervisor_step = sub_division.hierarchy_steps.ordered.first
-      request.update_columns(current_step_id: supervisor_step.id)
-      original_step_id = request.current_step_id
+      request.update_columns(current_review_role_id: ReviewRole.supervisor.id)
+      original_role_id = request.current_review_role_id
 
       mid_user = create(:user, :faculty)
       mid_role = ReviewRole.find_or_create_by!(name: "Division Reviewer") do |role|
@@ -74,27 +73,26 @@ RSpec.describe ReviewChainResolver do
         role.raiseable_on_behalf_eligible = false
         role.system_role = false
       end
-      HierarchyStep.create!(
-        review_role: mid_role,
-        division: division,
-        position: (division.hierarchy_steps.maximum(:position) || 0) + 1
-      )
-      HierarchyStep.normalize_positions_for!(division)
+
+      hierarchy = Hierarchy.create!(name: "Mid-flight Div #{SecureRandom.hex(4)}", scope: "division")
+      hierarchy.hierarchy_roles.create!(review_role: mid_role, position: 1, can_raise_on_behalf: false)
+      hierarchy.hierarchy_roles.create!(review_role: ReviewRole.dean, position: 2, can_raise_on_behalf: false)
+      hierarchy.normalize_positions!
+      division.update!(hierarchy: hierarchy)
       RoleAssignment.create!(user: mid_user, review_role: mid_role, division: division)
 
       request.reload
       resolver = described_class.new(request)
 
-      expect(request.current_step_id).to eq(original_step_id)
+      expect(request.current_review_role_id).to eq(original_role_id)
       expect(resolver.next_step.review_role.name).to eq("Division Reviewer")
       expect(resolver.next_step.user).to eq(mid_user)
 
-      insert = division.hierarchy_steps.find_by!(review_role: mid_role)
-      request.update_columns(current_step_id: insert.id)
+      request.update_columns(current_review_role_id: mid_role.id)
       resolver = described_class.new(request.reload)
       expect(resolver.previous_step.user).to eq(supervisor)
       expect(resolver.next_step.user).to eq(dean)
-      expect(request.current_step_id).to eq(insert.id)
+      expect(request.current_review_role_id).to eq(mid_role.id)
     end
   end
 end

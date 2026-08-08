@@ -12,6 +12,8 @@ class RoleAssignment < ApplicationRecord
   validate :scope_matches_review_role
   validate :exclusivity_rules
   validate :user_is_faculty
+  validate :slot_not_taken_by_another_user
+  validate :role_on_owner_hierarchy
 
   def self.holder_for(review_role:, division: nil, sub_division: nil)
     scope = where(review_role_id: review_role.is_a?(ReviewRole) ? review_role.id : review_role)
@@ -44,6 +46,38 @@ class RoleAssignment < ApplicationRecord
     return if user.blank? || user.faculty?
 
     errors.add(:user, "must be a faculty member")
+  end
+
+  def slot_not_taken_by_another_user
+    return if review_role.blank?
+
+    scope = RoleAssignment.where(review_role_id: review_role_id)
+    scope = if division_id.present?
+      scope.where(division_id: division_id)
+    elsif sub_division_id.present?
+      scope.where(sub_division_id: sub_division_id)
+    else
+      return
+    end
+    scope = scope.where.not(id: id) if persisted?
+    scope = scope.where.not(user_id: user_id) if user_id.present?
+    return unless scope.exists?
+
+    errors.add(:base, "#{review_role.name} is already assigned here — edit the existing assignment to change the person")
+  end
+
+  def role_on_owner_hierarchy
+    return if review_role.blank?
+
+    hierarchy = if division_id.present?
+      Division.find_by(id: division_id)&.hierarchy
+    elsif sub_division_id.present?
+      SubDivision.find_by(id: sub_division_id)&.hierarchy
+    end
+    return if hierarchy.blank?
+    return if hierarchy.hierarchy_roles.exists?(review_role_id: review_role_id)
+
+    errors.add(:review_role, "is not part of this #{division_id.present? ? 'division' : 'sub-division'}'s hierarchy")
   end
 
   # Division-scoped: no other role anywhere.

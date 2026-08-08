@@ -13,13 +13,11 @@ RSpec.describe AchievementRequestPolicy do
   let(:request)      { create(:achievement_request, category: category) }
 
   def at_supervisor!(req)
-    step = sub_division.hierarchy_steps.ordered.first
-    req.update!(status: :in_review, current_step: step)
+    req.update!(status: :in_review, current_review_role: ReviewRole.supervisor)
   end
 
   def at_dean!(req)
-    step = division.hierarchy_steps.ordered.first
-    req.update!(status: :in_review, current_step: step)
+    req.update!(status: :in_review, current_review_role: ReviewRole.dean)
   end
 
   describe "#review?" do
@@ -134,7 +132,7 @@ RSpec.describe AchievementRequestPolicy do
 
     describe "#resubmit?" do
       it "permits the owning student when reverted" do
-        own_request.update!(status: :reverted, current_step: nil)
+        own_request.update!(status: :reverted, current_review_role: nil)
 
         expect(described_class.new(owner, own_request).resubmit?).to be true
       end
@@ -144,7 +142,7 @@ RSpec.describe AchievementRequestPolicy do
       end
 
       it "denies a different student even when reverted" do
-        own_request.update!(status: :reverted, current_step: nil)
+        own_request.update!(status: :reverted, current_review_role: nil)
         other = create(:student)
 
         expect(described_class.new(other.user, own_request).resubmit?).to be false

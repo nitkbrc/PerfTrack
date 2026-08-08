@@ -37,7 +37,7 @@ RSpec.describe AchievementRequest, type: :model do
       )
 
       expect(request).to be_in_review
-      expect(request.current_step.review_role.name).to eq(ReviewRole::SUPERVISOR)
+      expect(request.current_review_role.name).to eq(ReviewRole::SUPERVISOR)
       expect(request.request_versions.count).to eq(1)
       expect(request.req_histories.sole.request_version).to eq(request.current_version)
     end
@@ -64,7 +64,7 @@ RSpec.describe AchievementRequest, type: :model do
       )
 
       expect(request).to be_in_review
-      expect(request.current_step.review_role.name).to eq(ReviewRole::DEAN)
+      expect(request.current_review_role.name).to eq(ReviewRole::DEAN)
       expect(request.req_histories.sole.action).to eq("supervisor_initiate")
     end
   end
@@ -75,7 +75,7 @@ RSpec.describe AchievementRequest, type: :model do
       create(:achievement_request, student: student, title: "Original").tap do |r|
         r.req_histories.create!(actor: student.user, action: "submit", to_status: "in_review",
                                 request_version: r.current_version)
-        r.update!(status: :reverted, current_step: nil)
+        r.update!(status: :reverted, current_review_role: nil)
       end
     end
 
@@ -88,7 +88,7 @@ RSpec.describe AchievementRequest, type: :model do
       request_record.reload
       expect(request_record.request_versions.count).to eq(2)
       expect(request_record).to be_in_review
-      expect(request_record.current_step.review_role.name).to eq(ReviewRole::SUPERVISOR)
+      expect(request_record.current_review_role.name).to eq(ReviewRole::SUPERVISOR)
     end
   end
 

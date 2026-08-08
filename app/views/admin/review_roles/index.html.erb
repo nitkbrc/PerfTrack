@@ -1,42 +1,90 @@
-<div class="mb-6 flex flex-wrap items-end justify-between gap-3">
-  <div>
-    <%= link_to edit_admin_settings_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
+<div class="mx-auto w-full max-w-5xl space-y-8 pb-28"
+     data-controller="review-roles">
+  <header class="space-y-4">
+    <%= link_to edit_admin_settings_path, class: "inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
       <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
       Settings
     <% end %>
-    <h1 class="mt-2 text-2xl font-bold text-text-main">Review roles</h1>
-  </div>
-  <%= link_to "New role", new_admin_review_role_path, class: admin_primary_button_classes, data: admin_modal_frame_data %>
-</div>
 
-<div class="clay-card scats-list-shell">
-  <table class="w-full text-left text-sm">
-    <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
-      <tr>
-        <th class="px-4 py-3">Name</th>
-        <th class="px-4 py-3">Scope</th>
-        <th class="px-4 py-3">Raiseable</th>
-        <th class="px-4 py-3">System</th>
-        <th class="px-4 py-3 text-right">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="scats-list">
-      <% @review_roles.each do |role| %>
-        <tr class="scats-row">
-          <td class="px-4 py-3 font-medium"><%= role.name %></td>
-          <td class="px-4 py-3"><%= role.scope.humanize %></td>
-          <td class="px-4 py-3"><%= role.raiseable_on_behalf_eligible? ? "Yes" : "—" %></td>
-          <td class="px-4 py-3"><%= role.system_role? ? "Yes" : "No" %></td>
-          <td class="px-4 py-3 text-right">
-            <%= link_to admin_edit_action_label, edit_admin_review_role_path(role), class: admin_secondary_button_classes, data: admin_modal_frame_data %>
-            <% unless role.system_role? %>
-              <%= button_to "Delete", admin_review_role_path(role), method: :delete,
-                    form: { data: { turbo_confirm: "Delete this role?" } },
-                    class: admin_delete_classes %>
-            <% end %>
-          </td>
-        </tr>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="min-w-0 max-w-2xl">
+        <h1 class="text-[26px] font-semibold leading-tight tracking-tight text-slate-900">Review roles</h1>
+        <p class="mt-2 text-sm leading-relaxed text-slate-500">
+          Roles used in hierarchy templates. Toggle “Raise on behalf” for sub-division roles, then save all changes together.
+        </p>
+      </div>
+      <%= link_to new_admin_review_role_path,
+            class: "#{admin_primary_button_classes} gap-1.5",
+            data: admin_modal_frame_data do %>
+        <span class="material-symbols-outlined text-base" aria-hidden="true">add</span>
+        New role
       <% end %>
-    </tbody>
-  </table>
+    </div>
+  </header>
+
+  <div class="space-y-6">
+    <section class="clay-card scats-list-shell overflow-hidden" aria-labelledby="division-scoped-roles-heading">
+      <div class="border-b border-border-subtle/70 px-5 py-4">
+        <div class="flex items-center gap-2.5">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+            <span class="material-symbols-outlined text-lg" aria-hidden="true">layers</span>
+          </span>
+          <div>
+            <h2 id="division-scoped-roles-heading" class="text-sm font-semibold text-slate-900">Division-scoped</h2>
+            <p class="text-xs text-slate-400">Used after a sub-division finishes reviewing</p>
+          </div>
+        </div>
+      </div>
+      <%= render "roles_table", roles: @division_roles %>
+    </section>
+
+    <section class="clay-card scats-list-shell overflow-hidden" aria-labelledby="sub-division-scoped-roles-heading">
+      <div class="border-b border-border-subtle/70 px-5 py-4">
+        <div class="flex items-center gap-2.5">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+            <span class="material-symbols-outlined text-lg" aria-hidden="true">folder</span>
+          </span>
+          <div>
+            <h2 id="sub-division-scoped-roles-heading" class="text-sm font-semibold text-slate-900">Sub-division-scoped</h2>
+            <p class="text-xs text-slate-400">First-line reviewers — can be eligible to raise on behalf</p>
+          </div>
+        </div>
+      </div>
+      <%= render "roles_table", roles: @sub_division_roles %>
+    </section>
+  </div>
+
+  <div class="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden px-4 pb-5"
+       data-review-roles-target="unsavedBar">
+    <div class="pointer-events-auto mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/95 px-5 py-4 shadow-lg backdrop-blur">
+      <div class="flex items-center gap-3">
+        <span class="relative flex h-2.5 w-2.5 shrink-0">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+          <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+        </span>
+        <div>
+          <p class="text-sm font-semibold text-slate-900">Unsaved changes</p>
+          <p class="mt-0.5 text-xs leading-relaxed text-slate-500">Raise-on-behalf toggles are not saved until you confirm.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <%= link_to "Discard", admin_review_roles_path,
+              data: { turbo: false, action: "click->review-roles#discard" },
+              class: "rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" %>
+        <button type="button"
+                data-action="review-roles#save"
+                class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-secondary-container focus:ring-offset-2">
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">save</span>
+          Save changes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <form data-review-roles-target="form"
+        method="post"
+        action="<%= bulk_save_admin_review_roles_path %>"
+        class="hidden">
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+  </form>
 </div>

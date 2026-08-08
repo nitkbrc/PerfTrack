@@ -1,7 +1,75 @@
-<% content_for :modal do %>
-  <%= turbo_frame_tag "modal" do %>
-    <%= render layout: "admin/shared/modal", locals: { title: "New division", return_url: admin_divisions_path } do %>
-      <%= render "form", division: @division %>
+<div class="mx-auto w-full max-w-3xl space-y-6"
+     data-controller="owner-create-wizard"
+     data-owner-create-wizard-step-value="1"
+     data-owner-create-wizard-total-value="3">
+  <div>
+    <%= link_to admin_divisions_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
+      <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+      Divisions
     <% end %>
+    <h1 class="mt-2 text-2xl font-bold text-text-main">Create division</h1>
+  </div>
+
+  <div class="flex gap-2">
+    <% [ "Details", "Hierarchy", "Assignments" ].each_with_index do |label, i| %>
+      <div data-owner-create-wizard-target="progressStep" class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs text-slate-600">
+        <%= i + 1 %>. <%= label %>
+      </div>
+    <% end %>
+  </div>
+
+  <%= form_with model: [ :admin, @division ], class: "space-y-5" do |f| %>
+    <%= render "admin/shared/error_messages", record: @division %>
+
+    <div data-owner-create-wizard-target="step" data-step="1" class="clay-card space-y-4 p-6">
+      <div>
+        <%= f.label :name, class: admin_label_classes %>
+        <%= f.text_field :name, autofocus: true, class: admin_input_classes %>
+      </div>
+      <div>
+        <%= f.label :div_type, "Type", class: admin_label_classes %>
+        <%= f.select :div_type, Division.div_types.keys.map { |t| [ t.titleize, t ] }, {}, class: admin_input_classes %>
+      </div>
+      <div class="flex justify-end">
+        <button type="button" data-action="owner-create-wizard#next" class="<%= admin_primary_button_classes %>">Continue</button>
+      </div>
+    </div>
+
+    <div data-owner-create-wizard-target="step" data-step="2" class="clay-card hidden space-y-4 p-6">
+      <%= f.hidden_field :hierarchy_id, data: { hierarchy_id_field: true } %>
+      <p class="text-sm text-text-muted">Choose a division hierarchy template (or create one on the Hierarchy templates page).</p>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <% @hierarchy_options.each do |opt| %>
+          <button type="button"
+                  data-hierarchy-option
+                  data-hierarchy-id="<%= opt[:id] %>"
+                  data-roles="<%= ERB::Util.html_escape(opt[:roles].to_json) %>"
+                  data-action="owner-create-wizard#selectHierarchy"
+                  class="rounded-xl border border-border-subtle bg-white p-4 text-left shadow-sm hover:border-primary/40">
+            <p class="font-semibold text-text-main"><%= opt[:name] %></p>
+            <p class="mt-1 text-xs text-text-muted">
+              used by <%= pluralize(opt[:usage], "division") %>
+              <% if opt[:is_default] %> · Default<% end %>
+            </p>
+            <p class="mt-2 text-xs text-slate-500">
+              <%= opt[:roles].map { |r| r[:name] }.reverse.join(" → ") %>
+            </p>
+          </button>
+        <% end %>
+      </div>
+      <div class="flex justify-between">
+        <button type="button" data-action="owner-create-wizard#back" class="<%= admin_link_classes %>">Back</button>
+        <button type="button" data-action="owner-create-wizard#next" class="<%= admin_primary_button_classes %>">Continue</button>
+      </div>
+    </div>
+
+    <div data-owner-create-wizard-target="step" data-step="3" class="clay-card hidden space-y-4 p-6">
+      <p class="text-sm text-text-muted">Assign faculty to every role. Division-scoped roles require faculty with no other review roles.</p>
+      <div class="space-y-4" data-assignment-fields></div>
+      <div class="flex justify-between">
+        <button type="button" data-action="owner-create-wizard#back" class="<%= admin_link_classes %>">Back</button>
+        <%= f.submit "Create division", class: admin_primary_button_classes %>
+      </div>
+    </div>
   <% end %>
-<% end %>
+</div>
