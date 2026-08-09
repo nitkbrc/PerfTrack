@@ -32,8 +32,10 @@ export default class extends Controller {
         this.allowNextVisit = false
         return
       }
-      // While Save & exit is in flight, allow the save redirect through.
-      if (this.saving || sessionStorage.getItem(NEXT_URL_KEY)) return
+      // Only skip while an in-flight Save & exit owns this page instance.
+      // Do NOT key off sessionStorage alone — a stale next-url would permanently
+      // disable the leave modal across later edits.
+      if (this.saving) return
       if (this.dirtySources.size === 0) return
 
       event.preventDefault()
@@ -41,9 +43,43 @@ export default class extends Controller {
       this.open()
     }
 
+    this.onDocumentClick = (event) => {
+      // Backup for full-page (data-turbo="false") links that skip turbo:before-visit.
+      if (this.saving || this.allowNextVisit) return
+      if (this.dirtySources.size === 0) return
+      if (this.isOpen()) return
+
+      const link = event.target.closest?.("a[href]")
+      if (!(link instanceof HTMLAnchorElement)) return
+      if (event.defaultPrevented) return
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      if (event.button != null && event.button !== 0) return
+      if (link.dataset.turbo !== "false") return
+      if (link.hasAttribute("download") || link.target === "_blank") return
+      if (link.getAttribute("href")?.startsWith("#")) return
+      // Discard actions intentionally clear dirty state before navigating.
+      if (link.dataset.action?.includes("unsaved-changes#allowLeave")) return
+
+      const method = (link.dataset.turboMethod || link.dataset.method || "get").toLowerCase()
+      if (method !== "get") return
+
+      let url
+      try {
+        url = new URL(link.href, window.location.href)
+      } catch {
+        return
+      }
+      if (url.origin !== window.location.origin) return
+      if (this.samePage(url.href, window.location.href)) return
+
+      event.preventDefault()
+      event.stopPropagation()
+      this.pendingUrl = url.href
+      this.open()
+    }
+
     this.onBeforeUnload = (event) => {
       if (this.dirtySources.size === 0 || this.saving) return
-      if (sessionStorage.getItem(NEXT_URL_KEY)) return
       event.preventDefault()
       event.returnValue = ""
     }
@@ -89,9 +125,12 @@ export default class extends Controller {
     document.addEventListener("turbo:before-visit", this.onBeforeVisit)
     document.addEventListener("turbo:submit-end", this.onSubmitEnd)
     document.addEventListener("turbo:load", this.resumePendingNavigation)
+    document.addEventListener("click", this.onDocumentClick, true)
     window.addEventListener("beforeunload", this.onBeforeUnload)
     window.addEventListener("keydown", this.onKeydown)
 
+    // Re-sync in case dirty events were published before this controller mounted.
+    document.dispatchEvent(new CustomEvent("leave-guard:ping", { bubbles: true }))
     this.resumePendingNavigation()
   }
 
@@ -107,6 +146,7 @@ export default class extends Controller {
     document.removeEventListener("turbo:before-visit", this.onBeforeVisit)
     document.removeEventListener("turbo:submit-end", this.onSubmitEnd)
     document.removeEventListener("turbo:load", this.resumePendingNavigation)
+    document.removeEventListener("click", this.onDocumentClick, true)
     window.removeEventListener("beforeunload", this.onBeforeUnload)
     window.removeEventListener("keydown", this.onKeydown)
   }
@@ -170,21 +210,25 @@ export default class extends Controller {
     this.saving = false
     this._saveStarted = false
     this.setSavingUi(false)
+    // Drive visibility with the HTML hidden attribute + inline display so we
+    // never fight Tailwind's .hidden vs .flex source order.
+    this.rootTarget.hidden = false
     this.rootTarget.classList.remove("hidden")
-    this.rootTarget.classList.add("flex")
+    this.rootTarget.style.display = "flex"
     this.rootTarget.setAttribute("aria-hidden", "false")
     document.body.classList.add("overflow-hidden")
   }
 
   close() {
+    this.rootTarget.hidden = true
     this.rootTarget.classList.add("hidden")
-    this.rootTarget.classList.remove("flex")
+    this.rootTarget.style.display = ""
     this.rootTarget.setAttribute("aria-hidden", "true")
     document.body.classList.remove("overflow-hidden")
   }
 
   isOpen() {
-    return !this.rootTarget.classList.contains("hidden")
+    return !this.rootTarget.hidden && !this.rootTarget.classList.contains("hidden")
   }
 
   setSavingUi(saving) {

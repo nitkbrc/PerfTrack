@@ -37,6 +37,15 @@ class User < ApplicationRecord
   alias_method :deaned_divisions, :assigned_divisions
   alias_method :supervised_sub_divisions, :assigned_sub_divisions
 
+  # Admins always can. Faculty only when they hold a ReviewRole that admin
+  # has enabled for student account creation.
+  def can_create_students?
+    return true if admin?
+
+    faculty? && role_assignments.joins(:review_role)
+      .where(review_roles: { can_create_students: true }).exists?
+  end
+
   def self.eligible_for_role(review_role, keep_user_id: nil)
     ReviewRole.ensure_system_roles!
     scope = faculty

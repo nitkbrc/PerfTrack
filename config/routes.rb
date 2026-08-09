@@ -54,9 +54,13 @@ Rails.application.routes.draw do
 
   # Directory of students with scores, visible to every faculty member.
   # Dashboard is the faculty root; students list stays at /faculty/students.
+  # Create/import is gated by ReviewRole.can_create_students for the signed-in faculty.
   namespace :faculty, module: "faculties" do
     root "dashboard#index"
-    resources :students, only: [ :index, :show ]
+    resources :students, only: [ :index, :show, :new, :create ]
+    resources :student_imports, only: [ :new, :create ] do
+      get :template, on: :collection
+    end
   end
 
   namespace :dean, module: "deans" do
@@ -112,7 +116,8 @@ Rails.application.routes.draw do
     end
     resource :settings, only: [ :edit, :update ] do
       get :score_scale
-      get :profile_permissions
+      get :role_permissions
+      get :profile_permissions, to: redirect("/admin/settings/role_permissions")
     end
   end
 

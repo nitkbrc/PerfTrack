@@ -20,9 +20,9 @@ module AdminHelper
         icon: "account_tree"
       },
       {
-        title: "Profile edit permissions",
-        description: "Control which profile fields students and faculty can edit.",
-        path: profile_permissions_admin_settings_path,
+        title: "Role permissions",
+        description: "Profile self-edit fields and which review roles may add students.",
+        path: role_permissions_admin_settings_path,
         icon: "manage_accounts"
       },
       {

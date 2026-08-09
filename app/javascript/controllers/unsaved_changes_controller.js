@@ -26,11 +26,17 @@ export default class extends Controller {
     }
 
     this.onSubmitStart = () => {
-      this.markClean({ acceptCurrentAsInitial: true })
+      // Allow Turbo redirect through the leave guard without permanently
+      // treating the pre-save values as the new baseline until success.
+      this.publishClean()
     }
 
     this.onSubmitEnd = (event) => {
-      if (!event.detail?.success) this.syncDirty()
+      if (event.detail?.success) {
+        this.markClean({ acceptCurrentAsInitial: true })
+        return
+      }
+      this.syncDirty()
     }
 
     this.onSaveRequest = (event) => {
@@ -58,6 +64,10 @@ export default class extends Controller {
       this.element.dispatchEvent(new CustomEvent("unsaved-changes:save", { bubbles: true }))
     }
 
+    this.onPing = () => {
+      this.syncDirty()
+    }
+
     this.element.addEventListener("input", this.onDomChange)
     this.element.addEventListener("change", this.onDomChange)
     this.element.addEventListener("unsaved-changes:snapshot", this.onCustomSnapshot)
@@ -65,11 +75,17 @@ export default class extends Controller {
     this.element.addEventListener("submit", this.onSubmitStart)
     this.element.addEventListener("turbo:submit-end", this.onSubmitEnd)
     document.addEventListener("leave-guard:save", this.onSaveRequest)
+    document.addEventListener("leave-guard:ping", this.onPing)
 
     if (this.strategyValue === "form") {
       this.refreshFromForm({ seedInitial: true })
     } else {
       this.element.dispatchEvent(new CustomEvent("unsaved-changes:request-snapshot", { bubbles: true }))
+      // If the sibling custom controller connected later, retry once.
+      queueMicrotask(() => {
+        if (this.initialSnapshot !== null) return
+        this.element.dispatchEvent(new CustomEvent("unsaved-changes:request-snapshot", { bubbles: true }))
+      })
     }
   }
 
@@ -81,6 +97,7 @@ export default class extends Controller {
     this.element.removeEventListener("submit", this.onSubmitStart)
     this.element.removeEventListener("turbo:submit-end", this.onSubmitEnd)
     document.removeEventListener("leave-guard:save", this.onSaveRequest)
+    document.removeEventListener("leave-guard:ping", this.onPing)
     this.publishClean()
   }
 
@@ -139,10 +156,21 @@ export default class extends Controller {
 
   serializeForm(form) {
     const entries = []
+    const checkboxNames = new Set()
+
+    form.querySelectorAll('input[type="checkbox"][name]').forEach((el) => {
+      if (!el.disabled) checkboxNames.add(el.name)
+    })
 
     form.querySelectorAll("input, select, textarea").forEach((el) => {
       if (!el.name || el.disabled) return
-      if (el.name === "authenticity_token" || el.name === "payload") return
+      if (el.name === "authenticity_token" || el.name === "payload" || el.name === "commit") return
+      if (el.type === "submit" || el.type === "button" || el.type === "image" || el.type === "reset") return
+
+      // Skip Rails' unchecked-checkbox companion hidden fields; the checkbox
+      // entry below already encodes checked vs unchecked.
+      if (el.type === "hidden" && checkboxNames.has(el.name)) return
+
       if (el.type === "file") {
         const file = el.files?.[0]
         entries.push([el.name, file ? `${file.name}:${file.size}:${file.lastModified}` : ""])

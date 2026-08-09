@@ -44,4 +44,40 @@ RSpec.describe User do
       expect(user).to be_valid
     end
   end
+
+  describe "#can_create_students?" do
+    it "is true for admins" do
+      expect(build(:user, :admin).can_create_students?).to be(true)
+    end
+
+    it "is false for unassigned faculty even when a review role is enabled" do
+      ReviewRole.ensure_system_roles!
+      ReviewRole.dean.update!(can_create_students: true)
+      faculty = create(:user, :faculty)
+
+      expect(faculty.can_create_students?).to be(false)
+    end
+
+    it "is true for faculty who hold an enabled review role assignment" do
+      ReviewRole.ensure_system_roles!
+      ReviewRole.dean.update!(can_create_students: true)
+      faculty = create(:user, :faculty)
+      create(:division, dean: faculty)
+
+      expect(faculty.can_create_students?).to be(true)
+    end
+
+    it "is false for faculty whose review role is not enabled" do
+      ReviewRole.ensure_system_roles!
+      ReviewRole.dean.update!(can_create_students: false)
+      faculty = create(:user, :faculty)
+      create(:division, dean: faculty)
+
+      expect(faculty.can_create_students?).to be(false)
+    end
+
+    it "is false for students" do
+      expect(create(:student).user.can_create_students?).to be(false)
+    end
+  end
 end

@@ -1,0 +1,70 @@
+<div class="mx-auto max-w-3xl">
+  <h1 class="mb-2 text-2xl font-bold text-text-main">Import results</h1>
+  <div class="mb-6 flex flex-wrap items-center gap-2">
+    <span class="scats-badge scats-badge-success"><%= @import.created.size %> created</span>
+    <span class="scats-badge scats-badge-danger"><%= @import.failed.size %> failed</span>
+  </div>
+
+  <% if @import.failed.any? %>
+    <div class="scats-callout scats-callout-danger mb-6" role="alert">
+      <span class="scats-callout-icon material-symbols-outlined" aria-hidden="true">error</span>
+      <div class="scats-callout-body">
+        <p class="scats-callout-title">Some rows were not imported</p>
+        <ul class="mt-1 list-disc space-y-0.5 pl-5 opacity-90">
+          <% @import.failed.each do |result| %>
+            <li>Line <%= result.line %> (<%= result.email.presence || result.name %>): <%= result.error %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  <% elsif @import.created.any? %>
+    <div class="scats-callout scats-callout-success mb-6" role="status">
+      <span class="scats-callout-icon material-symbols-outlined" aria-hidden="true">check_circle</span>
+      <div class="scats-callout-body">
+        <p class="scats-callout-title">Import completed</p>
+        <p class="mt-1 opacity-90">All rows were created. Download the results CSV to save temporary passwords — they are only shown on this page.</p>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="mb-6 flex flex-wrap items-center gap-3">
+    <a href="data:text/csv;base64,<%= Base64.strict_encode64(@import.results_csv) %>"
+       download="scats_student_import_results.csv"
+       class="scats-primary-button">
+      Download results CSV (includes passwords)
+    </a>
+    <%= link_to "Import another file", new_faculty_student_import_path, class: "scats-secondary-button" %>
+    <%= link_to "← Back to students", faculty_students_path, class: "scats-ghost-button" %>
+  </div>
+
+  <div class="clay-card scats-list-shell">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
+        <tr>
+          <th class="w-14 px-4 py-3">Line</th>
+          <th class="px-4 py-3">Name</th>
+          <th class="hidden px-4 py-3 sm:table-cell">Email</th>
+          <th class="hidden px-4 py-3 md:table-cell">Temporary password</th>
+          <th class="w-28 px-4 py-3">Status</th>
+        </tr>
+      </thead>
+      <tbody class="scats-list">
+        <% @import.results.each do |result| %>
+          <tr class="scats-row <%= "bg-danger-soft/40" unless result.created? %>">
+            <td class="px-4 py-3 text-text-muted"><%= result.line %></td>
+            <td class="min-w-0 truncate px-4 py-3 font-medium text-text-main"><%= result.name %></td>
+            <td class="hidden min-w-0 truncate px-4 py-3 text-text-muted sm:table-cell"><%= result.email %></td>
+            <td class="hidden truncate px-4 py-3 font-mono text-xs text-text-main md:table-cell"><%= result.password || "—" %></td>
+            <td class="min-w-0 px-4 py-3">
+              <% if result.created? %>
+                <span class="scats-badge scats-badge-success">Created</span>
+              <% else %>
+                <span class="scats-badge scats-badge-danger truncate" title="<%= result.error %>"><%= truncate(result.error, length: 28) %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -31,10 +31,19 @@
     </div>
 
     <div>
-      <%= f.label :photo, user.persisted? ? "Photo (optional — replaces current)" : "Photo", class: admin_label_classes %>
-      <%= f.file_field :photo, accept: "image/png,image/jpeg",
-            class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
-      <p class="mt-1 text-xs text-slate-500">PNG or JPEG, max 5 MB.</p>
+      <% if user.persisted? %>
+        <%= f.label :photo, "Photo (optional — replaces current)", class: admin_label_classes %>
+        <%= f.file_field :photo, accept: "image/png,image/jpeg",
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+        <p class="mt-1 text-xs text-slate-500">PNG or JPEG, max 5 MB. Leave blank to keep the current photo.</p>
+      <% else %>
+        <%= f.label :photo, "Photo (optional)", class: admin_label_classes %>
+        <%= f.file_field :photo, accept: "image/png,image/jpeg",
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+        <p class="mt-1 text-xs text-slate-500">
+          PNG or JPEG, max 5 MB. Leave blank to use a placeholder — you or the user can add a real photo later.
+        </p>
+      <% end %>
     </div>
 
     <div>

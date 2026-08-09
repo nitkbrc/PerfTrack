@@ -1,0 +1,87 @@
+<div class="mx-auto max-w-xl">
+  <div class="mb-6">
+    <%= link_to faculty_students_path, class: "inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
+      <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+      Students
+    <% end %>
+    <h1 class="mt-3 text-2xl font-bold text-text-main">Add student</h1>
+    <p class="mt-1 text-sm text-text-muted">
+      Creates a student account. Temporary password is their USN typed twice — they must change it on first login.
+    </p>
+  </div>
+
+  <div class="clay-card p-6 sm:p-8">
+    <%= form_with model: @user, url: faculty_students_path, html: { multipart: true }, class: "space-y-5",
+          data: { controller: "unsaved-changes" } do |f| %>
+      <% if @user.errors.any? %>
+        <div class="mb-2 rounded-lg border border-red-200 bg-red-50 p-4">
+          <h2 class="text-sm font-semibold text-red-800">
+            <%= pluralize(@user.errors.count, "error") %> prevented this from being saved:
+          </h2>
+          <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
+            <% @user.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div>
+        <%= f.label :name, class: admin_label_classes %>
+        <%= f.text_field :name, autofocus: true, autocomplete: "off", class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :email, class: admin_label_classes %>
+        <%= f.email_field :email, autocomplete: "off", class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :phone, class: admin_label_classes %>
+        <%= f.telephone_field :phone, autocomplete: "off", class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :address, class: admin_label_classes %>
+        <%= f.text_area :address, rows: 3, autocomplete: "off", class: admin_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :photo, "Photo (optional)", class: admin_label_classes %>
+        <%= f.file_field :photo, accept: "image/png,image/jpeg",
+              class: "mt-1 block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100" %>
+        <p class="mt-1 text-xs text-slate-500">
+          PNG or JPEG, max 5 MB. Leave blank to use a placeholder.
+        </p>
+      </div>
+
+      <% @user.build_student_profile if @user.student_profile.nil? %>
+      <fieldset class="space-y-5 rounded-lg border border-slate-200 p-4">
+        <legend class="px-1 text-sm font-semibold text-slate-700">Student profile</legend>
+
+        <%= f.fields_for :student_profile do |sp| %>
+          <div>
+            <%= sp.label :usn, "USN", class: admin_label_classes %>
+            <%= sp.text_field :usn, class: admin_input_classes, required: true %>
+          </div>
+
+          <div>
+            <%= sp.label :department_id, "Department", class: admin_label_classes %>
+            <%= sp.collection_select :department_id, @departments, :id, :name,
+                  { prompt: "Select a department" }, class: admin_input_classes, required: true %>
+          </div>
+
+          <div>
+            <%= sp.label :sem, "Semester", class: admin_label_classes %>
+            <%= sp.select :sem, (1..8).to_a, { prompt: "Select a semester" }, class: admin_input_classes %>
+          </div>
+        <% end %>
+      </fieldset>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <%= f.submit "Create student", class: admin_primary_button_classes %>
+        <%= link_to "Cancel", faculty_students_path, class: admin_link_classes %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -9,6 +9,7 @@ RSpec.describe "Unsaved changes leave guard", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include('data-controller="leave-guard"')
+    expect(response.body).to include('id="leave-guard"')
     expect(response.body).to include("Discard & leave")
     expect(response.body).to include("Save & exit")
     expect(response.body).to include("Stay on page")

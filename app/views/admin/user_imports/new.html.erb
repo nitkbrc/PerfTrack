@@ -41,6 +41,7 @@
     <div data-import-mode-target="panel" data-mode="manual" role="tabpanel">
       <p class="mb-5 text-sm text-text-muted">
         Create a single account with name, contact details, role, and temporary password.
+        A profile photo is optional — without one, a placeholder is used until someone uploads a real photo.
       </p>
       <%= render "admin/users/form", user: @user %>
     </div>
@@ -57,7 +58,7 @@
           </p>
           <ul class="mt-2 list-disc space-y-1 pl-5 text-sm opacity-90">
             <li><code>phone</code> and <code>address</code> are required on every row. Phone numbers must be unique across all users.</li>
-            <li>CSV import attaches a placeholder profile photo — replace it by editing the user afterward.</li>
+            <li>CSV import attaches a placeholder profile photo when none is provided — same as manual create. Replace it by editing the user afterward.</li>
             <li>Students' temporary password is their USN typed twice.</li>
             <li>Faculty and admin passwords come from the field below (default <code>pass123</code>), or are auto-generated when it is left blank.</li>
             <li><code>role</code> must be admin, faculty or student.</li>

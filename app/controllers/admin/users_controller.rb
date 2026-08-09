@@ -33,6 +33,8 @@ module Admin
       @user = authorize User.new(user_params)
       # Admin knows the initial password, so the user must pick their own on first login.
       @user.password_change_required = true
+      # Same as CSV import: a real photo is optional at create; attach a placeholder if none given.
+      UserPhotoPlaceholder.attach!(@user)
       if @user.save
         redirect_to admin_users_path, notice: "User created."
       else
@@ -78,6 +80,8 @@ module Admin
       # The profile fieldset is only meaningful for students; drop stray params
       # submitted while the fieldset was hidden.
       permitted.delete(:student_profile_attributes) unless permitted[:role] == "student"
+      # Empty file inputs submit a blank value — treat as "no photo provided".
+      permitted.delete(:photo) if permitted[:photo].blank?
       permitted
     end
 
@@ -88,6 +92,7 @@ module Admin
                                         :password, :password_confirmation,
                                         { student_profile_attributes: [ :id, :usn, :department_id, :sem ] } ])
       permitted.delete(:student_profile_attributes) unless @user.student?
+      permitted.delete(:photo) if permitted[:photo].blank?
       if permitted[:password].blank?
         permitted.except(:password, :password_confirmation)
       else

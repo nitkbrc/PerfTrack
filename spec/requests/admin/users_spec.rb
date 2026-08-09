@@ -72,6 +72,24 @@ RSpec.describe "Admin users", type: :request do
     expect(response).to redirect_to(root_path)
   end
 
+  it "creates a user without a photo by attaching the placeholder" do
+    expect {
+      post "/admin/users", params: { user: user_attrs(email: "nophoto@example.com", phone: "9876543219").except(:photo) }
+    }.to change(User, :count).by(1)
+
+    user = User.find_by(email: "nophoto@example.com")
+    expect(user.photo).to be_attached
+    expect(user.photo.filename.to_s).to eq("placeholder.png")
+  end
+
+  it "shows that photo is optional on the manual create form" do
+    get new_admin_user_import_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Photo (optional)")
+    expect(response.body).to include("Leave blank to use a placeholder")
+  end
+
   it "rejects creating a user with a phone number already in use" do
     create(:user, :faculty, phone: "9876543210")
 

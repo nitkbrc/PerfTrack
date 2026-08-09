@@ -47,7 +47,8 @@ export default class extends Controller {
     this.element.addEventListener("unsaved-changes:request-snapshot", this.onSnapshotRequest)
     this.element.addEventListener("unsaved-changes:save", this.onSaveRequest)
     this.element.addEventListener("turbo:submit-end", this.onSubmitEnd)
-    this.publishSnapshot({ seedInitial: true })
+    // Publish after the paired unsaved-changes controller has connected.
+    queueMicrotask(() => this.publishSnapshot({ seedInitial: true }))
   }
 
   disconnect() {
@@ -638,6 +639,11 @@ export default class extends Controller {
       }))
 
       this.payloadTarget.value = JSON.stringify({ hierarchies, reattachments, deleted_hierarchy_ids: [] })
+
+      const token = document.querySelector('meta[name="csrf-token"]')?.content
+      const tokenInput = this.formTarget.querySelector('input[name="authenticity_token"]')
+      if (token && tokenInput) tokenInput.value = token
+
       if (typeof this.formTarget.requestSubmit === "function") {
         this.formTarget.requestSubmit()
       } else {

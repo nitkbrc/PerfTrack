@@ -1,6 +1,16 @@
 <div class="mx-auto w-full max-w-4xl">
-  <h1 class="mb-1 text-2xl font-bold text-text-main">Students</h1>
-  <p class="mb-6 text-sm text-text-muted">All students with their current overall score. Select a student for the full breakdown.</p>
+  <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="mb-1 text-2xl font-bold text-text-main">Students</h1>
+      <p class="text-sm text-text-muted">All students with their current overall score. Select a student for the full breakdown.</p>
+    </div>
+    <% if @can_create_students %>
+      <div class="flex flex-wrap items-center gap-2">
+        <%= link_to "Add student", new_faculty_student_path, class: admin_primary_button_classes %>
+        <%= link_to "Import CSV", new_faculty_student_import_path, class: "scats-secondary-button" %>
+      </div>
+    <% end %>
+  </div>
 
   <%= form_with url: faculty_students_path, method: :get, class: "clay-card mb-6 flex flex-col gap-3 p-4 sm:p-5" do |f| %>
     <div class="w-full">

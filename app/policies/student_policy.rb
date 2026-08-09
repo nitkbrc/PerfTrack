@@ -9,4 +9,13 @@ class StudentPolicy < ApplicationPolicy
   def show?
     index?
   end
+
+  # Manual create / CSV import for student accounts (faculty gated by ReviewRole).
+  def create?
+    user.can_create_students?
+  end
+
+  def new?
+    create?
+  end
 end
