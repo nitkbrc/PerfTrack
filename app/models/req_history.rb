@@ -6,6 +6,7 @@ class ReqHistory < ApplicationRecord
     approve
     revert
     reject
+    hierarchy_reassigned
     supervisor_approve
     supervisor_reforward
     supervisor_revert

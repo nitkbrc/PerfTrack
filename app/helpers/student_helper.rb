@@ -24,6 +24,7 @@ module StudentHelper
     "dean_approve" => "Approved by dean — points awarded",
     "dean_revert" => "Sent back to supervisor by dean",
     "dean_reject" => "Rejected by dean",
+    "hierarchy_reassigned" => "Review path updated after hierarchy change",
     "auto_reject_archived" => "Automatically rejected — category archived"
   }.freeze
 
@@ -50,6 +51,9 @@ module StudentHelper
     when "supervisor_reforward" then "Re-forwarded by #{actor}"
     when "revert", "supervisor_revert", "dean_revert" then "Reverted by #{actor}"
     when "reject", "supervisor_reject", "dean_reject", "auto_reject_archived" then "Rejected by #{actor}"
+    when "hierarchy_reassigned"
+      role_name = latest.comment.to_s[/Now awaiting ([^.]+)\./, 1]
+      role_name.present? ? "Reassigned to #{role_name}" : "Review path updated"
     else request.status.humanize
     end
   end
@@ -74,6 +78,7 @@ module StudentHelper
       "dean_approve" => "approved",
       "dean_revert" => "sent back",
       "dean_reject" => "rejected",
+      "hierarchy_reassigned" => "reassigned",
       "auto_reject_archived" => "auto-rejected"
     }.fetch(action, action.to_s.tr("_", " "))
   end

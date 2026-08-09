@@ -1,0 +1,13 @@
+<h1>Review path updated</h1>
+<p>
+  An administrator updated the review hierarchy for your request
+  <strong>“<%= @request.title %>”</strong>.
+</p>
+<p>
+  It is now awaiting <strong><%= @landing_role.name %></strong>
+  <% if @reviewer %>
+    (<%= @reviewer.name.presence || @reviewer.email %>)
+  <% end %>.
+  Previous approvals on roles that still appear in the new path were preserved where possible.
+</p>
+<%= render "details" %>

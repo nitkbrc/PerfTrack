@@ -57,6 +57,20 @@ class RequestMailer < ApplicationMailer
     mail(to: @recipient.email, subject: "SCATS request rejected")
   end
 
+  # Hierarchy template / reattach remapped an in-flight request onto a new role.
+  def hierarchy_reassigned_to_reviewer(request, actor:, recipient:, landing_role:)
+    @landing_role = landing_role
+    setup_request_mail(request, actor: actor, recipient: recipient)
+    mail(to: @recipient.email, subject: "SCATS request reassigned to your review after a hierarchy change")
+  end
+
+  def hierarchy_reassigned_to_student(request, actor:, landing_role:, reviewer: nil)
+    @landing_role = landing_role
+    @reviewer = reviewer
+    setup_request_mail(request, actor: actor, recipient: request.student.user)
+    mail(to: @recipient.email, subject: "Your SCATS request review path was updated")
+  end
+
   private
 
   def setup_request_mail(request, actor:, recipient:, comment: nil)

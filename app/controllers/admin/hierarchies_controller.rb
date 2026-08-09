@@ -61,7 +61,7 @@ module Admin
       authorize Hierarchy, :update?
       raw = params.require(:payload)
       payload = raw.is_a?(String) ? JSON.parse(raw) : raw.to_unsafe_h
-      HierarchyBulkSave.new(payload).call!
+      HierarchyBulkSave.new(payload, actor: current_user).call!
       redirect_to admin_hierarchies_path, notice: "Hierarchies saved."
     rescue HierarchyBulkSave::Error => e
       redirect_to admin_hierarchies_path, alert: e.message
