@@ -12,7 +12,8 @@
     </div>
 
     <%= form_with model: @user, url: profile_path, method: :patch, class: "mt-8 space-y-6 border-t border-border-subtle pt-6",
-          html: { multipart: true } do |f| %>
+          html: { multipart: true },
+          data: { controller: "unsaved-changes" } do |f| %>
       <% if @user.errors.any? %>
         <div class="rounded-md border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
           <ul class="list-disc pl-5">

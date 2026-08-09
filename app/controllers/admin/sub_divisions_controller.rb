@@ -9,7 +9,11 @@ module Admin
     end
 
     def show
-      @sub_division = authorize SubDivision.find(params[:id])
+      @sub_division = authorize SubDivision.includes(
+        :division,
+        hierarchy: { hierarchy_roles: :review_role },
+        role_assignments: :user
+      ).find(params[:id])
       @show_archived = params[:archived].present?
       scope = @show_archived ? @sub_division.categories.archived : @sub_division.categories.active
       @categories = scope.order(:name)

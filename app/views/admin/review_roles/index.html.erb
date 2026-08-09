@@ -1,5 +1,6 @@
 <div class="mx-auto w-full max-w-5xl space-y-8 pb-28"
-     data-controller="review-roles">
+     data-controller="review-roles unsaved-changes"
+     data-unsaved-changes-strategy-value="custom">
   <header class="space-y-4">
     <%= link_to edit_admin_settings_path, class: "inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
       <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
@@ -55,7 +56,7 @@
   </div>
 
   <div class="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden px-4 pb-5"
-       data-review-roles-target="unsavedBar">
+       data-unsaved-changes-target="unsavedBar">
     <div class="pointer-events-auto mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/95 px-5 py-4 shadow-lg backdrop-blur">
       <div class="flex items-center gap-3">
         <span class="relative flex h-2.5 w-2.5 shrink-0">
@@ -69,7 +70,7 @@
       </div>
       <div class="flex items-center gap-2.5">
         <%= link_to "Discard", admin_review_roles_path,
-              data: { turbo: false, action: "click->review-roles#discard" },
+              data: { turbo: false, action: "click->unsaved-changes#allowLeave" },
               class: "rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" %>
         <button type="button"
                 data-action="review-roles#save"

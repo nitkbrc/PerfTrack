@@ -1,0 +1,30 @@
+<li role="treeitem" class="rounded-xl border border-border-subtle bg-surface-white p-2 sm:p-3">
+  <details class="group/branch" data-tree-target="node" open>
+    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-2 transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+      <span class="material-symbols-outlined scats-tree-chevron shrink-0 text-base text-slate-400"
+            aria-hidden="true">chevron_right</span>
+      <span class="min-w-0 flex-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <%= label %>
+      </span>
+      <span class="text-[11px] font-medium text-slate-400"><%= templates.size %></span>
+      <%= link_to new_admin_reason_template_path(action_type: action_key),
+            class: "relative z-10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/5",
+            onclick: "event.preventDefault(); event.stopPropagation(); window.location.href=this.href" do %>
+        <span class="material-symbols-outlined text-[14px]" aria-hidden="true">add</span>
+        Add shared
+      <% end %>
+    </summary>
+
+    <ul class="mt-1 space-y-1 px-1 pb-1">
+      <% if templates.empty? %>
+        <li class="rounded-md border border-dashed border-slate-200 bg-white px-3 py-3 text-center text-xs text-slate-400">
+          No shared <%= action_key %> defaults yet.
+        </li>
+      <% else %>
+        <% templates.each do |template| %>
+          <%= render "admin/reason_templates/template_row", template: template %>
+        <% end %>
+      <% end %>
+    </ul>
+  </details>
+</li>

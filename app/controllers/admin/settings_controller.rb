@@ -13,12 +13,12 @@ module Admin
     def profile_permissions
       authorize @setting, :edit?
       Permission.ensure_defaults!
-      @permissions_by_action = Permission.grouped_by_action
+      @permissions_by_role = Permission.grouped_by_role
     end
 
     def update
       authorize @setting
-      @permissions_by_action = Permission.grouped_by_action if params[:permissions].present?
+      @permissions_by_role = Permission.grouped_by_role if params[:permissions].present?
 
       ActiveRecord::Base.transaction do
         @setting.update!(setting_params) if params[:setting].present?

@@ -78,8 +78,8 @@ RSpec.describe "Admin user imports", type: :request do
   it "uses the admin-supplied temporary password for staff but not students" do
     upload(<<~CSV, staff_password: "welcome2026")
       name,email,role,phone,address,usn,department,sem
-      #{csv_row(name: "Prof. Rao", email: "rao@college.edu", role: "faculty", usn: "", department: "", sem: "")}
-      #{csv_row(email: "asha@college.edu")}
+      #{csv_row(name: "Prof. Rao", email: "rao@college.edu", role: "faculty", phone: "9876543211", usn: "", department: "", sem: "")}
+      #{csv_row(email: "asha@college.edu", phone: "9876543212")}
     CSV
 
     faculty = User.find_by(email: "rao@college.edu")
@@ -101,27 +101,30 @@ RSpec.describe "Admin user imports", type: :request do
   end
 
   it "skips bad rows but imports the rest, reporting each error" do
-    create(:user, email: "taken@college.edu")
+    create(:user, email: "taken@college.edu", phone: "9000000001")
 
     upload(<<~CSV)
       name,email,role,phone,address,usn,department,sem
-      #{csv_row(name: "Good One", email: "good@college.edu", usn: "1XX22CS002", sem: "1")}
-      #{csv_row(name: "Bad Role", email: "badrole@college.edu", role: "teacher", usn: "", department: "", sem: "")}
+      #{csv_row(name: "Good One", email: "good@college.edu", phone: "9876543210", usn: "1XX22CS002", sem: "1")}
+      #{csv_row(name: "Bad Role", email: "badrole@college.edu", role: "teacher", phone: "9876543211", usn: "", department: "", sem: "")}
       #{csv_row(name: "No Phone", email: "nophone@college.edu", phone: "", usn: "1XX22CS010")}
-      #{csv_row(name: "No Usn", email: "nousn@college.edu", usn: "", sem: "2")}
-      #{csv_row(name: "Bad Dept", email: "baddept@college.edu", usn: "1XX22CS003", department: "Astrology", sem: "2")}
-      #{csv_row(name: "Dupe", email: "taken@college.edu", role: "faculty", usn: "", department: "", sem: "")}
+      #{csv_row(name: "No Usn", email: "nousn@college.edu", phone: "9876543212", usn: "", sem: "2")}
+      #{csv_row(name: "Bad Dept", email: "baddept@college.edu", phone: "9876543213", usn: "1XX22CS003", department: "Astrology", sem: "2")}
+      #{csv_row(name: "Dupe", email: "taken@college.edu", role: "faculty", phone: "9876543214", usn: "", department: "", sem: "")}
+      #{csv_row(name: "Phone Taken", email: "phonetaken@college.edu", phone: "9876543210", usn: "1XX22CS004", sem: "2")}
     CSV
 
     expect(User.find_by(email: "good@college.edu")).to be_present
     expect(User.find_by(email: "badrole@college.edu")).to be_nil
     expect(User.find_by(email: "baddept@college.edu")).to be_nil
+    expect(User.find_by(email: "phonetaken@college.edu")).to be_nil
 
     expect(response.body).to include("role must be one of")
     expect(response.body).to include("phone is required")
     expect(response.body).to include("usn is required for students")
     expect(response.body).to include("Astrology")
     expect(response.body).to include("Email has already been taken")
+    expect(response.body).to include("Phone has already been taken")
   end
 
   it "serves the CSV template" do

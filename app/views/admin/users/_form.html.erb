@@ -1,8 +1,9 @@
 <div data-controller="role-fields">
-  <%= form_with model: [ :admin, user ], html: { multipart: true }, class: "space-y-5" do |f| %>
+  <%= form_with model: [ :admin, user ], html: { multipart: true }, class: "space-y-5",
+        data: (user.persisted? ? { controller: "unsaved-changes" } : {}) do |f| %>
     <%= render "admin/shared/error_messages", record: user %>
 
-    <% if user.photo.attached? %>
+    <% if user.persisted? && user.photo.attached? %>
       <div class="flex items-center gap-4">
         <%= user_photo_tag(user, size: 64) %>
         <p class="text-xs text-slate-500">Upload a new file below to replace the current photo.</p>

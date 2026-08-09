@@ -72,11 +72,36 @@ RSpec.describe "Admin users", type: :request do
     expect(response).to redirect_to(root_path)
   end
 
+  it "rejects creating a user with a phone number already in use" do
+    create(:user, :faculty, phone: "9876543210")
+
+    expect {
+      post "/admin/users", params: { user: user_attrs(email: "other@example.com") }
+    }.not_to change(User, :count)
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.body).to include("has already been taken")
+  end
+
+  it "rejects updating a user to another user's phone number" do
+    create(:user, :faculty, phone: "9111000001")
+    user = create(:user, :faculty, phone: "9111000002")
+
+    patch "/admin/users/#{user.id}", params: { user: user_attrs(
+      name: user.name, email: user.email, phone: "9111-000-001",
+      password: "", password_confirmation: ""
+    ).except(:photo) }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.body).to include("has already been taken")
+    expect(user.reload.phone).to eq("9111000002")
+  end
+
   it "updates a user without changing the password when fields are left blank" do
     user = create(:user, :faculty, password: "password123")
 
     patch "/admin/users/#{user.id}", params: { user: user_attrs(
-      name: "Renamed", email: user.email, password: "", password_confirmation: ""
+      name: "Renamed", email: user.email, phone: user.phone, password: "", password_confirmation: ""
     ).except(:photo) }
 
     expect(response).to redirect_to("/admin/users")
@@ -91,7 +116,7 @@ RSpec.describe "Admin users", type: :request do
     user = create(:user, :student)
 
     patch "/admin/users/#{user.id}", params: { user: user_attrs(
-      name: user.name, email: user.email, role: "admin",
+      name: user.name, email: user.email, phone: user.phone, role: "admin",
       password: "", password_confirmation: ""
     ).except(:photo) }
 
@@ -113,7 +138,7 @@ RSpec.describe "Admin users", type: :request do
     user = create(:user, :faculty)
 
     patch "/admin/users/#{user.id}", params: { user: user_attrs(
-      name: user.name, email: user.email,
+      name: user.name, email: user.email, phone: user.phone,
       password: "resetpass123", password_confirmation: "resetpass123"
     ).except(:photo) }
 
@@ -125,7 +150,7 @@ RSpec.describe "Admin users", type: :request do
 
     expect {
       post "/admin/users", params: { user: user_attrs(
-        name: "New Student", email: "newstud@example.com", role: "student",
+        name: "New Student", email: "newstud@example.com", role: "student", phone: "9876543299",
         student_profile_attributes: { usn: "1XX23CS999", department_id: department.id, sem: 5 }
       ) }
     }.to change(User, :count).by(1).and change(Student, :count).by(1)
@@ -138,7 +163,7 @@ RSpec.describe "Admin users", type: :request do
   it "ignores student profile params for non-student roles" do
     expect {
       post "/admin/users", params: { user: user_attrs(
-        name: "New Faculty 2", email: "newfac2@example.com",
+        name: "New Faculty 2", email: "newfac2@example.com", phone: "9876543298",
         student_profile_attributes: { usn: "", department_id: "", sem: "" }
       ) }
     }.to change(User, :count).by(1)

@@ -197,14 +197,25 @@ RoleAssignment.find_or_create_by!(review_role: coordinator_role, sub_division: c
 end
 
 puts "Seeding reason templates..."
-[
+revert_messages = [
   "Please attach clearer proof — the current image is not readable.",
   "The certificate does not mention your name; please upload the correct one.",
-  "This achievement belongs under a different category. Please resubmit accordingly.",
-  "Insufficient evidence to verify this claim.",
   "Please add the event date and organiser details to the description."
-].each { |text| ReasonTemplate.find_or_create_by!(message_text: text) }
-
+]
+reject_messages = [
+  "This achievement belongs under a different category.",
+  "Insufficient evidence to verify this claim."
+]
+revert_messages.each_with_index do |text, index|
+  ReasonTemplate.find_or_create_by!(division_id: nil, action: "revert", message_text: text) do |t|
+    t.position = index
+  end
+end
+reject_messages.each_with_index do |text, index|
+  ReasonTemplate.find_or_create_by!(division_id: nil, action: "reject", message_text: text) do |t|
+    t.position = index
+  end
+end
 puts "Seeding students..."
 student_rows = [
   [ "Asha Kumar",    "asha.kumar@scats.edu",    "1SC22CS001", "CSE", 5, "9200000001", "Hostel A, Room 101" ],
@@ -243,7 +254,12 @@ end
 
 def supervisor_of(request) = request.category.sub_division.supervisor
 def dean_of(request) = request.category.sub_division.division.dean
-def any_template = ReasonTemplate.all.to_a.sample
+def reject_template_for(request)
+  ReasonTemplate.effective_for(
+    division: request.category.sub_division.division,
+    action: "reject"
+  ).first
+end
 
 def seed_requests_for(student)
   yield if student.achievement_requests.none?
@@ -312,7 +328,7 @@ end
 
 seed_requests_for(arjun) do
   r = request_for(arjun, categories["Event organisation"], "Organised freshers' day", "Led a team of ten volunteers.")
-  r.reject!(actor: supervisor_of(r), comment: "Insufficient evidence to verify this claim.", reason_template: any_template)
+  r.reject!(actor: supervisor_of(r), comment: "Insufficient evidence to verify this claim.", reason_template: reject_template_for(r))
 end
 
 seed_requests_for(divya) do
@@ -357,7 +373,7 @@ seed_requests_for(rohan) do
                   "Demo scenario: rejected at Coordinator.")
   r.advance!(actor: supervisor_of(r))
   r.reject!(actor: coord_coding, comment: "Certificate does not match the claimed event.",
-            reason_template: any_template)
+            reason_template: reject_template_for(r))
 
   # Mid-chain revert Division Reviewer → Coordinator
   r = request_for(rohan, categories["National hackathon win"], "Regional finals trophy",

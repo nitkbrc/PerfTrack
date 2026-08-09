@@ -1,0 +1,84 @@
+<%# Global unsaved-changes confirm. Owned by leave-guard Stimulus controller. %>
+<style>
+  @keyframes scats-spin {
+    to { transform: rotate(360deg); }
+  }
+  .scats-spin {
+    display: inline-block;
+    animation: scats-spin 0.8s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scats-spin { animation: none; }
+  }
+</style>
+<div id="leave-guard"
+     class="fixed inset-0 z-[80] hidden items-center justify-center p-4 sm:p-6"
+     data-controller="leave-guard"
+     data-leave-guard-target="root"
+     aria-hidden="true">
+  <button type="button"
+          class="absolute inset-0 cursor-default border-0 bg-[#000666]/45 backdrop-blur-[2px] transition"
+          data-action="leave-guard#stay"
+          tabindex="-1"
+          aria-label="Keep editing"></button>
+
+  <div class="relative z-10 w-full max-w-[26rem] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_24px_64px_rgba(0,6,102,0.18),0_4px_16px_rgba(15,23,42,0.08)]"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="leave-guard-title"
+       aria-describedby="leave-guard-description"
+       data-leave-guard-target="dialog">
+    <div class="h-1 w-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-400" aria-hidden="true"></div>
+
+    <div class="px-6 pb-2 pt-5 sm:px-7 sm:pt-6">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex min-w-0 items-start gap-3.5">
+          <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+            <span class="material-symbols-outlined text-[24px]" style="font-variation-settings:'FILL' 1" aria-hidden="true">error</span>
+          </span>
+          <div class="min-w-0 pt-0.5">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700/80">Before you leave</p>
+            <h2 id="leave-guard-title" class="mt-1 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+              Unsaved changes
+            </h2>
+          </div>
+        </div>
+        <button type="button"
+                class="cursor-pointer rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                data-action="leave-guard#stay"
+                aria-label="Stay on this page">
+          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+        </button>
+      </div>
+
+      <p id="leave-guard-description" class="mt-4 text-sm leading-relaxed text-slate-500">
+        Your edits are still only on this page. Save & exit to keep them and continue, stay to keep editing, or discard them.
+      </p>
+    </div>
+
+    <div class="mt-2 border-t border-slate-100 bg-slate-50/80 px-6 py-4 sm:px-7">
+      <div class="flex flex-col gap-2.5">
+        <button type="button"
+                class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#000666] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1a237e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#000666]/35 focus-visible:ring-offset-2"
+                data-action="leave-guard#saveAndLeave"
+                data-leave-guard-target="saveButton">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">save</span>
+          Save & exit
+        </button>
+
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button type="button"
+                  class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-white hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1"
+                  data-action="leave-guard#stay">
+            Stay on page
+          </button>
+          <button type="button"
+                  class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-1"
+                  data-action="leave-guard#leave">
+            Discard & leave
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,5 +1,6 @@
 <div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
-  <%= form_with model: [ :admin, department ], class: "space-y-5" do |f| %>
+  <%= form_with model: [ :admin, department ], class: "space-y-5",
+        data: (department.persisted? ? { controller: "unsaved-changes" } : {}) do |f| %>
     <%= render "admin/shared/error_messages", record: department %>
 
     <div>

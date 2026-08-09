@@ -24,9 +24,23 @@
       </div>
       <div class="relative z-10 mt-5 flex flex-wrap items-center gap-2">
         <% if division.archived? %>
-          <%= button_to admin_restore_action_label, restore_admin_division_path(division), method: :patch,
+          <%= button_to restore_admin_division_path(division), method: :patch,
                 form: { onclick: "event.stopPropagation()" },
-                class: admin_secondary_button_classes %>
+                class: admin_restore_button_classes do %>
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">history</span>
+            Restore
+          <% end %>
+          <%= button_to admin_division_path(division), method: :delete,
+                form: {
+                  onclick: "event.stopPropagation()",
+                  data: {
+                    turbo_confirm: "Permanently delete “#{division.name}”? Sub-divisions and categories under it will be removed. This is blocked if any approved requests exist."
+                  }
+                },
+                class: admin_permanent_delete_button_classes do %>
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete_forever</span>
+            Delete
+          <% end %>
         <% else %>
           <%= link_to admin_edit_action_label, edit_admin_division_path(division), class: admin_secondary_button_classes, data: admin_modal_frame_data %>
           <%= button_to admin_archive_action_label, archive_admin_division_path(division), method: :patch,

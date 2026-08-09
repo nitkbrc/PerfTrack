@@ -35,6 +35,7 @@ class HierarchyRole < ApplicationRecord
   end
 
   def ensure_not_last_role
+    return if destroyed_by_association
     return if hierarchy.blank?
     return if hierarchy.hierarchy_roles.where.not(id: id).exists?
 
@@ -43,6 +44,7 @@ class HierarchyRole < ApplicationRecord
   end
 
   def block_if_current_on_live_requests
+    return if destroyed_by_association
     return if hierarchy.blank? || review_role_id.blank?
 
     owner_ids =

@@ -53,10 +53,71 @@
   line-height: 1;
 }
 
+/* Material icon spinner — needs non-inline display for transform to apply. */
+.scats-spin {
+  display: inline-block;
+  animation: scats-spin 0.8s linear infinite;
+}
+
+@keyframes scats-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scats-spin {
+    animation: none;
+  }
+}
+
+/* Tree expand/collapse arrows — rotate when the owning <details> is open.
+   Uses the direct summary child so nested branches animate independently. */
+.scats-tree-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 200ms ease;
+  transform: rotate(0deg);
+}
+
+details[open] > summary .scats-tree-chevron {
+  transform: rotate(90deg);
+}
+
 /* Padding stays on call sites (p-4 / p-5 / p-6) so consumers aren't double-padded. */
 .clay-card {
   @apply rounded-xl border border-border-subtle bg-surface-white;
   box-shadow: var(--scats-card-shadow);
+}
+
+/* Selectable option cards (division type, hierarchy picker, etc.) */
+.scats-choice-card {
+  @apply rounded-2xl border border-border-subtle bg-surface-white text-left transition;
+  box-shadow: var(--scats-card-shadow);
+}
+
+.scats-choice-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 6, 102, 0.1), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.scats-choice-card.is-selected {
+  border-color: var(--scats-primary);
+  background-color: color-mix(in srgb, var(--scats-primary) 6%, white);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--scats-primary) 35%, transparent),
+    var(--scats-card-shadow);
+}
+
+.scats-choice-card.is-selected[data-div-type="positive"] {
+  border-color: #059669;
+  background-color: #ecfdf5;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35), var(--scats-card-shadow);
+}
+
+.scats-choice-card.is-selected[data-div-type="negative"] {
+  border-color: #d97706;
+  background-color: #fffbeb;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), var(--scats-card-shadow);
 }
 
 .glass-panel {

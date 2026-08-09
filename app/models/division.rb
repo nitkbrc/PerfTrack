@@ -5,12 +5,18 @@ class Division < ApplicationRecord
 
   has_many :sub_divisions
   has_many :role_assignments, dependent: :destroy
+  has_many :reason_templates, dependent: :destroy
+  has_many :reason_template_suppressions, dependent: :destroy
 
   enum :div_type, { positive: "positive", negative: "negative" }
 
   before_validation :assign_default_hierarchy, on: :create
 
   validate :hierarchy_scope_must_be_division
+
+  before_destroy :purge_descendants_for_permanent_delete!, prepend: true
+  before_destroy :prevent_destroy_with_approved_history, prepend: true
+  before_destroy :prevent_destroy_unless_archived, prepend: true
 
   def dean
     RoleAssignment.holder_for(review_role: ReviewRole.dean, division: self)
@@ -34,6 +40,16 @@ class Division < ApplicationRecord
     hierarchy.hierarchy_roles.filter_map do |hr|
       hr.review_role unless assigned_review_role_ids.include?(hr.review_role_id)
     end
+  end
+
+  def approved_requests
+    AchievementRequest.approved
+                      .joins(category: :sub_division)
+                      .where(sub_divisions: { division_id: id })
+  end
+
+  def approved_request_history?
+    approved_requests.exists?
   end
 
   def archive!(stamp = Time.current, actor: nil)
@@ -64,5 +80,31 @@ class Division < ApplicationRecord
     return if hierarchy.scope_division?
 
     errors.add(:hierarchy, "must be a division-scoped hierarchy")
+  end
+
+  def prevent_destroy_unless_archived
+    return if archived?
+
+    errors.add(:base, "Only archived divisions can be permanently deleted. Archive it first.")
+    throw :abort
+  end
+
+  def prevent_destroy_with_approved_history
+    return unless approved_request_history?
+
+    errors.add(:base, "Cannot permanently delete — this division has approved request history. Leave it archived.")
+    throw :abort
+  end
+
+  # Non-approved requests, categories, and sub-divisions are removed so the
+  # division hard-delete can succeed under FK constraints.
+  def purge_descendants_for_permanent_delete!
+    sub_divisions.find_each do |sub_division|
+      sub_division.categories.find_each do |category|
+        category.achievement_requests.find_each(&:destroy!)
+        category.destroy!
+      end
+      sub_division.destroy!
+    end
   end
 end

@@ -1,34 +1,147 @@
-<div class="mx-auto w-full max-w-lg space-y-4">
-  <div>
-    <%= link_to edit_admin_settings_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
+<div class="mx-auto w-full max-w-6xl space-y-8"
+     data-controller="score-scale-preview"
+     data-score-scale-preview-half-range-value="750">
+  <header class="space-y-4">
+    <%= link_to edit_admin_settings_path, class: "inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
       <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
       Settings
     <% end %>
-    <h1 class="mt-2 text-2xl font-bold text-text-main">Score scale constant</h1>
-  </div>
 
-  <%= form_with url: admin_settings_path, method: :put, class: "clay-card space-y-5 p-6 sm:p-8" do %>
-    <%= hidden_field_tag :form, "score_scale" %>
-    <%= fields_for :setting, @setting do |f| %>
-      <%= render "admin/shared/error_messages", record: @setting %>
-
-      <div class="space-y-2">
-        <%= f.label :score_scale_k, "Score scale constant (k)", class: admin_label_classes %>
-        <%= f.number_field :score_scale_k, min: 1, class: "#{admin_input_classes} mt-0" %>
-        <div class="scats-callout scats-callout-warning mt-3" role="note">
-          <span class="scats-callout-icon material-symbols-outlined" aria-hidden="true">warning</span>
-          <div class="scats-callout-body">
-            <p class="scats-callout-title">Read before changing</p>
-            <p class="mt-1 leading-relaxed opacity-90">
-              Controls how steeply net points map to the 0–10 overall score. Smaller values
-              make scores react faster to points. Changing it immediately rescales every
-              student's displayed score — stored point history is never affected.
-            </p>
-          </div>
+    <div class="min-w-0 max-w-2xl">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">tune</span>
+        </span>
+        <div>
+          <h1 class="text-[26px] font-semibold leading-tight tracking-tight text-slate-900">Score scale constant</h1>
+          <p class="mt-1 text-sm text-slate-500">How net points map to the 0–10 overall score</p>
         </div>
       </div>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
+    <%= form_with url: admin_settings_path, method: :put, class: "clay-card h-full space-y-5 p-5 sm:p-6",
+          data: { controller: "unsaved-changes" } do %>
+      <%= hidden_field_tag :form, "score_scale" %>
+      <%= fields_for :setting, @setting do |f| %>
+        <%= render "admin/shared/error_messages", record: @setting %>
+
+        <div class="space-y-2">
+          <%= f.label :score_scale_k, "Constant (k)", class: admin_label_classes %>
+          <%= f.number_field :score_scale_k,
+                min: 1,
+                class: "#{admin_input_classes} mt-0",
+                data: {
+                  score_scale_preview_target: "input",
+                  action: "input->score-scale-preview#redraw change->score-scale-preview#redraw"
+                } %>
+          <p class="text-xs leading-relaxed text-slate-400">
+            Smaller <span class="font-semibold text-slate-600">k</span> → steeper curve (score reacts faster).
+            Larger <span class="font-semibold text-slate-600">k</span> → flatter curve.
+          </p>
+        </div>
+      <% end %>
+
+      <div class="scats-callout scats-callout-warning" role="note">
+        <span class="scats-callout-icon material-symbols-outlined" aria-hidden="true">warning</span>
+        <div class="scats-callout-body">
+          <p class="scats-callout-title">Read before changing</p>
+          <p class="mt-1 leading-relaxed opacity-90">
+            Saving rescales every student’s displayed overall score immediately.
+            Stored point history is never affected.
+          </p>
+        </div>
+      </div>
+
+      <%= submit_tag "Save score scale", class: admin_primary_button_classes %>
     <% end %>
 
-    <%= submit_tag "Save score scale", class: admin_primary_button_classes %>
-  <% end %>
+    <section class="clay-card overflow-hidden" aria-labelledby="score-curve-heading">
+      <div class="border-b border-border-subtle/70 px-5 py-4 sm:px-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="score-curve-heading" class="text-sm font-semibold text-slate-900">Score curve preview</h2>
+            <p class="mt-0.5 text-xs text-slate-400" data-score-scale-preview-target="rangeLabel">
+              Net points from −750 to +750
+            </p>
+          </div>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Live
+          </span>
+        </div>
+      </div>
+
+      <div class="px-3 pb-2 pt-4 sm:px-5">
+        <svg viewBox="0 0 400 200"
+             class="h-auto w-full select-none"
+             role="img"
+             aria-label="Graph of overall score versus net points for the current k">
+          <%# Plot background %>
+          <rect x="48" y="16" width="312" height="152" fill="#f8fafc" rx="8"></rect>
+
+          <%# Horizontal grid: score 0, 2.5, 5, 7.5, 10 %>
+          <% [0, 2.5, 5, 7.5, 10].each do |score| %>
+            <% y = 168 - (score / 10.0) * 152 %>
+            <line x1="48" y1="<%= y %>" x2="360" y2="<%= y %>"
+                  stroke="<%= score == 5 ? '#94a3b8' : '#e2e8f0' %>"
+                  stroke-width="<%= score == 5 ? 1.25 : 1 %>"
+                  stroke-dasharray="<%= score == 5 ? '0' : '4 4' %>"></line>
+            <text x="40" y="<%= y + 3.5 %>" text-anchor="end"
+                  class="fill-slate-400" style="font-size: 10px; font-family: ui-sans-serif, system-ui, sans-serif;">
+              <%= score == score.to_i ? score.to_i : score %>
+            </text>
+          <% end %>
+
+          <%# Vertical axis at net = 0 (SVG x = 204) %>
+          <line x1="204" y1="16" x2="204" y2="168" stroke="#94a3b8" stroke-width="1.25"></line>
+
+          <%# Neutral point (0, 5) %>
+          <circle cx="204" cy="92" r="3.5" fill="#0f766e" stroke="#fff" stroke-width="1.5"></circle>
+
+          <%# Curve (drawn by Stimulus) %>
+          <path data-score-scale-preview-target="curve"
+                fill="none"
+                stroke="currentColor"
+                class="text-primary"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d=""></path>
+
+          <%# Axis labels %>
+          <text x="204" y="188" text-anchor="middle"
+                class="fill-slate-500" style="font-size: 11px; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 600;">
+            Net points
+          </text>
+          <text data-score-scale-preview-target="xMin" x="48" y="188" text-anchor="start"
+                class="fill-slate-400" style="font-size: 10px; font-family: ui-sans-serif, system-ui, sans-serif;">−750</text>
+          <text x="204" y="188" dy="-14" text-anchor="middle"
+                class="fill-slate-400" style="font-size: 10px; font-family: ui-sans-serif, system-ui, sans-serif;">0</text>
+          <text data-score-scale-preview-target="xMax" x="360" y="188" text-anchor="end"
+                class="fill-slate-400" style="font-size: 10px; font-family: ui-sans-serif, system-ui, sans-serif;">+750</text>
+
+          <text x="14" y="92" text-anchor="middle" transform="rotate(-90 14 92)"
+                class="fill-slate-500" style="font-size: 11px; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 600;">
+            Overall score
+          </text>
+        </svg>
+      </div>
+
+      <div class="grid grid-cols-1 gap-2 border-t border-border-subtle/70 px-5 py-4 sm:grid-cols-3 sm:px-6">
+        <div class="rounded-xl bg-slate-50 px-3 py-2.5">
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Negative side</p>
+          <p class="mt-0.5 text-sm font-semibold text-slate-800" data-score-scale-preview-target="sampleNeg">—</p>
+        </div>
+        <div class="rounded-xl bg-teal-50 px-3 py-2.5">
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-teal-700/70">Neutral</p>
+          <p class="mt-0.5 text-sm font-semibold text-teal-900" data-score-scale-preview-target="sampleZero">5.0 at net 0</p>
+        </div>
+        <div class="rounded-xl bg-slate-50 px-3 py-2.5">
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Positive side</p>
+          <p class="mt-0.5 text-sm font-semibold text-slate-800" data-score-scale-preview-target="samplePos">—</p>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>

@@ -10,8 +10,8 @@ class Hierarchy < ApplicationRecord
   validates :scope, presence: true
   validate :exactly_one_default_per_scope, if: :is_default?
 
-  before_destroy :prevent_default_destroy
-  before_destroy :prevent_destroy_when_in_use
+  before_destroy :prevent_destroy_when_in_use, prepend: true
+  before_destroy :prevent_default_destroy, prepend: true
 
   scope :for_scope, ->(scope) { where(scope: scope) }
   scope :defaults, -> { where(is_default: true) }
@@ -21,9 +21,11 @@ class Hierarchy < ApplicationRecord
 
     division_default = find_or_create_by!(name: "Default Division Hierarchy") do |h|
       h.scope = "division"
-      h.is_default = true
+      h.is_default = !exists?(scope: "division", is_default: true)
     end
-    division_default.update!(is_default: true, scope: "division") unless division_default.is_default?
+    if where(scope: "division", is_default: true).none?
+      division_default.update!(is_default: true, scope: "division")
+    end
     division_default.hierarchy_roles.find_or_create_by!(review_role: ReviewRole.dean) do |hr|
       hr.position = 1
       hr.can_raise_on_behalf = false
@@ -31,9 +33,11 @@ class Hierarchy < ApplicationRecord
 
     sub_default = find_or_create_by!(name: "Default Sub-division Hierarchy") do |h|
       h.scope = "sub_division"
-      h.is_default = true
+      h.is_default = !exists?(scope: "sub_division", is_default: true)
     end
-    sub_default.update!(is_default: true, scope: "sub_division") unless sub_default.is_default?
+    if where(scope: "sub_division", is_default: true).none?
+      sub_default.update!(is_default: true, scope: "sub_division")
+    end
     sub_default.hierarchy_roles.find_or_create_by!(review_role: ReviewRole.supervisor) do |hr|
       hr.position = 1
       hr.can_raise_on_behalf = true
@@ -45,6 +49,19 @@ class Hierarchy < ApplicationRecord
   def self.default_for(scope)
     ensure_defaults!
     find_by!(scope: scope, is_default: true)
+  end
+
+  # Promote this template to the sole default for its scope. Existing owners
+  # stay on their current hierarchy; only new units pick up the new default.
+  def make_default!
+    transaction do
+      Hierarchy.where(scope: scope, is_default: true).where.not(id: id).update_all(
+        is_default: false,
+        updated_at: Time.current
+      )
+      update!(is_default: true)
+    end
+    self
   end
 
   def owners

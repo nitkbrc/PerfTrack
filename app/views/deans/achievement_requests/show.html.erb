@@ -62,7 +62,7 @@
               url: revert_dean_achievement_request_path(@achievement_request),
               button_label: "Revert for clarification",
               button_classes: "bg-orange-500 hover:bg-orange-400",
-              reason_templates: @reason_templates,
+              reason_templates: @revert_reason_templates,
               comment_label: "Message" %>
       </div>
 
@@ -73,7 +73,7 @@
               button_label: "Reject",
               button_classes: "bg-red-600 hover:bg-red-500",
               confirm: "Rejecting is final — no points will be awarded. Continue?",
-              reason_templates: @reason_templates,
+              reason_templates: @reject_reason_templates,
               comment_label: "Message" %>
       </div>
     </div>

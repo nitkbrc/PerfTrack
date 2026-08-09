@@ -82,7 +82,13 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :departments, :reason_templates, :users
+    resources :departments, :users
+    resources :reason_templates do
+      member do
+        post :suppress
+        delete :unsuppress
+      end
+    end
     resources :categories, concerns: :archivable
     resources :review_roles, except: :show do
       collection do
@@ -91,6 +97,9 @@ Rails.application.routes.draw do
     end
     resources :role_assignments, except: :show
     resources :hierarchies, only: [ :index, :create, :destroy ] do
+      member do
+        post :make_default
+      end
       collection do
         post :bulk_save
         post :create_role

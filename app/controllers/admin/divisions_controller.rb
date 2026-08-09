@@ -9,7 +9,10 @@ module Admin
     end
 
     def show
-      @division = authorize Division.find(params[:id])
+      @division = authorize Division.includes(
+        hierarchy: { hierarchy_roles: :review_role },
+        role_assignments: :user
+      ).find(params[:id])
       @show_archived = params[:archived].present?
       scope = @show_archived ? @division.sub_divisions.archived : @division.sub_divisions.active
       @sub_divisions = scope.includes(:division, role_assignments: :user).order(:name)
@@ -70,7 +73,10 @@ module Admin
     def destroy
       division = authorize Division.find(params[:id])
       division.destroy!
-      redirect_to admin_divisions_path, notice: "Division deleted."
+      redirect_to admin_divisions_path(archived: 1), notice: "Division permanently deleted."
+    rescue ActiveRecord::RecordNotDestroyed
+      redirect_to admin_divisions_path(archived: 1),
+                  alert: division.errors.full_messages.to_sentence.presence || "Could not delete division."
     end
 
     def archive

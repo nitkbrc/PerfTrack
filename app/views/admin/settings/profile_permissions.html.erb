@@ -1,50 +1,82 @@
-<div class="mx-auto w-full max-w-3xl space-y-4">
-  <div>
-    <%= link_to edit_admin_settings_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
-      <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
-      Settings
-    <% end %>
-    <h1 class="mt-2 text-2xl font-bold text-text-main">Profile edit permissions</h1>
-    <p class="mt-1 text-sm text-text-muted">
-      Toggle which fields students and faculty may edit on their own profile. Admins are never gated.
-    </p>
-  </div>
-
-  <%= form_with url: admin_settings_path, method: :put, class: "clay-card space-y-6 p-6 sm:p-8" do %>
+<div class="mx-auto w-full max-w-5xl space-y-8 pb-10">
+  <%= form_with url: admin_settings_path, method: :put, class: "space-y-8",
+        data: { controller: "unsaved-changes" } do %>
     <%= hidden_field_tag :form, "profile_permissions" %>
 
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-left text-sm">
-        <thead>
-          <tr class="border-b border-border-subtle text-xs uppercase tracking-wide text-text-muted">
-            <th class="px-3 py-2 font-semibold">Action</th>
-            <th class="px-3 py-2 font-semibold">Student</th>
-            <th class="px-3 py-2 font-semibold">Faculty</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @permissions_by_action.each do |action, permissions| %>
-            <tr class="border-b border-border-subtle/70">
-              <td class="px-3 py-3 font-medium text-text-main"><%= action.humanize %></td>
-              <% %w[student faculty].each do |role| %>
-                <% permission = permissions.find { |p| p.role == role } %>
-                <td class="px-3 py-3">
-                  <% if permission %>
-                    <label class="inline-flex items-center gap-2">
-                      <%= hidden_field_tag "permissions[#{permission.id}][enabled]", "0" %>
-                      <%= check_box_tag "permissions[#{permission.id}][enabled]", "1", permission.enabled?,
-                            class: "rounded border-border-subtle text-primary focus:ring-secondary-container/40" %>
-                      <span class="text-text-muted"><%= permission.enabled? ? "On" : "Off" %></span>
-                    </label>
-                  <% end %>
-                </td>
-              <% end %>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+    <header class="space-y-4">
+      <%= link_to edit_admin_settings_path, class: "inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
+        <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+        Settings
+      <% end %>
+
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div class="min-w-0 max-w-2xl">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <span class="material-symbols-outlined text-[22px]" aria-hidden="true">manage_accounts</span>
+            </span>
+            <div>
+              <h1 class="text-[26px] font-semibold leading-tight tracking-tight text-slate-900">Profile edit permissions</h1>
+              <p class="mt-1 text-sm text-slate-500">Control self-service profile fields by role</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+              <span class="material-symbols-outlined text-lg" aria-hidden="true">save</span>
+            </span>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-slate-900">Ready to apply</p>
+              <p class="mt-0.5 text-xs leading-relaxed text-slate-500">Locked fields stay visible but read-only on profiles.</p>
+            </div>
+          </div>
+          <%= submit_tag "Save permissions",
+                class: "#{admin_primary_button_classes} inline-flex shrink-0 items-center gap-1.5" %>
+        </div>
+      </div>
+    </header>
+
+    <% student_summary = profile_permission_summary(@permissions_by_role["student"] || []) %>
+    <% faculty_summary = profile_permission_summary(@permissions_by_role["faculty"] || []) %>
+
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div class="clay-card flex items-center gap-3 px-4 py-3.5">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">school</span>
+        </span>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Students</p>
+          <p class="text-sm font-semibold text-slate-900"><%= student_summary[:enabled] %> of <%= student_summary[:total] %> editable</p>
+        </div>
+      </div>
+      <div class="clay-card flex items-center gap-3 px-4 py-3.5">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">person</span>
+        </span>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Faculty</p>
+          <p class="text-sm font-semibold text-slate-900"><%= faculty_summary[:enabled] %> of <%= faculty_summary[:total] %> editable</p>
+        </div>
+      </div>
+      <div class="clay-card flex items-center gap-3 px-4 py-3.5">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">admin_panel_settings</span>
+        </span>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Admins</p>
+          <p class="text-sm font-semibold text-slate-900">Always full access</p>
+        </div>
+      </div>
     </div>
 
-    <%= submit_tag "Save permissions", class: admin_primary_button_classes %>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <% %w[student faculty].each do |role| %>
+        <% permissions = @permissions_by_role[role] %>
+        <% next if permissions.blank? %>
+        <%= render "role_permissions_panel", role: role, permissions: permissions %>
+      <% end %>
+    </div>
   <% end %>
 </div>

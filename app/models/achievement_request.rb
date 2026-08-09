@@ -194,7 +194,7 @@ class AchievementRequest < ApplicationRecord
   end
 
   # Move to the previous assigned step, or floor to the creator with status reverted.
-  def revert!(actor:, comment:)
+  def revert!(actor:, comment:, reason_template: nil)
     raise ArgumentError, "request is not in review" unless in_review?
 
     prev = previous_step
@@ -204,11 +204,13 @@ class AchievementRequest < ApplicationRecord
       if prev
         update!(current_review_role: prev.review_role, status: :in_review)
         req_histories.create!(actor: actor, action: "revert", comment: comment,
+                              reason_template: reason_template,
                               from_status: from, to_status: "in_review",
                               request_version: current_version)
       else
         update!(current_review_role: nil, status: :reverted)
         req_histories.create!(actor: actor, action: "revert", comment: comment,
+                              reason_template: reason_template,
                               from_status: from, to_status: "reverted",
                               request_version: current_version)
       end

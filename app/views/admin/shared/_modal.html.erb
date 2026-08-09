@@ -1,29 +1,36 @@
 <%# locals: title:, return_url: %>
-<div class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-4 sm:p-8"
+<%#
+  Admin overlay modal. Keep the scrim as a solid tint only —
+  backdrop-filter / blur on the overlay breaks native <select> popup
+  positioning in Chromium (options appear shifted up / overlapping the field).
+%>
+<div class="fixed inset-0 z-[60]"
      data-controller="modal"
      data-modal-return-url-value="<%= return_url %>"
      data-action="turbo:submit-end->modal#submitEnd keydown@window->modal#keydown">
   <button type="button"
-          class="fixed inset-0 cursor-default border-0 bg-[#000666]/40 backdrop-blur-sm"
+          class="absolute inset-0 cursor-default border-0 bg-[#000666]/45"
           data-action="modal#close"
           aria-label="Close dialog"></button>
 
-  <div class="clay-card relative z-10 mt-8 w-full max-w-lg p-8 sm:mt-16"
-       role="dialog"
-       aria-modal="true"
-       aria-labelledby="admin-modal-title">
-    <div class="mb-6 flex items-start justify-between gap-4">
-      <h1 id="admin-modal-title" class="text-2xl font-bold text-slate-900"><%= title %></h1>
-      <button type="button"
-              class="rounded-xl p-1.5 text-slate-400 transition hover:bg-[#000666]/10 hover:text-[#000666]"
-              data-action="modal#close"
-              aria-label="Close">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5" aria-hidden="true">
-          <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-        </svg>
-      </button>
-    </div>
+  <div class="relative z-10 flex h-full items-start justify-center overflow-y-auto p-4 sm:p-8">
+    <div class="clay-card relative my-8 w-full max-w-lg p-8 sm:my-16"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="admin-modal-title">
+      <div class="mb-6 flex items-start justify-between gap-4">
+        <h1 id="admin-modal-title" class="text-2xl font-bold text-slate-900"><%= title %></h1>
+        <button type="button"
+                class="cursor-pointer rounded-xl p-1.5 text-slate-400 transition hover:bg-[#000666]/10 hover:text-[#000666]"
+                data-action="modal#close"
+                aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5" aria-hidden="true">
+            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+          </svg>
+        </button>
+      </div>
 
-    <%= yield %>
+      <%= yield %>
+    </div>
   </div>
 </div>

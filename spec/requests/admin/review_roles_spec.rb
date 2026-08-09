@@ -71,7 +71,7 @@ RSpec.describe "Admin review roles", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Raise on behalf")
-    expect(response.body).to include('data-controller="review-roles"')
+    expect(response.body).to match(/data-controller="[^"]*\breview-roles\b/)
     expect(response.body).to include("data-raiseable-toggle")
     expect(response.body).to include("Save changes")
     expect(response.body).to include(bulk_save_admin_review_roles_path)

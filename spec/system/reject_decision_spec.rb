@@ -12,6 +12,9 @@ RSpec.describe "Reject decisions", type: :system do
   let!(:division)   { create(:division, div_type: "positive", dean: dean) }
   let!(:sub_division) { create(:sub_division, division: division, supervisor: supervisor) }
   let!(:category)   { create(:category, sub_division: sub_division) }
+  let!(:reject_reason) do
+    create(:reason_template, :shared, :reject, message_text: "Not enough evidence to verify this claim.")
+  end
   let!(:request_record) do
     create(:achievement_request, category: category, at_step: :supervisor, title: "Borderline claim")
   end
@@ -27,15 +30,19 @@ RSpec.describe "Reject decisions", type: :system do
     within('[aria-label="Decision action"]') { click_button "Reject" }
   end
 
+  def submit_reject!(message)
+    within("form[action$='/reject']") do
+      select message.truncate(80), from: "reason_template_id"
+      accept_confirm { click_button "Reject" }
+    end
+  end
+
   it "supervisor reject rejects the request (does not revert it)" do
     sign_in_as supervisor
     visit supervisor_achievement_request_path(request_record)
 
     open_reject_panel!
-    within("form[action$='/reject']") do
-      fill_in "comment", with: "Not enough evidence."
-      accept_confirm { click_button "Reject" }
-    end
+    submit_reject!(reject_reason.message_text)
 
     expect(page).to have_content("Request rejected.")
     expect(request_record.reload.status).to eq("rejected")
@@ -48,10 +55,7 @@ RSpec.describe "Reject decisions", type: :system do
     visit dean_achievement_request_path(request_record)
 
     open_reject_panel!
-    within("form[action$='/reject']") do
-      fill_in "comment", with: "Does not meet the bar."
-      accept_confirm { click_button "Reject" }
-    end
+    submit_reject!(reject_reason.message_text)
 
     expect(page).to have_content("Request rejected.")
     expect(request_record.reload.status).to eq("rejected")

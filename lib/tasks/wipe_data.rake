@@ -17,6 +17,7 @@ namespace :db do
 
     puts "Wiping departments and reason templates..."
     Department.delete_all
+    ReasonTemplateSuppression.delete_all
     ReasonTemplate.delete_all
 
     puts "Done — run db:migrate (if needed) and db:seed."

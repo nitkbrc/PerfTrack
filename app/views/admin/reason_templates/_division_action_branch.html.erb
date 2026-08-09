@@ -1,0 +1,69 @@
+<li role="treeitem" class="rounded-lg border border-slate-100 bg-slate-50/60 p-2">
+  <details class="group/action" data-tree-target="node" open>
+    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-white [&::-webkit-details-marker]:hidden">
+      <span class="material-symbols-outlined scats-tree-chevron shrink-0 text-sm text-slate-400"
+            aria-hidden="true">chevron_right</span>
+      <span class="min-w-0 flex-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <%= label %>
+      </span>
+      <%= link_to new_admin_reason_template_path(division_id: division.id, action_type: action_key),
+            class: "relative z-10 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/5",
+            onclick: "event.preventDefault(); event.stopPropagation(); window.location.href=this.href" do %>
+        <span class="material-symbols-outlined text-[14px]" aria-hidden="true">add</span>
+        Add extra
+      <% end %>
+    </summary>
+
+    <div class="mt-2 space-y-3 px-1 pb-1">
+      <div>
+        <p class="mb-1 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">From shared defaults</p>
+        <ul class="space-y-1">
+          <% if shared_templates.empty? %>
+            <li class="rounded-md border border-dashed border-slate-200 bg-white px-3 py-2 text-center text-xs text-slate-400">
+              No shared <%= action_key %> defaults.
+            </li>
+          <% else %>
+            <% shared_templates.each do |template| %>
+              <% hidden = suppressed_ids.include?(template.id) %>
+              <li class="flex items-start gap-3 rounded-md border px-3 py-2.5 <%= hidden ? "border-amber-200 bg-amber-50/50" : "border-slate-200 bg-white" %>">
+                <p class="min-w-0 flex-1 text-sm <%= hidden ? "text-slate-400 line-through" : "text-slate-800" %>">
+                  <%= truncate(template.message_text, length: 120) %>
+                </p>
+                <% if hidden %>
+                  <%= button_to unsuppress_admin_reason_template_path(template, division_id: division.id),
+                        method: :delete,
+                        form: { class: "inline" },
+                        class: "shrink-0 cursor-pointer rounded-md px-2 py-1 text-[11px] font-semibold text-teal-700 transition hover:bg-teal-50" do %>
+                    Restore
+                  <% end %>
+                <% else %>
+                  <%= button_to suppress_admin_reason_template_path(template, division_id: division.id),
+                        method: :post,
+                        form: { class: "inline" },
+                        class: "shrink-0 cursor-pointer rounded-md px-2 py-1 text-[11px] font-semibold text-amber-700 transition hover:bg-amber-50" do %>
+                    Hide here
+                  <% end %>
+                <% end %>
+              </li>
+            <% end %>
+          <% end %>
+        </ul>
+      </div>
+
+      <div>
+        <p class="mb-1 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Extras for this division</p>
+        <ul class="space-y-1">
+          <% if extras.empty? %>
+            <li class="rounded-md border border-dashed border-slate-200 bg-white px-3 py-2 text-center text-xs text-slate-400">
+              No extras — shared defaults cover this action.
+            </li>
+          <% else %>
+            <% extras.each do |template| %>
+              <%= render "admin/reason_templates/template_row", template: template %>
+            <% end %>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </details>
+</li>

@@ -10,7 +10,12 @@
   can_delete = !hierarchy.is_default? && all_owners.empty?
 %>
 
-<article class="flex w-[23rem] shrink-0 snap-start flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md"
+<article class="flex w-[23rem] shrink-0 snap-start flex-col rounded-2xl border shadow-sm transition
+         <%= if hierarchy.is_default?
+               "border-primary/30 bg-gradient-to-b from-indigo-50/90 via-white to-white ring-1 ring-primary/15 hover:border-primary/45 hover:shadow-md"
+             else
+               "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
+             end %>"
          data-hierarchy-card
          data-hierarchy-id="<%= hierarchy.id %>"
          data-hierarchy-scope="<%= hierarchy.scope %>"
@@ -18,12 +23,36 @@
          data-hierarchy-name="<%= hierarchy.name %>">
 
   <%# ── Header ─────────────────────────────────────────────────── %>
-  <div class="flex items-start justify-between gap-3 px-6 pb-5 pt-6">
+  <div class="flex items-start justify-between gap-3 px-6 pb-5 pt-6
+              <%= hierarchy.is_default? ? "rounded-t-2xl border-b border-primary/10 bg-gradient-to-r from-indigo-50/80 to-transparent" : "" %>">
     <div class="min-w-0">
-      <div class="flex items-center gap-2">
-        <h3 class="truncate text-base font-semibold tracking-tight text-slate-900"><%= hierarchy.name %></h3>
+      <div class="flex min-w-0 items-center gap-2">
         <% if hierarchy.is_default? %>
-          <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Default</span>
+          <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                title="Default template">
+            <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1" aria-hidden="true">star</span>
+          </span>
+        <% else %>
+          <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400"
+                title="Custom template">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">account_tree</span>
+          </span>
+        <% end %>
+        <h3 class="min-w-0 flex-1 cursor-text truncate rounded-md text-base font-semibold tracking-tight text-slate-900 outline-none ring-primary/30 focus-visible:ring-2"
+            title="Click to rename"
+            data-hierarchy-title
+            data-action="click->hierarchy-templates#startRename"><%= hierarchy.name %></h3>
+        <input type="text"
+               class="<%= admin_input_classes %> mt-0 hidden h-9 min-w-0 flex-1 text-base font-semibold"
+               value="<%= hierarchy.name %>"
+               maxlength="120"
+               aria-label="Hierarchy name"
+               data-hierarchy-name-input
+               data-action="keydown->hierarchy-templates#renameKeydown blur->hierarchy-templates#commitRename">
+        <% if hierarchy.is_default? %>
+          <span class="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">Default</span>
+        <% else %>
+          <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Custom</span>
         <% end %>
       </div>
       <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
@@ -49,6 +78,35 @@
           <span class="material-symbols-outlined text-lg text-slate-400" aria-hidden="true">group</span>
           Assign people
         <% end %>
+
+        <button type="button"
+                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                data-action="hierarchy-templates#startRenameFromMenu">
+          <span class="material-symbols-outlined text-lg text-slate-400" aria-hidden="true">edit</span>
+          Rename
+        </button>
+
+        <% if hierarchy.is_default? %>
+          <p class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-400">
+            <span class="material-symbols-outlined text-lg" aria-hidden="true">star</span>
+            Current default
+          </p>
+        <% else %>
+          <%= button_to make_default_admin_hierarchy_path(hierarchy),
+                method: :post,
+                form: {
+                  data: {
+                    turbo_confirm: "Make “#{hierarchy.name}” the default #{owner_noun} hierarchy? The previous default stays as a normal template. Units already attached keep their current hierarchy."
+                  }
+                },
+                class: "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50" do %>
+            <span class="material-symbols-outlined text-lg text-slate-400" aria-hidden="true">star</span>
+            Make default
+          <% end %>
+        <% end %>
+
+        <div class="my-1.5 border-t border-slate-100"></div>
+
         <% if can_delete %>
           <%= button_to admin_hierarchy_path(hierarchy), method: :delete,
                 form: { data: { turbo_confirm: "Delete “#{hierarchy.name}”? This template is not in use." } },
@@ -58,7 +116,11 @@
           <% end %>
         <% else %>
           <p class="px-4 py-2.5 text-xs leading-relaxed text-slate-400">
-            <%= hierarchy.is_default? ? "Default templates cannot be deleted." : "Move every #{owner_noun} off this template to delete it." %>
+            <% if hierarchy.is_default? %>
+              Default templates cannot be deleted.
+            <% else %>
+              Move every <%= owner_noun %> off this template to delete it.
+            <% end %>
           </p>
         <% end %>
       </div>
@@ -134,9 +196,9 @@
             </p>
           <% end %>
 
-          <details class="group/details">
+          <details class="group/details" data-tree-target="node">
             <summary class="flex cursor-pointer list-none items-center gap-1 text-xs font-semibold text-primary">
-              <span class="material-symbols-outlined text-base transition group-open/details:rotate-90" aria-hidden="true">chevron_right</span>
+              <span class="material-symbols-outlined scats-tree-chevron text-base" aria-hidden="true">chevron_right</span>
               Create a new role
             </summary>
             <%= form_with url: create_role_admin_hierarchies_path, class: "mt-3 space-y-2.5" do %>
@@ -156,69 +218,85 @@
     </div>
   </div>
 
-  <%# ── Attached owners ────────────────────────────────────────── %>
-  <div class="mt-auto border-t border-slate-100 px-6 py-6" data-owner-panel>
-    <div class="mb-4 flex items-baseline justify-between gap-3">
-      <h4 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-        Assigned <%= owner_noun.pluralize %>
-      </h4>
-      <span class="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-500"
-            data-owner-count><%= owners.size %></span>
-    </div>
+  <%# ── Attached owners (collapsible) ──────────────────────────── %>
+  <div class="mt-auto border-t border-slate-100 px-6 py-4" data-owner-panel>
+    <details class="group/owners" data-tree-target="node">
+      <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg py-2 transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+        <span class="flex min-w-0 items-center gap-2">
+          <span class="material-symbols-outlined scats-tree-chevron text-base text-slate-400" aria-hidden="true">chevron_right</span>
+          <h4 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            Assigned <%= owner_noun.pluralize %>
+          </h4>
+        </span>
+        <span class="flex shrink-0 items-center gap-2">
+          <span class="<%= unstaffed_count.positive? ? "inline-flex" : "hidden" %> items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600"
+                data-owner-unstaffed
+                title="Roles still need people">
+            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">warning</span>
+            <span data-owner-unstaffed-count><%= unstaffed_count %></span>
+            <span class="sr-only">unstaffed</span>
+          </span>
+          <span class="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-500"
+                data-owner-count><%= owners.size %></span>
+        </span>
+      </summary>
 
-    <ul class="space-y-2.5"
-        data-owner-list
-        data-hierarchy-id="<%= hierarchy.id %>"
-        data-action="dragover->hierarchy-templates#ownerDragOver drop->hierarchy-templates#ownerDrop">
-      <% if owners.any? %>
-        <% owners.each do |owner| %>
-          <% staffed = owner.hierarchy_staffed? %>
-          <li class="flex cursor-grab items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition
-                <%= staffed ? "border-slate-200 bg-white text-slate-800 hover:border-slate-300" : "border-red-200 bg-red-50/50 text-red-700" %>"
-              draggable="true"
-              data-owner-id="<%= owner.id %>"
-              data-owner-type="<%= owner.class.name %>"
-              data-action="dragstart->hierarchy-templates#ownerDragStart dragend->hierarchy-templates#ownerDragEnd">
-            <span class="material-symbols-outlined w-5 shrink-0 text-center text-[20px] leading-none <%= staffed ? "text-slate-300" : "text-red-300" %>" aria-hidden="true">drag_indicator</span>
-            <span class="min-w-0 flex-1 truncate font-medium" data-owner-label>
-              <% if owner.is_a?(SubDivision) %>
-                <span class="<%= staffed ? "text-slate-400" : "text-red-400" %>"><%= owner.division.name %></span>
-                <span class="text-slate-300">/</span>
-                <%= owner.name %>
-              <% else %>
-                <%= owner.name %>
-              <% end %>
-            </span>
-            <% unless staffed %>
-              <span class="material-symbols-outlined shrink-0 text-lg text-red-500" aria-hidden="true" title="Roles still need people">warning</span>
+      <div class="pb-2 pt-2">
+        <ul class="space-y-2.5"
+            data-owner-list
+            data-hierarchy-id="<%= hierarchy.id %>"
+            data-action="dragover->hierarchy-templates#ownerDragOver drop->hierarchy-templates#ownerDrop">
+          <% if owners.any? %>
+            <% owners.each do |owner| %>
+              <% staffed = owner.hierarchy_staffed? %>
+              <li class="flex cursor-grab items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition
+                    <%= staffed ? "border-slate-200 bg-white text-slate-800 hover:border-slate-300" : "border-red-200 bg-red-50/50 text-red-700" %>"
+                  draggable="true"
+                  data-owner-id="<%= owner.id %>"
+                  data-owner-type="<%= owner.class.name %>"
+                  data-action="dragstart->hierarchy-templates#ownerDragStart dragend->hierarchy-templates#ownerDragEnd">
+                <span class="material-symbols-outlined w-5 shrink-0 text-center text-[20px] leading-none <%= staffed ? "text-slate-300" : "text-red-300" %>" aria-hidden="true">drag_indicator</span>
+                <span class="min-w-0 flex-1 truncate font-medium" data-owner-label>
+                  <% if owner.is_a?(SubDivision) %>
+                    <span class="<%= staffed ? "text-slate-400" : "text-red-400" %>"><%= owner.division.name %></span>
+                    <span class="text-slate-300">/</span>
+                    <%= owner.name %>
+                  <% else %>
+                    <%= owner.name %>
+                  <% end %>
+                </span>
+                <% unless staffed %>
+                  <span class="material-symbols-outlined shrink-0 text-lg text-red-500" aria-hidden="true" title="Roles still need people">warning</span>
+                <% end %>
+              </li>
             <% end %>
-          </li>
-        <% end %>
-      <% else %>
-        <li class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-xs leading-relaxed text-slate-400" data-empty-owners>
-          Nothing attached yet. Drag a <%= owner_noun %> here or use Assign below.
-        </li>
-      <% end %>
-    </ul>
+          <% else %>
+            <li class="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-xs leading-relaxed text-slate-400" data-empty-owners>
+              Nothing attached yet. Drag a <%= owner_noun %> here or use Assign below.
+            </li>
+          <% end %>
+        </ul>
 
-    <div class="mt-4" data-assign-owner-panel>
-      <button type="button"
-              class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 transition hover:border-primary/40 hover:bg-slate-50 hover:text-primary"
-              data-action="hierarchy-templates#toggleAssignOwner">
-        <span class="material-symbols-outlined text-lg" aria-hidden="true">add_link</span>
-        Assign <%= owner_noun %>
-      </button>
+        <div class="mt-4" data-assign-owner-panel>
+          <button type="button"
+                  class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 transition hover:border-primary/40 hover:bg-slate-50 hover:text-primary"
+                  data-action="hierarchy-templates#toggleAssignOwner">
+            <span class="material-symbols-outlined text-lg" aria-hidden="true">add_link</span>
+            Assign <%= owner_noun %>
+          </button>
 
-      <div class="mt-3 hidden space-y-2.5 rounded-xl border border-slate-200 bg-white p-4" data-assign-owner-form>
-        <select class="<%= admin_input_classes %> w-full text-sm"
-                data-assign-owner-select
-                data-action="change->hierarchy-templates#assignOwner">
-          <option value="">Choose a <%= owner_noun %>…</option>
-        </select>
-        <p class="text-[11px] leading-relaxed text-slate-400">
-          Roles missing from this chain are dropped from that <%= owner_noun %> when you save.
-        </p>
+          <div class="mt-3 hidden space-y-2.5 rounded-xl border border-slate-200 bg-white p-4" data-assign-owner-form>
+            <select class="<%= admin_input_classes %> w-full text-sm"
+                    data-assign-owner-select
+                    data-action="change->hierarchy-templates#assignOwner">
+              <option value="">Choose a <%= owner_noun %>…</option>
+            </select>
+            <p class="text-[11px] leading-relaxed text-slate-400">
+              Roles missing from this chain are dropped from that <%= owner_noun %> when you save.
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+    </details>
   </div>
 </article>

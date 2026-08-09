@@ -7,7 +7,8 @@
 
   <div class="rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
     <%= form_with model: @achievement_request, url: supervisor_achievement_request_path(@achievement_request),
-          method: :patch, class: "space-y-5" do |f| %>
+          method: :patch, class: "space-y-5",
+          data: { controller: "unsaved-changes" } do |f| %>
       <%= render "admin/shared/error_messages", record: @achievement_request %>
 
       <div>

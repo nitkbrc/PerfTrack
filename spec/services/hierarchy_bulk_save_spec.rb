@@ -147,4 +147,27 @@ RSpec.describe HierarchyBulkSave do
     expect(RoleAssignment.where(division: division, review_role: mid)).to be_empty
     expect(RoleAssignment.where(division: division, review_role: ReviewRole.dean)).to exist
   end
+
+  it "renames a default hierarchy" do
+    default = Hierarchy.default_for("division")
+    new_name = "Renamed Default Division #{SecureRandom.hex(3)}"
+
+    payload = {
+      hierarchies: [
+        {
+          id: default.id,
+          name: new_name,
+          scope: "division",
+          roles: [ { review_role_id: ReviewRole.dean.id, can_raise_on_behalf: false } ]
+        }
+      ],
+      reattachments: [],
+      deleted_hierarchy_ids: []
+    }
+
+    described_class.new(payload).call!
+
+    expect(default.reload.name).to eq(new_name)
+    expect(default).to be_is_default
+  end
 end

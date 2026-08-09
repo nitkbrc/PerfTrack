@@ -1,0 +1,69 @@
+<% role_meta = profile_permission_role(role) %>
+<% summary = profile_permission_summary(permissions) %>
+
+<section class="clay-card overflow-hidden ring-1 <%= role_meta[:ring] %>" aria-labelledby="profile-permissions-<%= role %>-heading">
+  <div class="border-b border-border-subtle/60 bg-gradient-to-b px-5 py-4 sm:px-6 <%= role_meta[:header] %>">
+    <div class="flex items-start justify-between gap-4">
+      <div class="flex min-w-0 items-start gap-3">
+        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl <%= role_meta[:icon_bg] %>">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true"><%= role_meta[:icon] %></span>
+        </span>
+        <div class="min-w-0">
+          <h2 id="profile-permissions-<%= role %>-heading" class="text-base font-semibold text-slate-900">
+            <%= role_meta[:label] %>
+          </h2>
+          <p class="mt-0.5 text-xs leading-relaxed text-slate-500"><%= role_meta[:subtitle] %></p>
+        </div>
+      </div>
+      <div class="shrink-0 text-right">
+        <p class="text-lg font-semibold tabular-nums <%= role_meta[:accent] %>">
+          <%= summary[:enabled] %>/<%= summary[:total] %>
+        </p>
+        <p class="text-[11px] font-medium uppercase tracking-wide text-slate-400">Editable</p>
+      </div>
+    </div>
+  </div>
+
+  <ul class="divide-y divide-border-subtle/60">
+    <% permissions.each do |permission| %>
+      <% field = profile_permission_field(permission.action) %>
+      <li>
+        <div class="flex items-center gap-4 px-5 py-4 transition hover:bg-slate-50/60 sm:px-6">
+          <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true"><%= field[:icon] %></span>
+          </span>
+
+          <div class="min-w-0 flex-1">
+            <p class="font-medium text-slate-900"><%= field[:label] %></p>
+            <p class="mt-0.5 text-xs leading-relaxed text-slate-400"><%= field[:description] %></p>
+          </div>
+
+          <div class="shrink-0"
+               data-controller="switch-status"
+               data-switch-status-on-value="Editable"
+               data-switch-status-off-value="Locked">
+            <%= hidden_field_tag "permissions[#{permission.id}][enabled]", "0" %>
+            <label class="inline-flex cursor-pointer flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+              <%= check_box_tag "permissions[#{permission.id}][enabled]", "1", permission.enabled?,
+                    class: "peer sr-only",
+                    data: {
+                      switch_status_target: "input",
+                      action: "change->switch-status#sync"
+                    },
+                    aria: { label: "#{role_meta[:label]} may edit #{field[:label].downcase}" } %>
+              <span class="relative h-6 w-11 shrink-0 rounded-full bg-slate-200 transition peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-secondary-container/50 peer-focus-visible:ring-offset-1 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5"
+                    aria-hidden="true"></span>
+              <span class="inline-flex min-w-[4.5rem] items-center justify-end gap-1 text-xs font-semibold <%= permission.enabled? ? "text-emerald-700" : "text-slate-400" %>"
+                    data-switch-status-target="status">
+                <% if permission.enabled? %>
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                <% end %>
+                <%= permission.enabled? ? "Editable" : "Locked" %>
+              </span>
+            </label>
+          </div>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+</section>

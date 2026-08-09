@@ -85,8 +85,10 @@ RSpec.describe "Dean decision flow", type: :request do
   end
 
   describe "PATCH revert" do
-    it "sends back for clarification with a comment and template" do
-      template = create(:reason_template, message_text: "Please attach the certificate.")
+    it "sends back with a shared canned template message (ignores client comment)" do
+      template = create(:reason_template, :shared,
+                        action: "revert",
+                        message_text: "Please attach the certificate.")
 
       patch revert_dean_achievement_request_path(request_record),
             params: { comment: "Need the original certificate.", reason_template_id: template.id }
@@ -98,26 +100,31 @@ RSpec.describe "Dean decision flow", type: :request do
 
       history = request_record.req_histories.sole
       expect(history.action).to eq("revert")
-      expect(history.comment).to eq("Need the original certificate.")
+      expect(history.comment).to eq("Please attach the certificate.")
+      expect(history.reason_template).to eq(template)
     end
 
-    it "requires a comment" do
+    it "requires choosing a reason" do
       patch revert_dean_achievement_request_path(request_record), params: { comment: "" }
 
       expect(response).to redirect_to(dean_achievement_request_path(request_record))
+      expect(flash[:alert]).to eq("Choose a reason.")
       expect(request_record.reload.status).to eq("in_review")
     end
   end
 
   describe "PATCH reject" do
-    it "rejects terminally with no points" do
+    it "rejects terminally with Other free-text and no points" do
       patch reject_dean_achievement_request_path(request_record),
-            params: { comment: "Insufficient evidence." }
+            params: { comment: "Insufficient evidence.", reason_template_id: "other" }
 
       request_record.reload
       expect(request_record.status).to eq("rejected")
       expect(request_record.points_awarded).to be_nil
-      expect(request_record.req_histories.sole.action).to eq("reject")
+      history = request_record.req_histories.sole
+      expect(history.action).to eq("reject")
+      expect(history.comment).to eq("Insufficient evidence.")
+      expect(history.reason_template).to be_nil
     end
   end
 

@@ -1,0 +1,23 @@
+<li class="group/row relative flex items-start gap-3 rounded-md border border-slate-200 bg-white px-3 py-2.5">
+  <%= link_to edit_admin_reason_template_path(template),
+        class: "absolute inset-0 z-0",
+        aria: { label: "Edit reason template" } do %>
+  <% end %>
+  <p class="pointer-events-none relative z-10 min-w-0 flex-1 text-sm text-slate-800">
+    <%= truncate(template.message_text, length: 140) %>
+  </p>
+  <div class="relative z-10 flex shrink-0 items-center gap-1">
+    <%= link_to edit_admin_reason_template_path(template),
+          class: "inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-primary",
+          aria: { label: "Edit" } do %>
+      <span class="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
+    <% end %>
+    <%= button_to admin_reason_template_path(template), method: :delete,
+          data: { turbo_confirm: "Delete this template?" },
+          form: { class: "inline", onclick: "event.stopPropagation()" },
+          class: "inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600",
+          aria: { label: "Delete" } do %>
+      <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+    <% end %>
+  </div>
+</li>

@@ -1,74 +1,172 @@
-<div class="mx-auto w-full max-w-3xl space-y-6"
+<% start_step = @division.errors.any? ? 3 : 1 %>
+<% selected_type = @division.div_type.presence || "positive" %>
+<% wizard_steps = [
+     ["1", "Division details", "Details"],
+     ["2", "Choose hierarchy", "Hierarchy"],
+     ["3", "Assign people", "Assign"]
+   ] %>
+
+<div class="mx-auto w-full max-w-2xl px-4 py-8"
      data-controller="owner-create-wizard"
-     data-owner-create-wizard-step-value="1"
+     data-owner-create-wizard-step-value="<%= start_step %>"
      data-owner-create-wizard-total-value="3">
-  <div>
-    <%= link_to admin_divisions_path, class: "#{admin_link_classes} inline-flex items-center gap-1 text-sm" do %>
-      <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
-      Divisions
-    <% end %>
-    <h1 class="mt-2 text-2xl font-bold text-text-main">Create division</h1>
-  </div>
 
-  <div class="flex gap-2">
-    <% [ "Details", "Hierarchy", "Assignments" ].each_with_index do |label, i| %>
-      <div data-owner-create-wizard-target="progressStep" class="flex-1 rounded-lg bg-slate-100 px-3 py-2 text-center text-xs text-slate-600">
-        <%= i + 1 %>. <%= label %>
-      </div>
-    <% end %>
-  </div>
+  <%= link_to admin_divisions_path, class: "mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
+    <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+    Divisions
+  <% end %>
 
-  <%= form_with model: [ :admin, @division ], class: "space-y-5" do |f| %>
+  <%= render "admin/shared/wizard_progress", steps: wizard_steps, start_step: start_step %>
+
+  <%= form_with model: [ :admin, @division ], class: "space-y-0" do |f| %>
     <%= render "admin/shared/error_messages", record: @division %>
 
-    <div data-owner-create-wizard-target="step" data-step="1" class="clay-card space-y-4 p-6">
-      <div>
-        <%= f.label :name, class: admin_label_classes %>
-        <%= f.text_field :name, autofocus: true, class: admin_input_classes %>
+    <%# ── Step 1: Details ───────────────────────────────────────── %>
+    <div data-owner-create-wizard-target="step" data-step="1" class="<%= start_step == 1 ? "" : "hidden" %>">
+      <div class="mb-6 text-center">
+        <h1 class="text-2xl font-bold text-[#000666]">Create a division</h1>
+        <p class="mt-1 text-sm text-slate-500">Name it and choose whether it’s for achievements or conduct.</p>
       </div>
-      <div>
-        <%= f.label :div_type, "Type", class: admin_label_classes %>
-        <%= f.select :div_type, Division.div_types.keys.map { |t| [ t.titleize, t ] }, {}, class: admin_input_classes %>
-      </div>
-      <div class="flex justify-end">
-        <button type="button" data-action="owner-create-wizard#next" class="<%= admin_primary_button_classes %>">Continue</button>
+
+      <div class="clay-card space-y-6 p-6 sm:p-8">
+        <div>
+          <%= f.label :name, class: admin_label_classes %>
+          <%= f.text_field :name, autofocus: true, class: admin_input_classes, placeholder: "e.g. Technical, Cultural, Discipline" %>
+        </div>
+
+        <%= f.hidden_field :div_type, value: selected_type, data: { div_type_field: true } %>
+
+        <div>
+          <p class="<%= admin_label_classes %>">Type</p>
+          <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button"
+                    data-div-type-option
+                    data-div-type="positive"
+                    data-action="owner-create-wizard#selectDivType"
+                    aria-pressed="<%= selected_type == "positive" %>"
+                    class="scats-choice-card group flex w-full cursor-pointer flex-col gap-3 p-5 <%= "is-selected" if selected_type == "positive" %>">
+              <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 transition group-hover:bg-emerald-100">
+                <span class="material-symbols-outlined text-[24px] text-emerald-600" style="font-variation-settings:'FILL' 1" aria-hidden="true">emoji_events</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-[#000666]">Positive</p>
+                <p class="mt-1 text-xs leading-relaxed text-slate-500">Achievements, awards, and contributions that add points.</p>
+              </div>
+            </button>
+
+            <button type="button"
+                    data-div-type-option
+                    data-div-type="negative"
+                    data-action="owner-create-wizard#selectDivType"
+                    aria-pressed="<%= selected_type == "negative" %>"
+                    class="scats-choice-card group flex w-full cursor-pointer flex-col gap-3 p-5 <%= "is-selected" if selected_type == "negative" %>">
+              <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 transition group-hover:bg-amber-100">
+                <span class="material-symbols-outlined text-[24px] text-amber-700" aria-hidden="true">gavel</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-[#000666]">Negative</p>
+                <p class="mt-1 text-xs leading-relaxed text-slate-500">Conduct and disciplinary matters that subtract points.</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-1">
+          <button type="button" data-action="owner-create-wizard#next" class="<%= admin_primary_button_classes %>">Continue</button>
+        </div>
       </div>
     </div>
 
-    <div data-owner-create-wizard-target="step" data-step="2" class="clay-card hidden space-y-4 p-6">
+    <%# ── Step 2: Hierarchy ─────────────────────────────────────── %>
+    <div data-owner-create-wizard-target="step" data-step="2" class="<%= start_step == 2 ? "" : "hidden" %>">
+      <div class="mb-6 flex items-center gap-3">
+        <button type="button"
+                data-action="owner-create-wizard#back"
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200">
+          <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+        </button>
+        <div>
+          <h1 class="text-xl font-bold text-[#000666]">Choose a hierarchy</h1>
+          <p class="text-xs text-slate-500">Pick the review chain this division will use.</p>
+        </div>
+      </div>
+
       <%= f.hidden_field :hierarchy_id, data: { hierarchy_id_field: true } %>
-      <p class="text-sm text-text-muted">Choose a division hierarchy template (or create one on the Hierarchy templates page).</p>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <% @hierarchy_options.each do |opt| %>
-          <button type="button"
-                  data-hierarchy-option
-                  data-hierarchy-id="<%= opt[:id] %>"
-                  data-roles="<%= ERB::Util.html_escape(opt[:roles].to_json) %>"
-                  data-action="owner-create-wizard#selectHierarchy"
-                  class="rounded-xl border border-border-subtle bg-white p-4 text-left shadow-sm hover:border-primary/40">
-            <p class="font-semibold text-text-main"><%= opt[:name] %></p>
-            <p class="mt-1 text-xs text-text-muted">
-              used by <%= pluralize(opt[:usage], "division") %>
-              <% if opt[:is_default] %> · Default<% end %>
-            </p>
-            <p class="mt-2 text-xs text-slate-500">
-              <%= opt[:roles].map { |r| r[:name] }.reverse.join(" → ") %>
-            </p>
-          </button>
-        <% end %>
-      </div>
-      <div class="flex justify-between">
-        <button type="button" data-action="owner-create-wizard#back" class="<%= admin_link_classes %>">Back</button>
+
+      <% if @hierarchy_options.blank? %>
+        <div class="clay-card p-8 text-center">
+          <p class="text-sm text-slate-500">No division hierarchies yet.</p>
+          <%= link_to "Open hierarchy templates", admin_hierarchies_path, class: "#{admin_link_classes} mt-3 inline-flex" %>
+        </div>
+      <% else %>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <% @hierarchy_options.each do |opt| %>
+            <button type="button"
+                    data-hierarchy-option
+                    data-hierarchy-id="<%= opt[:id] %>"
+                    data-roles="<%= ERB::Util.html_escape(opt[:roles].to_json) %>"
+                    data-action="owner-create-wizard#selectHierarchy"
+                    aria-pressed="false"
+                    class="scats-choice-card group flex w-full cursor-pointer flex-col gap-3 p-5">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-100">
+                  <span class="material-symbols-outlined text-[22px]" aria-hidden="true">account_tree</span>
+                </div>
+                <% if opt[:is_default] %>
+                  <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Default</span>
+                <% end %>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-[#000666]"><%= opt[:name] %></p>
+                <p class="mt-1 text-xs text-slate-500">
+                  Used by <%= pluralize(opt[:usage], "division") %>
+                </p>
+                <p class="mt-2 text-xs leading-relaxed text-slate-400">
+                  <%= opt[:roles].map { |r| r[:name] }.reverse.join(" → ") %>
+                </p>
+              </div>
+            </button>
+          <% end %>
+        </div>
+        <p class="mt-4 text-center text-xs text-slate-400">
+          Need a different chain?
+          <%= link_to "Manage hierarchy templates", admin_hierarchies_path, class: admin_link_classes %>
+        </p>
+      <% end %>
+
+      <div class="mt-6 flex justify-end">
         <button type="button" data-action="owner-create-wizard#next" class="<%= admin_primary_button_classes %>">Continue</button>
       </div>
     </div>
 
-    <div data-owner-create-wizard-target="step" data-step="3" class="clay-card hidden space-y-4 p-6">
-      <p class="text-sm text-text-muted">Assign faculty to every role. Division-scoped roles require faculty with no other review roles.</p>
-      <div class="space-y-4" data-assignment-fields></div>
-      <div class="flex justify-between">
-        <button type="button" data-action="owner-create-wizard#back" class="<%= admin_link_classes %>">Back</button>
-        <%= f.submit "Create division", class: admin_primary_button_classes %>
+    <%# ── Step 3: Assignments ───────────────────────────────────── %>
+    <div data-owner-create-wizard-target="step" data-step="3" class="<%= start_step == 3 ? "" : "hidden" %>">
+      <div class="mb-6 flex items-center gap-3">
+        <button type="button"
+                data-action="owner-create-wizard#back"
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200">
+          <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+        </button>
+        <div>
+          <h1 class="text-xl font-bold text-[#000666]">Assign people</h1>
+          <p class="text-xs text-slate-500">Staff every role in the chosen hierarchy.</p>
+        </div>
+      </div>
+
+      <div class="clay-card space-y-5 p-6 sm:p-8">
+        <div class="rounded-xl border border-[#000666]/10 bg-[#000666]/5 p-4">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Note</p>
+          <p class="mt-1 text-xs leading-relaxed text-slate-600">
+            Division-scoped roles require faculty with no other review roles.
+          </p>
+        </div>
+
+        <div class="space-y-4" data-assignment-fields></div>
+
+        <div class="flex flex-wrap items-center gap-4 pt-1">
+          <%= f.submit "Create division", class: admin_primary_button_classes %>
+          <%= link_to "Cancel", admin_divisions_path, class: admin_link_classes %>
+        </div>
       </div>
     </div>
   <% end %>

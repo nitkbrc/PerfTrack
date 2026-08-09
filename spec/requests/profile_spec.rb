@@ -58,6 +58,19 @@ RSpec.describe "Profile", type: :request do
     expect(user.reload.phone).to eq("9100000888")
   end
 
+  it "rejects profile phone updates that collide with another user" do
+    Permission.ensure_defaults!
+    create(:user, :faculty, phone: "9100000111")
+    user = create(:user, :faculty, phone: "9100000222")
+    sign_in user
+
+    patch profile_path, params: { user: { phone: "9100-000-111" } }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.body).to include("has already been taken")
+    expect(user.reload.phone).to eq("9100000222")
+  end
+
   it "rejects student phone updates when the permission is disabled" do
     Permission.ensure_defaults!
     student_user = create(:student).user

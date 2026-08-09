@@ -39,4 +39,9 @@ class Permission < ApplicationRecord
     ensure_defaults!
     where(action: ACTIONS).order(:action, :role).group_by(&:action)
   end
+
+  def self.grouped_by_role
+    ensure_defaults!
+    where(action: ACTIONS).order(:role, :action).group_by(&:role)
+  end
 end

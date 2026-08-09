@@ -43,39 +43,114 @@ RSpec.describe "Supervisor review actions", type: :request do
   end
 
   describe "PATCH revert" do
-    it "reverts with a comment and optional reason template" do
-      template = create(:reason_template, message_text: "Proof is unreadable.")
+    it "reverts with a shared canned template message (ignores client comment)" do
+      template = create(:reason_template, :shared,
+                        action: "revert",
+                        message_text: "Proof is unreadable.")
 
       patch revert_supervisor_achievement_request_path(request_record),
-            params: { comment: "Proof is unreadable, please re-upload.", reason_template_id: template.id }
+            params: { comment: "tampered client text", reason_template_id: template.id }
 
       expect(request_record.reload.status).to eq("reverted")
 
       history = request_record.req_histories.sole
       expect(history.action).to eq("revert")
-      expect(history.comment).to eq("Proof is unreadable, please re-upload.")
+      expect(history.comment).to eq("Proof is unreadable.")
+      expect(history.reason_template).to eq(template)
     end
 
-    it "requires a comment" do
-      patch revert_supervisor_achievement_request_path(request_record), params: { comment: "  " }
+    it "reverts with a division extra template" do
+      template = create(:reason_template, :division_extra,
+                        division: sub_division.division,
+                        action: "revert",
+                        message_text: "Sports-only proof note.")
+
+      patch revert_supervisor_achievement_request_path(request_record),
+            params: { reason_template_id: template.id }
+
+      expect(request_record.reload.status).to eq("reverted")
+      expect(request_record.req_histories.sole.comment).to eq("Sports-only proof note.")
+    end
+
+    it "rejects a suppressed shared template" do
+      template = create(:reason_template, :shared, action: "revert", message_text: "Hidden here.")
+      create(:reason_template_suppression, division: sub_division.division, reason_template: template)
+
+      patch revert_supervisor_achievement_request_path(request_record),
+            params: { reason_template_id: template.id }
 
       expect(response).to redirect_to(supervisor_achievement_request_path(request_record))
-      expect(flash[:alert]).to eq("A message to the student is required.")
+      expect(flash[:alert]).to eq("Choose a valid reason for this division.")
+      expect(request_record.reload.status).to eq("in_review")
+    end
+
+    it "reverts with Other free-text" do
+      patch revert_supervisor_achievement_request_path(request_record),
+            params: { comment: "Please re-upload a clearer scan.", reason_template_id: "other" }
+
+      expect(request_record.reload.status).to eq("reverted")
+      history = request_record.req_histories.sole
+      expect(history.comment).to eq("Please re-upload a clearer scan.")
+      expect(history.reason_template).to be_nil
+    end
+
+    it "rejects a template from another division's extras" do
+      other = create(:reason_template, :division_extra, action: "revert", message_text: "Wrong division reason.")
+
+      patch revert_supervisor_achievement_request_path(request_record),
+            params: { reason_template_id: other.id }
+
+      expect(response).to redirect_to(supervisor_achievement_request_path(request_record))
+      expect(flash[:alert]).to eq("Choose a valid reason for this division.")
+      expect(request_record.reload.status).to eq("in_review")
+    end
+
+    it "requires Other comment text" do
+      patch revert_supervisor_achievement_request_path(request_record),
+            params: { comment: "  ", reason_template_id: "other" }
+
+      expect(response).to redirect_to(supervisor_achievement_request_path(request_record))
+      expect(flash[:alert]).to eq("A message is required when choosing Other.")
       expect(request_record.reload.status).to eq("in_review")
       expect(request_record.req_histories.count).to eq(0)
+    end
+
+    it "requires choosing a reason" do
+      patch revert_supervisor_achievement_request_path(request_record), params: { comment: "ignored" }
+
+      expect(response).to redirect_to(supervisor_achievement_request_path(request_record))
+      expect(flash[:alert]).to eq("Choose a reason.")
+      expect(request_record.reload.status).to eq("in_review")
     end
   end
 
   describe "PATCH reject" do
-    it "rejects terminally with a comment" do
+    it "rejects with a canned reject template" do
+      template = create(:reason_template, :reject, :shared,
+                        message_text: "Fraudulent claim.")
+
       patch reject_supervisor_achievement_request_path(request_record),
-            params: { comment: "Fraudulent claim." }
+            params: { comment: "ignored", reason_template_id: template.id }
 
       expect(request_record.reload.status).to eq("rejected")
 
       history = request_record.req_histories.sole
       expect(history.action).to eq("reject")
       expect(history.comment).to eq("Fraudulent claim.")
+      expect(history.reason_template).to eq(template)
+    end
+
+    it "rejects a revert template used for reject" do
+      template = create(:reason_template, :shared,
+                        action: "revert",
+                        message_text: "Not for reject.")
+
+      patch reject_supervisor_achievement_request_path(request_record),
+            params: { reason_template_id: template.id }
+
+      expect(response).to redirect_to(supervisor_achievement_request_path(request_record))
+      expect(flash[:alert]).to eq("Choose a valid reason for this division.")
+      expect(request_record.reload.status).to eq("in_review")
     end
   end
 

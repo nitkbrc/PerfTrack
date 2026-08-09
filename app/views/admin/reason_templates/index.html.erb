@@ -1,43 +1,84 @@
-<div class="mb-6 flex items-center justify-between gap-3">
-  <h1 class="text-2xl font-bold text-text-main">Reason templates</h1>
-  <%= link_to new_admin_reason_template_path, class: "#{admin_primary_button_classes} inline-flex items-center gap-1.5" do %>
-    <span class="material-symbols-outlined text-base leading-none" aria-hidden="true">add</span>
-    New template
-  <% end %>
-</div>
+<div class="mx-auto w-full max-w-5xl space-y-8 pb-10">
+  <header class="space-y-4">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="min-w-0 max-w-2xl">
+        <h1 class="text-[26px] font-semibold leading-tight tracking-tight text-slate-900">Reason templates</h1>
+        <p class="mt-2 text-sm leading-relaxed text-slate-500">
+          Shared defaults apply to every division. Add division overrides only when a unit needs extra reasons,
+          or hide a default that does not apply there. Reviewers pick a reason as-is, or Other to write their own.
+        </p>
+      </div>
+      <%= link_to new_admin_reason_template_path,
+            class: "#{admin_primary_button_classes} inline-flex items-center gap-1.5" do %>
+        <span class="material-symbols-outlined text-base leading-none" aria-hidden="true">add</span>
+        New template
+      <% end %>
+    </div>
+  </header>
 
-<% if @reason_templates.any? %>
-  <div class="clay-card scats-list-shell">
-    <table class="w-full text-left text-sm">
-      <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-muted">
-        <tr>
-          <th class="px-4 py-3">Message</th>
-          <th class="w-28 whitespace-nowrap px-4 py-3 text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="scats-list">
-        <% @reason_templates.each do |template| %>
-          <tr class="scats-row relative cursor-pointer">
-            <td class="min-w-0 px-4 py-3 text-text-main">
-              <%= link_to edit_admin_reason_template_path(template),
-                    class: "scats-row-hit",
-                    aria: { label: "Edit reason template" } do %>
-              <% end %>
-              <span class="pointer-events-none relative z-10"><%= truncate(template.message_text, length: 120) %></span>
-            </td>
-            <td class="scats-row-actions px-4 py-3 text-right">
-              <%= button_to "Delete", admin_reason_template_path(template), method: :delete,
-                    data: { turbo_confirm: "Delete this template?" },
-                    form: { class: "inline", onclick: "event.stopPropagation()" },
-                    class: admin_delete_classes %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% else %>
-  <div class="clay-card p-8 text-center text-sm text-text-muted">
-    No reason templates yet. These pre-fill revert/reject messages for supervisors and deans.
-  </div>
-<% end %>
+  <section data-controller="tree" class="space-y-3">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-sm font-semibold text-text-main">Shared defaults</h2>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button"
+                class="scats-ghost-button !px-3 !py-1.5 text-xs"
+                data-tree-target="toggle"
+                data-action="tree#toggle"
+                aria-expanded="false">
+          Expand all
+        </button>
+      </div>
+    </div>
+
+    <div class="clay-card rounded-2xl p-4 sm:p-5">
+      <ul class="space-y-3" role="tree">
+        <%= render "admin/reason_templates/shared_action_branch",
+              action_key: "revert",
+              label: "Revert reasons",
+              templates: @shared_templates.select(&:revert?) %>
+        <%= render "admin/reason_templates/shared_action_branch",
+              action_key: "reject",
+              label: "Reject reasons",
+              templates: @shared_templates.select(&:reject?) %>
+      </ul>
+    </div>
+  </section>
+
+  <section data-controller="tree" class="space-y-3">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="text-sm font-semibold text-text-main">Division overrides</h2>
+        <p class="mt-0.5 text-xs text-slate-400">Extras and hidden shared defaults — leave empty to use shared defaults only.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button"
+                class="scats-ghost-button !px-3 !py-1.5 text-xs"
+                data-tree-target="toggle"
+                data-action="tree#toggle"
+                aria-expanded="false">
+          Expand all
+        </button>
+      </div>
+    </div>
+
+    <% if @divisions.empty? %>
+      <div class="clay-card px-8 py-12 text-center">
+        <p class="text-sm font-medium text-text-main">No active divisions yet</p>
+        <p class="mt-1 text-sm text-text-muted">
+          <%= link_to "Create a division", admin_divisions_path, class: admin_link_classes %>
+          to attach overrides.
+        </p>
+      </div>
+    <% else %>
+      <div class="clay-card rounded-2xl p-4 sm:p-5">
+        <ul class="space-y-3" role="tree">
+          <% @divisions.each do |division| %>
+            <%= render "admin/reason_templates/division_branch",
+                  division: division,
+                  shared_templates: @shared_templates %>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </section>
+</div>

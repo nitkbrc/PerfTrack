@@ -1,0 +1,48 @@
+<%
+  extras = division.reason_templates.sort_by { |t| [ t.action, t.position, t.id ] }
+  suppressed_ids = division.reason_template_suppressions.map(&:reason_template_id).to_set
+  shared_by_action = {
+    "revert" => shared_templates.select(&:revert?),
+    "reject" => shared_templates.select(&:reject?)
+  }
+  override_count = extras.size + suppressed_ids.size
+%>
+<li role="treeitem" class="rounded-xl border border-border-subtle bg-surface-white p-2 sm:p-3">
+  <details class="group/branch" data-tree-target="node" <%= "open" if override_count.positive? %>>
+    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-2 transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+      <span class="material-symbols-outlined scats-tree-chevron shrink-0 text-base text-slate-400"
+            aria-hidden="true">chevron_right</span>
+      <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+        <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1" aria-hidden="true">layers</span>
+      </span>
+      <span class="min-w-0 flex-1">
+        <span class="flex flex-wrap items-center gap-2">
+          <span class="text-sm font-semibold text-text-main"><%= division.name %></span>
+          <%= division_type_badge(division) %>
+        </span>
+        <span class="block text-xs text-text-muted">
+          <% if override_count.zero? %>
+            Using shared defaults only
+          <% else %>
+            <%= pluralize(extras.size, "extra") %>
+            <% if suppressed_ids.any? %>
+              · <%= pluralize(suppressed_ids.size, "hidden default") %>
+            <% end %>
+          <% end %>
+        </span>
+      </span>
+    </summary>
+
+    <div class="mt-2 space-y-3 px-1 pb-1 sm:px-2">
+      <% %w[revert reject].each do |action_key| %>
+        <%= render "admin/reason_templates/division_action_branch",
+              division: division,
+              action_key: action_key,
+              label: "#{action_key.humanize} overrides",
+              shared_templates: shared_by_action[action_key],
+              extras: extras.select { |t| t.action == action_key },
+              suppressed_ids: suppressed_ids %>
+      <% end %>
+    </div>
+  </details>
+</li>

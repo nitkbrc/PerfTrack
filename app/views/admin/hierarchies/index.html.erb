@@ -1,5 +1,6 @@
 <div class="w-full space-y-10 pb-28"
-     data-controller="hierarchy-templates"
+     data-controller="hierarchy-templates unsaved-changes"
+     data-unsaved-changes-strategy-value="custom"
      data-hierarchy-templates-save-url-value="<%= bulk_save_admin_hierarchies_path %>">
 
   <%# ── Page header ─────────────────────────────────────────────── %>
@@ -85,7 +86,7 @@
   </div>
 
   <%# ── Unsaved changes bar (revealed once something is edited) ──── %>
-  <div class="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden px-4 pb-5" data-unsaved-bar>
+  <div class="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden px-4 pb-5" data-unsaved-changes-target="unsavedBar">
     <div class="pointer-events-auto mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/95 px-5 py-4 shadow-lg backdrop-blur">
       <div class="flex items-center gap-3">
         <span class="relative flex h-2.5 w-2.5 shrink-0">
@@ -99,7 +100,7 @@
       </div>
       <div class="flex items-center gap-2.5">
         <%= link_to "Discard", admin_hierarchies_path,
-              data: { turbo: false },
+              data: { turbo: false, action: "click->unsaved-changes#allowLeave" },
               class: "rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" %>
         <button type="button"
                 data-action="hierarchy-templates#save"

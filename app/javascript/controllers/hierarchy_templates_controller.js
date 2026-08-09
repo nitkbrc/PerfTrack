@@ -33,22 +33,133 @@ export default class extends Controller {
     }
     document.addEventListener("click", this.closeMenusOnOutsideClick)
 
-    this.warnBeforeUnload = (event) => {
-      if (!this._dirty || this._saving) return
-      event.preventDefault()
-      event.returnValue = ""
+    this.onSnapshotRequest = () => this.publishSnapshot({ seedInitial: true })
+    this.onSaveRequest = () => {
+      // Unlock a stale save lock so Save & exit can always submit.
+      this._saving = false
+      this.setSavingUi(false)
+      this.save(new Event("submit"))
     }
-    window.addEventListener("beforeunload", this.warnBeforeUnload)
+    this.onSubmitEnd = () => {
+      this._saving = false
+      this.setSavingUi(false)
+    }
+    this.element.addEventListener("unsaved-changes:request-snapshot", this.onSnapshotRequest)
+    this.element.addEventListener("unsaved-changes:save", this.onSaveRequest)
+    this.element.addEventListener("turbo:submit-end", this.onSubmitEnd)
+    this.publishSnapshot({ seedInitial: true })
   }
 
   disconnect() {
     document.removeEventListener("click", this.closeMenusOnOutsideClick)
-    window.removeEventListener("beforeunload", this.warnBeforeUnload)
+    this.element.removeEventListener("unsaved-changes:request-snapshot", this.onSnapshotRequest)
+    this.element.removeEventListener("unsaved-changes:save", this.onSaveRequest)
+    this.element.removeEventListener("turbo:submit-end", this.onSubmitEnd)
+  }
+
+  publishSnapshot({ seedInitial = false } = {}) {
+    const snapshot = JSON.stringify(this.buildState())
+    this.element.dispatchEvent(new CustomEvent("unsaved-changes:snapshot", {
+      bubbles: true,
+      detail: { snapshot, seedInitial }
+    }))
   }
 
   markDirty() {
-    this._dirty = true
-    this.element.querySelector("[data-unsaved-bar]")?.classList.remove("hidden")
+    this.publishSnapshot()
+  }
+
+  buildState() {
+    const hierarchies = []
+    this.element.querySelectorAll("[data-hierarchy-card]").forEach((card) => {
+      const displayRoles = [...card.querySelectorAll("[data-role-list] [data-role-id]")]
+      const reviewRoles = [...displayRoles].reverse()
+      hierarchies.push({
+        id: Number(card.dataset.hierarchyId),
+        name: card.dataset.hierarchyName,
+        scope: card.dataset.hierarchyScope,
+        roles: reviewRoles.map((el, index) => ({
+          review_role_id: Number(el.dataset.roleId),
+          can_raise_on_behalf: el.dataset.canRaise === "true",
+          position: index + 1
+        }))
+      })
+    })
+
+    const reattachments = []
+    this.element.querySelectorAll("[data-owner-list]").forEach((list) => {
+      const hierarchyId = Number(list.dataset.hierarchyId)
+      if (!hierarchyId) return
+      const card = list.closest("[data-hierarchy-card]")
+      const expectedType = card?.dataset.hierarchyScope === "division" ? "Division" : "SubDivision"
+      list.querySelectorAll("[data-owner-id]").forEach((owner) => {
+        const ownerId = Number(owner.dataset.ownerId)
+        if (!ownerId || !owner.dataset.ownerType) return
+        if (owner.dataset.ownerType !== expectedType) return
+        reattachments.push({
+          owner_type: owner.dataset.ownerType,
+          owner_id: ownerId,
+          hierarchy_id: hierarchyId
+        })
+      })
+    })
+
+    return { hierarchies, reattachments }
+  }
+
+  startRenameFromMenu(event) {
+    const card = event.currentTarget.closest("[data-hierarchy-card]")
+    event.currentTarget.closest("details[data-card-menu]")?.removeAttribute("open")
+    this.beginRename(card)
+  }
+
+  startRename(event) {
+    this.beginRename(event.currentTarget.closest("[data-hierarchy-card]"))
+  }
+
+  beginRename(card) {
+    if (!card) return
+    const title = card.querySelector("[data-hierarchy-title]")
+    const input = card.querySelector("[data-hierarchy-name-input]")
+    if (!title || !input) return
+
+    input.value = card.dataset.hierarchyName || title.textContent.trim()
+    title.classList.add("hidden")
+    input.classList.remove("hidden")
+    input.focus()
+    input.select()
+  }
+
+  renameKeydown(event) {
+    if (event.key === "Enter") {
+      event.preventDefault()
+      event.currentTarget.blur()
+    } else if (event.key === "Escape") {
+      event.preventDefault()
+      const card = event.currentTarget.closest("[data-hierarchy-card]")
+      const input = event.currentTarget
+      input.value = card?.dataset.hierarchyName || ""
+      input.blur()
+    }
+  }
+
+  commitRename(event) {
+    const input = event.currentTarget
+    const card = input.closest("[data-hierarchy-card]")
+    const title = card?.querySelector("[data-hierarchy-title]")
+    if (!card || !title) return
+
+    const previous = (card.dataset.hierarchyName || "").trim()
+    const next = input.value.trim()
+    const resolved = next.length > 0 ? next : (previous.length > 0 ? previous : "Untitled hierarchy")
+
+    card.dataset.hierarchyName = resolved
+    title.textContent = resolved
+    input.value = resolved
+    input.classList.add("hidden")
+    title.classList.remove("hidden")
+
+    if (resolved !== previous) this.markDirty()
   }
 
   scrollPrev(event) {
@@ -412,9 +523,20 @@ export default class extends Controller {
 
   refreshOwnerCount(card) {
     if (!card) return
-    const count = card.querySelectorAll("[data-owner-list] [data-owner-id]").length
+    const owners = [...card.querySelectorAll("[data-owner-list] [data-owner-id]")]
+    const count = owners.length
+    const unstaffed = owners.filter((owner) => owner.classList.contains("border-red-200")).length
+
     const badge = card.querySelector("[data-owner-count]")
     if (badge) badge.textContent = String(count)
+
+    const unstaffedBadge = card.querySelector("[data-owner-unstaffed]")
+    const unstaffedCount = card.querySelector("[data-owner-unstaffed-count]")
+    if (unstaffedCount) unstaffedCount.textContent = String(unstaffed)
+    if (unstaffedBadge) {
+      unstaffedBadge.classList.toggle("hidden", unstaffed === 0)
+      unstaffedBadge.classList.toggle("inline-flex", unstaffed > 0)
+    }
   }
 
   refreshRoleMeta(card) {
@@ -450,12 +572,17 @@ export default class extends Controller {
     this._saving = true
     this.setSavingUi(true)
 
+    const fail = (message) => {
+      if (message) alert(message)
+      this._saving = false
+      this.setSavingUi(false)
+      document.dispatchEvent(new CustomEvent("leave-guard:save-failed", { bubbles: true }))
+    }
+
     try {
       const cards = [...this.element.querySelectorAll("[data-hierarchy-card]")]
       if (cards.length === 0) {
-        alert("No hierarchy templates to save.")
-        this._saving = false
-        this.setSavingUi(false)
+        fail("No hierarchy templates to save.")
         return
       }
 
@@ -463,17 +590,13 @@ export default class extends Controller {
       for (const card of cards) {
         const displayRoles = [...card.querySelectorAll("[data-role-list] [data-role-id]")]
         if (displayRoles.length === 0) {
-          alert(`"${card.dataset.hierarchyName}" needs at least one role.`)
-          this._saving = false
-          this.setSavingUi(false)
+          fail(`"${card.dataset.hierarchyName}" needs at least one role.`)
           return
         }
 
         const roleIds = displayRoles.map((el) => Number(el.dataset.roleId)).filter((id) => id > 0)
         if (roleIds.length !== displayRoles.length || new Set(roleIds).size !== roleIds.length) {
-          alert(`"${card.dataset.hierarchyName}" has invalid or duplicate roles. Refresh and try again.`)
-          this._saving = false
-          this.setSavingUi(false)
+          fail(`"${card.dataset.hierarchyName}" has invalid or duplicate roles. Refresh and try again.`)
           return
         }
 
@@ -508,13 +631,21 @@ export default class extends Controller {
         })
       })
 
+      // Accept current state as saved so the leave guard won't block the submit navigation.
+      this.element.dispatchEvent(new CustomEvent("unsaved-changes:snapshot", {
+        bubbles: true,
+        detail: { snapshot: JSON.stringify({ hierarchies, reattachments }), seedInitial: true }
+      }))
+
       this.payloadTarget.value = JSON.stringify({ hierarchies, reattachments, deleted_hierarchy_ids: [] })
-      this.formTarget.submit()
+      if (typeof this.formTarget.requestSubmit === "function") {
+        this.formTarget.requestSubmit()
+      } else {
+        this.formTarget.submit()
+      }
     } catch (error) {
       console.error(error)
-      alert("Could not prepare the save payload. Refresh and try again.")
-      this._saving = false
-      this.setSavingUi(false)
+      fail("Could not prepare the save payload. Refresh and try again.")
     }
   }
 }

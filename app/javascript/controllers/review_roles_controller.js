@@ -2,28 +2,34 @@ import { Controller } from "@hotwired/stimulus"
 
 // Stages raise-on-behalf toggles on the review roles index and saves them in one bulk POST.
 export default class extends Controller {
-  static targets = ["form", "unsavedBar"]
+  static targets = ["form"]
 
   connect() {
-    this._dirty = false
     this._saving = false
-
-    this.warnBeforeUnload = (event) => {
-      if (!this._dirty || this._saving) return
-      event.preventDefault()
-      event.returnValue = ""
+    this.onSnapshotRequest = () => this.publishSnapshot({ seedInitial: true })
+    this.onSaveRequest = () => {
+      this._saving = false
+      this.save(new Event("submit"))
     }
-    window.addEventListener("beforeunload", this.warnBeforeUnload)
+    this.onSubmitEnd = () => {
+      this._saving = false
+    }
+    this.element.addEventListener("unsaved-changes:request-snapshot", this.onSnapshotRequest)
+    this.element.addEventListener("unsaved-changes:save", this.onSaveRequest)
+    this.element.addEventListener("turbo:submit-end", this.onSubmitEnd)
+    this.publishSnapshot({ seedInitial: true })
   }
 
   disconnect() {
-    window.removeEventListener("beforeunload", this.warnBeforeUnload)
+    this.element.removeEventListener("unsaved-changes:request-snapshot", this.onSnapshotRequest)
+    this.element.removeEventListener("unsaved-changes:save", this.onSaveRequest)
+    this.element.removeEventListener("turbo:submit-end", this.onSubmitEnd)
   }
 
   toggleChanged(event) {
     const checkbox = event.currentTarget
     this.syncStatusLabel(checkbox)
-    this.markDirty()
+    this.publishSnapshot()
   }
 
   syncStatusLabel(checkbox) {
@@ -36,14 +42,16 @@ export default class extends Controller {
     label.classList.toggle("text-slate-400", !on)
   }
 
-  markDirty() {
-    this._dirty = true
-    this.unsavedBarTarget.classList.remove("hidden")
-  }
-
-  discard(event) {
-    // Full reload restores server state; beforeunload would otherwise block navigation.
-    this._dirty = false
+  publishSnapshot({ seedInitial = false } = {}) {
+    const roles = {}
+    this.element.querySelectorAll("input[data-raiseable-toggle]").forEach((checkbox) => {
+      roles[checkbox.dataset.roleId] = checkbox.checked ? "1" : "0"
+    })
+    const snapshot = JSON.stringify(roles)
+    this.element.dispatchEvent(new CustomEvent("unsaved-changes:snapshot", {
+      bubbles: true,
+      detail: { snapshot, seedInitial }
+    }))
   }
 
   save(event) {
@@ -51,7 +59,7 @@ export default class extends Controller {
     if (this._saving) return
 
     this._saving = true
-    this._dirty = false
+    this.publishSnapshot({ seedInitial: true })
 
     const form = this.formTarget
     form.querySelectorAll("input[data-bulk-role-field]").forEach((input) => input.remove())

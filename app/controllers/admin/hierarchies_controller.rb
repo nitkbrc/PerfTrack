@@ -38,8 +38,23 @@ module Admin
       hierarchy = authorize Hierarchy.find(params[:id])
       hierarchy.destroy!
       redirect_to admin_hierarchies_path, notice: "Hierarchy deleted."
-    rescue ActiveRecord::RecordNotDestroyed
-      redirect_to admin_hierarchies_path, alert: hierarchy.errors.full_messages.to_sentence.presence || "Could not delete."
+    rescue ActiveRecord::RecordNotDestroyed => e
+      message = hierarchy.errors.full_messages.to_sentence.presence ||
+                e.record.errors.full_messages.to_sentence.presence ||
+                "Could not delete."
+      redirect_to admin_hierarchies_path, alert: message
+    rescue ActiveRecord::DeleteRestrictionError
+      redirect_to admin_hierarchies_path, alert: "Cannot delete a hierarchy that is still in use."
+    end
+
+    def make_default
+      hierarchy = authorize Hierarchy.find(params[:id]), :update?
+      hierarchy.make_default!
+      redirect_to admin_hierarchies_path, notice: "“#{hierarchy.name}” is now the default #{hierarchy.scope.humanize.downcase} hierarchy."
+    rescue ActiveRecord::RecordInvalid
+      redirect_to admin_hierarchies_path, alert: hierarchy.errors.full_messages.to_sentence.presence || "Could not set default."
+    rescue ActiveRecord::RecordNotFound
+      redirect_to admin_hierarchies_path, alert: "Hierarchy not found."
     end
 
     def bulk_save

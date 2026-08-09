@@ -1,4 +1,5 @@
-<%= form_with model: [ :admin, review_role ], class: "space-y-5" do |f| %>
+<%= form_with model: [ :admin, review_role ], class: "space-y-5",
+      data: (review_role.persisted? ? { controller: "unsaved-changes" } : {}) do |f| %>
   <%= render "admin/shared/error_messages", record: review_role %>
 
   <div>

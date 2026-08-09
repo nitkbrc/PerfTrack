@@ -31,5 +31,6 @@
       <%= render "shared/app_footer" %>
     </div>
     <%= content_for?(:modal) ? yield(:modal) : turbo_frame_tag("modal") %>
+    <%= render "shared/leave_guard" %>
   </body>
 </html>

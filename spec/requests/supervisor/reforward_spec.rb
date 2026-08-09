@@ -46,7 +46,7 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
 
     it "allows reverting to the student from the supervisor step after dean feedback" do
       patch revert_supervisor_achievement_request_path(request_record),
-            params: { comment: "Please address the dean's feedback." }
+            params: { comment: "Please address the dean's feedback.", reason_template_id: "other" }
 
       expect(response).to redirect_to(supervisor_queue_path)
       expect(request_record.reload.status).to eq("reverted")
@@ -78,7 +78,8 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
     end
 
     it "reverts to the creator floor instead of the student" do
-      patch revert_supervisor_achievement_request_path(request_record), params: { comment: "nope" }
+      patch revert_supervisor_achievement_request_path(request_record),
+            params: { comment: "nope", reason_template_id: "other" }
 
       expect(response).to redirect_to(supervisor_queue_path)
       expect(request_record.reload.status).to eq("reverted")
@@ -163,7 +164,8 @@ RSpec.describe "Supervisor re-forward after dean revert", type: :request do
   end
 
   it "allows reject while the supervisor is the current reviewer" do
-    patch reject_supervisor_achievement_request_path(request_record), params: { comment: "Not valid." }
+    patch reject_supervisor_achievement_request_path(request_record),
+          params: { comment: "Not valid.", reason_template_id: "other" }
 
     expect(response).to redirect_to(supervisor_queue_path)
     expect(request_record.reload.status).to eq("rejected")

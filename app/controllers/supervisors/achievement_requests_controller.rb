@@ -1,5 +1,7 @@
 module Supervisors
   class AchievementRequestsController < BaseController
+    include DecisionReasons
+
     before_action :set_request, only: [ :show, :approve, :revert, :reject, :edit, :update, :remove_proof ]
     before_action :require_in_review, only: [ :approve, :revert, :reject ]
     before_action :require_raiseable_revision, only: [ :edit, :update, :remove_proof ]
@@ -12,7 +14,7 @@ module Supervisors
                   student: {}, current_review_role: {})
         .find(@achievement_request.id)
       @histories = @achievement_request.req_histories.includes(:actor).order(:created_at)
-      @reason_templates = ReasonTemplate.order(:created_at)
+      load_decision_reason_templates!
     end
 
     def approve
@@ -119,28 +121,26 @@ module Supervisors
     end
 
     def decide_revert(notice:)
-      comment = params[:comment].to_s.strip
-      if comment.blank?
-        redirect_to supervisor_achievement_request_path(@achievement_request),
-                    alert: "A message to the student is required."
+      resolved = resolve_decision_reason!(action: "revert")
+      unless resolved[:ok]
+        redirect_to supervisor_achievement_request_path(@achievement_request), alert: resolved[:alert]
         return
       end
 
-      @achievement_request.revert!(actor: current_user, comment: comment)
+      @achievement_request.revert!(actor: current_user, comment: resolved[:comment],
+                                   reason_template: resolved[:reason_template])
       redirect_to supervisor_queue_path, notice: notice
     end
 
     def decide_reject(notice:)
-      comment = params[:comment].to_s.strip
-      if comment.blank?
-        redirect_to supervisor_achievement_request_path(@achievement_request),
-                    alert: "A message to the student is required."
+      resolved = resolve_decision_reason!(action: "reject")
+      unless resolved[:ok]
+        redirect_to supervisor_achievement_request_path(@achievement_request), alert: resolved[:alert]
         return
       end
 
-      reason_template = ReasonTemplate.find_by(id: params[:reason_template_id])
-      @achievement_request.reject!(actor: current_user, comment: comment,
-                                   reason_template: reason_template)
+      @achievement_request.reject!(actor: current_user, comment: resolved[:comment],
+                                   reason_template: resolved[:reason_template])
       redirect_to supervisor_queue_path, notice: notice
     end
 

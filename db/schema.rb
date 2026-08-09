@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_06_100100) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_09_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -129,10 +129,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_100100) do
     t.index ["role", "action"], name: "index_permissions_on_role_and_action", unique: true
   end
 
-  create_table "reason_templates", force: :cascade do |t|
+  create_table "reason_template_suppressions", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.text "message_text"
+    t.bigint "division_id", null: false
+    t.bigint "reason_template_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["division_id", "reason_template_id"], name: "index_reason_template_suppressions_uniqueness", unique: true
+    t.index ["division_id"], name: "index_reason_template_suppressions_on_division_id"
+    t.index ["reason_template_id"], name: "index_reason_template_suppressions_on_reason_template_id"
+  end
+
+  create_table "reason_templates", force: :cascade do |t|
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.bigint "division_id"
+    t.text "message_text"
+    t.integer "position", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["division_id", "action", "position"], name: "index_reason_templates_on_division_action_position"
+    t.index ["division_id"], name: "index_reason_templates_on_division_id"
   end
 
   create_table "req_histories", force: :cascade do |t|
@@ -387,6 +402,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_100100) do
     t.string "role", default: "student", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["phone"], name: "index_users_on_phone", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
@@ -401,6 +417,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_100100) do
   add_foreign_key "hierarchy_roles", "review_roles"
   add_foreign_key "notifications", "achievement_requests"
   add_foreign_key "notifications", "users", column: "recipient_id"
+  add_foreign_key "reason_template_suppressions", "divisions"
+  add_foreign_key "reason_template_suppressions", "reason_templates"
+  add_foreign_key "reason_templates", "divisions"
   add_foreign_key "req_histories", "achievement_requests"
   add_foreign_key "req_histories", "reason_templates"
   add_foreign_key "req_histories", "request_versions"

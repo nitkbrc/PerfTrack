@@ -1,11 +1,32 @@
 <div class="mx-auto max-w-lg rounded-xl bg-white p-8 shadow-md ring-1 ring-slate-200">
-  <%= form_with model: [ :admin, reason_template ], class: "space-y-5" do |f| %>
+  <%= form_with model: [ :admin, reason_template ], class: "space-y-5",
+        data: (reason_template.persisted? ? { controller: "unsaved-changes" } : {}) do |f| %>
     <%= render "admin/shared/error_messages", record: reason_template %>
 
     <div>
+      <%= f.label :division_id, "Scope", class: admin_label_classes %>
+      <%= f.collection_select :division_id, @divisions, :id, :name,
+            { include_blank: "Shared default (all divisions)" },
+            class: admin_input_classes %>
+      <p class="mt-1 text-xs text-slate-500">
+        Leave as shared default to show everywhere, or pick a division to add an extra reason only there.
+      </p>
+    </div>
+
+    <div>
+      <%= f.label :action, "Used for", class: admin_label_classes %>
+      <%= f.select :action,
+            ReasonTemplate::ACTIONS.map { |a| [ a.humanize, a ] },
+            { prompt: "Select revert or reject" },
+            class: admin_input_classes, required: true %>
+    </div>
+
+    <div>
       <%= f.label :message_text, "Message", class: admin_label_classes %>
-      <%= f.text_area :message_text, rows: 4, autofocus: true, class: admin_input_classes %>
-      <p class="mt-1 text-xs text-slate-500">Shown as a pre-fill option when reverting or rejecting a request; still editable before sending.</p>
+      <%= f.text_area :message_text, rows: 4, autofocus: true, class: admin_input_classes, required: true %>
+      <p class="mt-1 text-xs text-slate-500">
+        Reviewers must send this text as-is. They can only draft their own message via Other.
+      </p>
     </div>
 
     <div class="flex items-center gap-4">

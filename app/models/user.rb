@@ -9,7 +9,10 @@ class User < ApplicationRecord
 
   has_one_attached :photo
 
+  before_validation :normalize_phone
+
   validates :phone, :address, presence: true
+  validates :phone, uniqueness: { message: "has already been taken" }
   validates :photo, attached: true,
                     content_type: [ "image/png", "image/jpeg" ],
                     size: { less_than: 5.megabytes }
@@ -55,5 +58,13 @@ class User < ApplicationRecord
       end
       scope.where.not(id: conflicting)
     end
+  end
+
+  private
+
+  def normalize_phone
+    return if phone.nil?
+
+    self.phone = phone.to_s.gsub(/\D/, "")
   end
 end

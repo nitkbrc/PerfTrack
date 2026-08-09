@@ -34,6 +34,75 @@ module AdminHelper
     ]
   end
 
+  PROFILE_PERMISSION_FIELDS = {
+    "edit_own_phone" => {
+      label: "Phone number",
+      description: "Change the contact number shown on their profile.",
+      icon: "call"
+    },
+    "edit_own_address" => {
+      label: "Address",
+      description: "Update residential or correspondence address details.",
+      icon: "home"
+    },
+    "edit_own_photo" => {
+      label: "Profile photo",
+      description: "Upload or replace their avatar image.",
+      icon: "photo_camera"
+    }
+  }.freeze
+
+  PROFILE_PERMISSION_ROLES = {
+    "student" => {
+      label: "Students",
+      subtitle: "Self-service edits on the student profile",
+      icon: "school",
+      header: "from-teal-50 to-white",
+      icon_bg: "bg-teal-100 text-teal-700",
+      accent: "text-teal-700",
+      ring: "ring-teal-100"
+    },
+    "faculty" => {
+      label: "Faculty",
+      subtitle: "Self-service edits on the faculty profile",
+      icon: "person",
+      header: "from-blue-50 to-white",
+      icon_bg: "bg-blue-100 text-blue-700",
+      accent: "text-blue-700",
+      ring: "ring-blue-100"
+    }
+  }.freeze
+
+  def profile_permission_field(action)
+    PROFILE_PERMISSION_FIELDS.fetch(action.to_s) do
+      {
+        label: action.to_s.sub(/\Aedit_own_/, "").humanize,
+        description: "Control whether users can edit this profile field.",
+        icon: "tune"
+      }
+    end
+  end
+
+  def profile_permission_role(role)
+    PROFILE_PERMISSION_ROLES.fetch(role.to_s) do
+      {
+        label: role.to_s.humanize,
+        subtitle: "Self-service profile edits",
+        icon: "person",
+        header: "from-slate-50 to-white",
+        icon_bg: "bg-slate-100 text-slate-600",
+        accent: "text-slate-700",
+        ring: "ring-slate-100"
+      }
+    end
+  end
+
+  def profile_permission_summary(permissions)
+    enabled = permissions.count(&:enabled?)
+    total = permissions.size
+    { enabled: enabled, total: total, locked: total - enabled }
+  end
+
   def admin_modal_frame_data
     { turbo_frame: "modal" }
   end
@@ -68,6 +137,20 @@ module AdminHelper
     "bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800 shadow-sm " \
     "transition hover:bg-amber-100 " \
     "focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2"
+  end
+
+  def admin_restore_button_classes
+    "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-emerald-200 " \
+    "bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-800 shadow-sm " \
+    "transition hover:bg-emerald-100 " \
+    "focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2"
+  end
+
+  def admin_permanent_delete_button_classes
+    "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 " \
+    "bg-white px-3 py-1.5 text-sm font-semibold text-red-700 shadow-sm " \
+    "transition hover:bg-red-50 " \
+    "focus:outline-none focus:ring-2 focus:ring-red-200 focus:ring-offset-2"
   end
 
   def admin_delete_classes

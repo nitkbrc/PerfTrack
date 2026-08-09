@@ -1,0 +1,105 @@
+<%# locals: owner (Division or SubDivision) %>
+<% hierarchy = owner.hierarchy %>
+<% owner_noun = owner.is_a?(Division) ? "division" : "sub-division" %>
+<% roles = hierarchy&.hierarchy_roles&.sort_by(&:position)&.reverse || [] %>
+<% assignments_by_role_id = owner.role_assignments.index_by(&:review_role_id) %>
+
+<aside class="clay-card sticky top-6 overflow-hidden" aria-labelledby="owner-hierarchy-heading">
+  <div class="border-b border-border-subtle/70 bg-gradient-to-b from-slate-50 to-white px-5 py-4">
+    <div class="flex items-start gap-3">
+      <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl <%= owner.is_a?(Division) ? "bg-blue-50 text-blue-700" : "bg-teal-50 text-teal-700" %>">
+        <span class="material-symbols-outlined text-[22px]" aria-hidden="true">account_tree</span>
+      </span>
+      <div class="min-w-0">
+        <h2 id="owner-hierarchy-heading" class="text-sm font-semibold text-slate-900">Review hierarchy</h2>
+        <p class="mt-0.5 text-xs leading-relaxed text-slate-400">
+          Chain used by this <%= owner_noun %>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-5 px-5 py-5">
+    <% if hierarchy.blank? %>
+      <div class="rounded-xl border border-dashed border-amber-200 bg-amber-50/60 px-4 py-5 text-center">
+        <p class="text-sm font-medium text-amber-900">No hierarchy attached</p>
+        <p class="mt-1 text-xs leading-relaxed text-amber-800/80">
+          Assign a template so review roles and staffing are defined.
+        </p>
+        <%= link_to "Open hierarchy templates", admin_hierarchies_path,
+              class: "#{admin_link_classes} mt-3 inline-flex" %>
+      </div>
+    <% else %>
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Template</p>
+        <div class="mt-1.5 flex flex-wrap items-center gap-2">
+          <p class="text-sm font-semibold text-slate-900"><%= hierarchy.name %></p>
+          <% if hierarchy.is_default? %>
+            <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Default</span>
+          <% end %>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-3 flex items-baseline justify-between gap-2">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Approval chain</p>
+          <span class="text-[11px] text-slate-400">Final → first</span>
+        </div>
+
+        <% if roles.empty? %>
+          <p class="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-400">
+            This template has no roles yet.
+          </p>
+        <% else %>
+          <ul class="space-y-0">
+            <% roles.each_with_index do |hierarchy_role, index| %>
+              <% role = hierarchy_role.review_role %>
+              <% assignment = assignments_by_role_id[role.id] %>
+              <% holder = assignment&.user %>
+              <% last = index == roles.size - 1 %>
+              <li class="relative <%= last ? "" : "pb-3" %>">
+                <% unless last %>
+                  <span class="pointer-events-none absolute bottom-0 left-5 top-10 w-px bg-slate-200" aria-hidden="true"></span>
+                <% end %>
+                <div class="relative flex items-start gap-3 rounded-xl border px-3 py-2.5 <%= holder ? "border-slate-200 bg-white" : "border-red-200 bg-red-50/40" %>">
+                  <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tracking-wide <%= review_role_badge_classes(role.name) %>">
+                    <%= review_role_initials(role.name) %>
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-semibold text-slate-900"><%= role.name %></p>
+                    <% if holder %>
+                      <p class="mt-0.5 truncate text-xs text-slate-500">
+                        <%= holder.name.presence || holder.email %>
+                      </p>
+                    <% else %>
+                      <p class="mt-0.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                        <span class="material-symbols-outlined text-[14px]" aria-hidden="true">warning</span>
+                        Unassigned
+                      </p>
+                    <% end %>
+                    <% if hierarchy_role.can_raise_on_behalf? %>
+                      <p class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-teal-700">Raise on behalf</p>
+                    <% end %>
+                  </div>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+
+      <div class="flex flex-col gap-2 border-t border-border-subtle/70 pt-4">
+        <%= link_to admin_role_assignments_path,
+              class: "inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-primary/30 hover:text-primary" do %>
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">group</span>
+          Assign people
+        <% end %>
+        <%= link_to admin_hierarchies_path,
+              class: "inline-flex items-center justify-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary" do %>
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
+          Edit templates
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</aside>

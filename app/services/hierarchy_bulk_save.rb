@@ -28,7 +28,7 @@ class HierarchyBulkSave
   def apply_hierarchy!(data)
     hierarchy = find_hierarchy!(data)
 
-    if data[:name].present? && !hierarchy.is_default?
+    if data[:name].present?
       hierarchy.update!(name: data[:name].to_s.strip)
     end
 

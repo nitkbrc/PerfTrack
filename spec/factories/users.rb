@@ -2,7 +2,7 @@ FactoryBot.define do
   factory :user do
     name { Faker::Name.name }
     sequence(:email) { |n| "user#{n}@example.com" }
-    phone { "9876543210" }
+    sequence(:phone) { |n| format("%010d", 9_000_000_000 + n) }
     address { "123 Example Street, Demo City" }
     password { "password123" }
     role { "student" }

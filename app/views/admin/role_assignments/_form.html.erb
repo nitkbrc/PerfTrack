@@ -1,4 +1,5 @@
-<%= form_with model: [ :admin, assignment ], class: "space-y-5" do |f| %>
+<%= form_with model: [ :admin, assignment ], class: "space-y-5",
+      data: (assignment.persisted? ? { controller: "unsaved-changes" } : {}) do |f| %>
   <%= render "admin/shared/error_messages", record: assignment %>
 
   <%= f.hidden_field :review_role_id %>
