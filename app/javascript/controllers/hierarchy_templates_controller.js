@@ -21,13 +21,10 @@ export default class extends Controller {
   static values = { saveUrl: String }
 
   connect() {
-    this.dragRole = null
-    this.dragOwner = null
-    this.dragOwnerSourceList = null
     this._saving = false
 
     this.closeMenusOnOutsideClick = (event) => {
-      this.element.querySelectorAll("details[data-card-menu][open]").forEach((menu) => {
+      this.element.querySelectorAll("details[data-card-menu][open], details[data-owner-menu][open]").forEach((menu) => {
         if (!menu.contains(event.target)) menu.open = false
       })
     }
@@ -35,7 +32,6 @@ export default class extends Controller {
 
     this.onSnapshotRequest = () => this.publishSnapshot({ seedInitial: true })
     this.onSaveRequest = () => {
-      // Unlock a stale save lock so Save & exit can always submit.
       this._saving = false
       this.setSavingUi(false)
       this.save(new Event("submit"))
@@ -47,8 +43,10 @@ export default class extends Controller {
     this.element.addEventListener("unsaved-changes:request-snapshot", this.onSnapshotRequest)
     this.element.addEventListener("unsaved-changes:save", this.onSaveRequest)
     this.element.addEventListener("turbo:submit-end", this.onSubmitEnd)
-    // Publish after the paired unsaved-changes controller has connected.
-    queueMicrotask(() => this.publishSnapshot({ seedInitial: true }))
+    queueMicrotask(() => {
+      this.publishSnapshot({ seedInitial: true })
+      this.refreshAllMoveControls()
+    })
   }
 
   disconnect() {
@@ -160,7 +158,10 @@ export default class extends Controller {
     input.classList.add("hidden")
     title.classList.remove("hidden")
 
-    if (resolved !== previous) this.markDirty()
+    if (resolved !== previous) {
+      this.refreshAllMoveControls()
+      this.markDirty()
+    }
   }
 
   scrollPrev(event) {
@@ -197,34 +198,77 @@ export default class extends Controller {
     return ROLE_BADGE_PALETTE[sum % ROLE_BADGE_PALETTE.length]
   }
 
-  roleDragStart(event) {
-    this.dragRole = event.currentTarget
-    event.dataTransfer.effectAllowed = "move"
-    event.currentTarget.classList.add("opacity-60")
+  moveRoleUp(event) {
+    this.moveListItem(event.currentTarget.closest("[data-role-id]"), -1)
   }
 
-  roleDragEnd(event) {
-    event.currentTarget.classList.remove("opacity-60")
-    this.dragRole = null
+  moveRoleDown(event) {
+    this.moveListItem(event.currentTarget.closest("[data-role-id]"), 1)
   }
 
-  roleDragOver(event) {
+  moveListItem(item, direction) {
+    if (!item) return
+    const sibling = direction < 0 ? item.previousElementSibling : item.nextElementSibling
+    if (!sibling || !sibling.hasAttribute("data-role-id")) return
+
+    if (direction < 0) item.parentElement.insertBefore(item, sibling)
+    else item.parentElement.insertBefore(sibling, item)
+
+    const card = item.closest("[data-hierarchy-card]")
+    this.refreshRoleMeta(card)
+    this.refreshMoveButtons(item.parentElement)
+    this.markDirty()
+  }
+
+  openOwnerMenu(event) {
+    const menu = event.currentTarget
+    if (!(menu instanceof HTMLDetailsElement) || !menu.open) return
+    const owner = menu.closest("[data-owner-id]")
+    if (owner) this.refreshOwnerMoveMenu(owner)
+  }
+
+  moveOwnerTo(event) {
     event.preventDefault()
-  }
+    const button = event.currentTarget
+    const destination = button.dataset.destination
+    if (!destination) return
 
-  roleDrop(event) {
-    event.preventDefault()
-    if (!this.dragRole) return
-    const list = event.currentTarget
-    const target = event.target.closest("[data-role-id]")
-    if (!list.contains(this.dragRole)) return
-    if (target && target !== this.dragRole) {
-      const rect = target.getBoundingClientRect()
-      const before = event.clientY < rect.top + rect.height / 2
-      list.insertBefore(this.dragRole, before ? target : target.nextSibling)
-      this.markDirty()
+    const owner = button.closest("[data-owner-id]")
+    const section = owner?.closest("[data-scope-section]")
+    button.closest("details[data-owner-menu]")?.removeAttribute("open")
+    if (!owner || !section) return
+
+    const sourceList = owner.closest("[data-owner-list]")
+    let targetList = null
+
+    if (destination === "tray") {
+      targetList = section.querySelector("[data-owner-list][data-owner-tray]")
+      if (!targetList) {
+        alert("There is no unassigned tray in this section. Leave the unit on a template, or create one.")
+        return
+      }
+    } else {
+      const card = section.querySelector(`[data-hierarchy-card][data-hierarchy-id="${destination}"]`)
+      targetList = card?.querySelector("[data-owner-list]")
+      const expectedType = card?.dataset.hierarchyScope === "division" ? "Division" : "SubDivision"
+      if (!targetList || owner.dataset.ownerType !== expectedType) {
+        alert("That destination is not available for this unit.")
+        return
+      }
     }
-    this.refreshRoleMeta(list.closest("[data-hierarchy-card]"))
+
+    if (!targetList || targetList.contains(owner)) return
+
+    this.clearListPlaceholders(targetList)
+    targetList.appendChild(owner)
+    this.styleOwnerForList(owner, targetList)
+    this.ensureEmptyOwnersPlaceholder(sourceList)
+    this.ensureEmptyTrayPlaceholder(sourceList)
+    this.refreshOwnerCount(sourceList?.closest("[data-hierarchy-card]"))
+    this.refreshOwnerCount(targetList.closest("[data-hierarchy-card]"))
+    this.refreshMoveButtons(sourceList)
+    this.refreshMoveButtons(targetList)
+    this.markDirty()
   }
 
   removeRole(event) {
@@ -243,6 +287,7 @@ export default class extends Controller {
     })
     item.remove()
     this.refreshRoleMeta(card)
+    this.refreshMoveButtons(list)
     this.markDirty()
   }
 
@@ -311,31 +356,69 @@ export default class extends Controller {
     }
 
     const sourceList = owner.closest("[data-owner-list]")
-    const empty = list.querySelector("[data-empty-owners]")
-    if (empty) empty.remove()
+    this.clearListPlaceholders(list)
     list.appendChild(owner)
     this.styleOwnerForList(owner, list)
 
     this.ensureEmptyOwnersPlaceholder(sourceList)
+    this.ensureEmptyTrayPlaceholder(sourceList)
     this.refreshOwnerCount(sourceList?.closest("[data-hierarchy-card]"))
     this.refreshOwnerCount(card)
+    this.refreshMoveButtons(sourceList)
+    this.refreshMoveButtons(list)
 
     select.value = ""
     card?.querySelector("[data-assign-owner-form]")?.classList.add("hidden")
     this.markDirty()
   }
 
-  // Tray chips and card rows use different styling; restyle on move.
+  ownerMoveMenuHtml(name) {
+    return `
+      <details class="relative shrink-0" data-owner-menu data-action="toggle->hierarchy-templates#openOwnerMenu">
+        <summary class="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 [&::-webkit-details-marker]:hidden"
+                 aria-label="Actions for ${this.escapeHtml(name)}">
+          <span class="material-symbols-outlined text-xl" aria-hidden="true">more_vert</span>
+        </summary>
+        <div class="absolute right-0 z-30 mt-1.5 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl"
+             data-owner-move-menu>
+          <p class="px-4 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Move to</p>
+          <div data-owner-move-destinations>
+            <p class="px-4 py-2 text-xs text-slate-400">No other destinations</p>
+          </div>
+        </div>
+      </details>
+    `
+  }
+
   styleOwnerForList(owner, list) {
-    if (list.hasAttribute("data-owner-tray")) {
-      owner.className = "flex cursor-grab items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm"
-      return
+    const unstaffed = Boolean(owner.querySelector("[data-owner-unstaffed-icon]"))
+    const onTray = list.hasAttribute("data-owner-tray")
+    const labelHtml = owner.querySelector("[data-owner-label]")?.innerHTML
+      || this.escapeHtml(this.ownerLabel(owner))
+    const name = this.ownerLabel(owner)
+
+    if (onTray) {
+      owner.className = "flex max-w-full items-center gap-1 rounded-xl border border-amber-200 bg-white py-1.5 pl-3 pr-1 text-sm font-medium text-slate-700 shadow-sm"
+      owner.innerHTML = `
+        <span class="min-w-0 flex-1 truncate" data-owner-label>${labelHtml}</span>
+        ${this.ownerMoveMenuHtml(name)}
+      `
+    } else {
+      owner.className = `flex items-center gap-2 rounded-xl border px-2.5 py-2 text-sm transition sm:gap-3 sm:px-3 sm:py-2.5 ${
+        unstaffed
+          ? "border-red-200 bg-red-50/50 text-red-700"
+          : "border-slate-200 bg-white text-slate-800 hover:border-slate-300"
+      }`
+      owner.innerHTML = `
+        <span class="min-w-0 flex-1 truncate font-medium" data-owner-label>${labelHtml}</span>
+        ${unstaffed
+          ? '<span class="material-symbols-outlined shrink-0 text-lg text-red-500" data-owner-unstaffed-icon aria-hidden="true" title="Roles still need people">warning</span>'
+          : ""}
+        ${this.ownerMoveMenuHtml(name)}
+      `
     }
 
-    const unstaffed = owner.querySelector('[title="Roles still need people"]') !== null
-    owner.className = `flex cursor-grab items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition ${
-      unstaffed ? "border-red-200 bg-red-50/50 text-red-700" : "border-slate-200 bg-white text-slate-800 hover:border-slate-300"
-    }`
+    this.refreshOwnerMoveMenu(owner)
   }
 
   restoreRoleOption(card, { id, name, raiseable }) {
@@ -370,24 +453,47 @@ export default class extends Controller {
     form?.classList.remove("hidden")
   }
 
+  reorderControlsHtml({ upAction, downAction, label }) {
+    return `
+      <div class="flex shrink-0 flex-col gap-0.5" data-reorder-controls>
+        <button type="button"
+                class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                data-action="${upAction}"
+                data-move-up
+                aria-label="Move ${this.escapeHtml(label)} up">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">keyboard_arrow_up</span>
+        </button>
+        <button type="button"
+                class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                data-action="${downAction}"
+                data-move-down
+                aria-label="Move ${this.escapeHtml(label)} down">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">keyboard_arrow_down</span>
+        </button>
+      </div>
+    `
+  }
+
   buildRoleItem({ id, name, canRaise }) {
     const li = document.createElement("li")
     li.className = "group relative pb-3"
-    li.draggable = true
     li.dataset.roleId = id
     li.dataset.roleName = name
     li.dataset.canRaise = canRaise ? "true" : "false"
-    li.dataset.action = "dragstart->hierarchy-templates#roleDragStart dragend->hierarchy-templates#roleDragEnd"
     li.innerHTML = `
-      <span class="pointer-events-none absolute bottom-0 left-[61px] top-[54px] w-px bg-slate-300" data-role-connector aria-hidden="true"></span>
-      <div class="relative flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 transition group-hover:border-slate-300 group-hover:shadow-sm">
-        <span class="material-symbols-outlined w-5 shrink-0 cursor-grab text-center text-[20px] leading-none text-slate-300 transition group-hover:text-slate-400" aria-hidden="true">drag_indicator</span>
+      <span class="pointer-events-none absolute bottom-0 left-[3.25rem] top-[3.25rem] w-px bg-slate-300 sm:left-[3.5rem]" data-role-connector aria-hidden="true"></span>
+      <div class="relative flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 transition group-hover:border-slate-300 group-hover:shadow-sm sm:gap-3 sm:px-3 sm:py-2.5">
+        ${this.reorderControlsHtml({
+          upAction: "hierarchy-templates#moveRoleUp",
+          downAction: "hierarchy-templates#moveRoleDown",
+          label: name
+        })}
         <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tracking-wide ${this.roleBadgeClasses(name)}" data-role-badge>
           ${this.escapeHtml(this.roleInitials(name))}
         </span>
         <p class="min-w-0 flex-1 truncate text-sm font-medium text-slate-800" data-role-label>${this.escapeHtml(name)}</p>
         <button type="button"
-                class="rounded-md p-1 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                class="cursor-pointer rounded-md p-1 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
                 data-action="hierarchy-templates#removeRole"
                 aria-label="Remove ${this.escapeHtml(name)}">
           <span class="material-symbols-outlined text-lg" aria-hidden="true">close</span>
@@ -412,7 +518,6 @@ export default class extends Controller {
 
     const card = select.closest("[data-hierarchy-card]")
     const list = card.querySelector("[data-role-list]")
-    const scope = card.dataset.hierarchyScope
     const existingIds = [...list.querySelectorAll("[data-role-id]")].map((el) => el.dataset.roleId)
     if (existingIds.includes(option.value)) {
       select.value = ""
@@ -425,23 +530,7 @@ export default class extends Controller {
       canRaise: option.dataset.raiseable === "true"
     })
 
-    // Visual list is final-on-top. Insert before Dean / after Supervisor anchors.
-    if (scope === "division") {
-      const first = list.querySelector("[data-role-id]")
-      if (first && this.roleName(first) === "Dean") {
-        list.insertBefore(li, first.nextSibling)
-      } else {
-        list.insertBefore(li, list.firstChild)
-      }
-    } else {
-      const items = [...list.querySelectorAll("[data-role-id]")]
-      const last = items[items.length - 1]
-      if (last && this.roleName(last) === "Supervisor") {
-        list.insertBefore(li, last)
-      } else {
-        list.appendChild(li)
-      }
-    }
+    list.appendChild(li)
 
     option.remove()
     select.value = ""
@@ -459,52 +548,13 @@ export default class extends Controller {
       }
     }
     this.refreshRoleMeta(card)
+    this.refreshMoveButtons(list)
     this.markDirty()
   }
 
-  ownerDragStart(event) {
-    this.dragOwner = event.currentTarget
-    this.dragOwnerSourceList = event.currentTarget.closest("[data-owner-list]")
-    event.dataTransfer.effectAllowed = "move"
-    event.currentTarget.classList.add("opacity-60")
-  }
-
-  ownerDragEnd(event) {
-    event.currentTarget.classList.remove("opacity-60")
-    this.dragOwner = null
-    this.dragOwnerSourceList = null
-  }
-
-  ownerDragOver(event) {
-    event.preventDefault()
-  }
-
-  ownerDrop(event) {
-    event.preventDefault()
-    if (!this.dragOwner) return
-
-    const list = event.currentTarget
-    // The "not on any template" tray is a source only — dropping back would be a no-op on save.
-    if (list.hasAttribute("data-owner-tray")) return
-
-    const card = list.closest("[data-hierarchy-card]")
-    const expectedType = card?.dataset.hierarchyScope === "division" ? "Division" : "SubDivision"
-    if (this.dragOwner.dataset.ownerType !== expectedType) {
-      alert("Divisions and sub-divisions can only move within their own section.")
-      return
-    }
-
-    if (list.contains(this.dragOwner)) return
-
-    const sourceList = this.dragOwnerSourceList || this.dragOwner.closest("[data-owner-list]")
-    const empty = list.querySelector("[data-empty-owners]")
-    if (empty) empty.remove()
-    list.appendChild(this.dragOwner)
-    this.styleOwnerForList(this.dragOwner, list)
-    this.ensureEmptyOwnersPlaceholder(sourceList)
-    this.refreshOwnerCount(sourceList?.closest("[data-hierarchy-card]"))
-    this.refreshOwnerCount(card)
-    this.markDirty()
+  clearListPlaceholders(list) {
+    if (!list) return
+    list.querySelectorAll("[data-empty-owners], [data-empty-tray]").forEach((el) => el.remove())
   }
 
   ensureEmptyOwnersPlaceholder(list) {
@@ -518,7 +568,21 @@ export default class extends Controller {
     const li = document.createElement("li")
     li.className = "rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-xs leading-relaxed text-slate-400"
     li.dataset.emptyOwners = "true"
-    li.textContent = `Nothing attached yet. Drag a ${noun} here or use Assign below.`
+    li.textContent = `Nothing attached yet. Use Assign below to add a ${noun}.`
+    list.appendChild(li)
+  }
+
+  ensureEmptyTrayPlaceholder(list) {
+    if (!list?.hasAttribute("data-owner-tray")) return
+    if (list.querySelector("[data-owner-id]")) return
+    if (list.querySelector("[data-empty-tray]")) return
+
+    const section = list.closest("[data-scope-section]")
+    const noun = section?.dataset.hierarchyScope === "division" ? "division" : "sub-division"
+    const li = document.createElement("li")
+    li.className = "rounded-lg border border-dashed border-amber-200/80 px-3 py-2 text-xs text-amber-800/60"
+    li.dataset.emptyTray = "true"
+    li.textContent = `All ${noun}s are on a template.`
     list.appendChild(li)
   }
 
@@ -551,11 +615,75 @@ export default class extends Controller {
         connector?.remove()
       } else if (!connector) {
         connector = document.createElement("span")
-        connector.className = "pointer-events-none absolute bottom-0 left-[61px] top-[54px] w-px bg-slate-300"
+        connector.className = "pointer-events-none absolute bottom-0 left-[3.25rem] top-[3.25rem] w-px bg-slate-300 sm:left-[3.5rem]"
         connector.dataset.roleConnector = ""
         connector.setAttribute("aria-hidden", "true")
         item.prepend(connector)
       }
+    })
+    this.refreshMoveButtons(card.querySelector("[data-role-list]"))
+  }
+
+  refreshMoveButtons(list) {
+    if (!list) return
+    const items = [...list.querySelectorAll(":scope > [data-role-id]")]
+    items.forEach((item, index) => {
+      const up = item.querySelector("[data-move-up]")
+      const down = item.querySelector("[data-move-down]")
+      if (up) up.disabled = index === 0
+      if (down) down.disabled = index === items.length - 1
+    })
+  }
+
+  refreshOwnerMoveMenu(owner) {
+    const destinations = owner.querySelector("[data-owner-move-destinations]")
+    if (!destinations) return
+
+    const section = owner.closest("[data-scope-section]")
+    const currentList = owner.closest("[data-owner-list]")
+    const currentId = currentList?.hasAttribute("data-owner-tray")
+      ? "tray"
+      : currentList?.dataset.hierarchyId
+
+    const items = []
+    section?.querySelectorAll("[data-hierarchy-card]").forEach((card) => {
+      const id = card.dataset.hierarchyId
+      if (!id || id === currentId) return
+      const name = card.dataset.hierarchyName || "Template"
+      items.push(`
+        <button type="button"
+                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                data-action="hierarchy-templates#moveOwnerTo"
+                data-destination="${this.escapeHtml(id)}">
+          <span class="material-symbols-outlined text-lg text-slate-400" aria-hidden="true">account_tree</span>
+          <span class="min-w-0 truncate">${this.escapeHtml(name)}</span>
+        </button>
+      `)
+    })
+
+    if (currentId !== "tray") {
+      items.push(`
+        <button type="button"
+                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                data-action="hierarchy-templates#moveOwnerTo"
+                data-destination="tray">
+          <span class="material-symbols-outlined text-lg text-amber-500" aria-hidden="true">inventory_2</span>
+          <span class="min-w-0 truncate">Not on a template</span>
+        </button>
+      `)
+    }
+
+    destinations.innerHTML = items.length > 0
+      ? items.join("")
+      : '<p class="px-4 py-2 text-xs leading-relaxed text-slate-400">No other destinations</p>'
+  }
+
+  refreshAllMoveControls() {
+    this.element.querySelectorAll("[data-role-list], [data-owner-list]").forEach((list) => {
+      this.refreshMoveButtons(list)
+    })
+    this.element.querySelectorAll("[data-owner-id]").forEach((owner) => {
+      this.refreshOwnerMoveMenu(owner)
     })
   }
 
@@ -632,7 +760,6 @@ export default class extends Controller {
         })
       })
 
-      // Accept current state as saved so the leave guard won't block the submit navigation.
       this.element.dispatchEvent(new CustomEvent("unsaved-changes:snapshot", {
         bubbles: true,
         detail: { snapshot: JSON.stringify({ hierarchies, reattachments }), seedInitial: true }

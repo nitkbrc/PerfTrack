@@ -57,7 +57,7 @@ RSpec.describe "Path B lifecycle", type: :system do
     expect(page).to have_content("4.3") # sigmoid(net -15, k 50) = 4.3
     find("summary").click
     expect(page).to have_content(
-      'A conduct record raised by your supervisor for "Ragging incident report" was verified by the dean.'
+      'A conduct record raised by your supervisor for "Ragging incident report" was verified by the Dean.'
     )
     expect(page).to have_content("Negative: 15 points deducted from your record.")
   end

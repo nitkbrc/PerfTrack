@@ -66,7 +66,7 @@ RSpec.describe "Path A lifecycle", type: :system do
     expect(page).to have_content("6.0") # sigmoid(net 20, k 50) = 6.0
     within("#notifications") { expect(page).to have_content("1") }
     find("summary").click
-    expect(page).to have_content('Your request "Won the state hackathon" was approved by the dean.')
+    expect(page).to have_content('Your request "Won the state hackathon" was approved by the Dean.')
     expect(page).to have_content("Positive: 20 points added to your record.")
   end
 end

@@ -27,7 +27,7 @@ RSpec.describe HierarchyBulkSave do
   it "reorders roles without position uniqueness or validation errors" do
     hierarchy, mid = build_custom_division_hierarchy
 
-    # Requested order puts Dean first in payload; normalize should still pin Dean last.
+    # Requested order puts Dean first in payload; the saved order must honor it.
     payload = {
       hierarchies: [
         {
@@ -47,7 +47,7 @@ RSpec.describe HierarchyBulkSave do
     expect { described_class.new(payload).call! }.not_to raise_error
 
     names = hierarchy.reload.hierarchy_roles.ordered.map { |hr| hr.review_role.name }
-    expect(names).to eq([ "Division Reviewer Spec", ReviewRole::DEAN ])
+    expect(names).to eq([ ReviewRole::DEAN, "Division Reviewer Spec" ])
   end
 
   it "reattaches a division and drops obsolete role assignments" do

@@ -28,17 +28,19 @@ class DeanApprovalNotificationJob < ApplicationJob
 
   def opening_sentence(request, positive)
     title = request.title
+    decision = "#{positive ? "approved" : "verified"}#{by_role_clause(request)}"
 
     if request.student_initiated?
-      if positive
-        "Your request \"#{title}\" was approved by the dean."
-      else
-        "Your request \"#{title}\" was verified by the dean."
-      end
+      "Your request \"#{title}\" was #{decision}."
     elsif positive
-      "A request raised by your supervisor for \"#{title}\" was approved by the dean."
+      "A request raised by your supervisor for \"#{title}\" was #{decision}."
     else
-      "A conduct record raised by your supervisor for \"#{title}\" was verified by the dean."
+      "A conduct record raised by your supervisor for \"#{title}\" was #{decision}."
     end
+  end
+
+  def by_role_clause(request)
+    role_name = request.approving_review_role_name
+    role_name.present? ? " by the #{role_name}" : ""
   end
 end

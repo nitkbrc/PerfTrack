@@ -2,9 +2,9 @@
 <%= "=" * (@is_reforward ? 21 : 18) %>
 
 <% if @is_reforward %>
-The supervisor clarified this request after your earlier feedback and re-forwarded it for your review.
+<%= @actor_role_label %> clarified this request after your earlier feedback and re-forwarded it for your review.
 <% else %>
-The supervisor approved this request and forwarded it for your review.
+<%= @actor_role_label %> approved this request and forwarded it for your review.
 <% end %>
 
 <%= render "details" %>

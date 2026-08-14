@@ -27,6 +27,7 @@ class RequestMailer < ApplicationMailer
   def forwarded_to_dean(request, actor:, is_reforward: false, recipient: nil)
     @is_reforward = is_reforward
     setup_request_mail(request, actor: actor, recipient: recipient || request.current_reviewer)
+    @actor_role_label = actor_role_label(request, actor)
     subject = if is_reforward
       "Clarified SCATS request re-forwarded for your review"
     else
@@ -39,16 +40,20 @@ class RequestMailer < ApplicationMailer
     setup_request_mail(request, actor: actor,
                        recipient: recipient || request.current_reviewer,
                        comment: comment)
+    @actor_role_label = actor_role_label(request, actor)
     mail(to: @recipient.email, subject: "Clarification requested on a SCATS request")
   end
 
   def reverted_to_student(request, actor:, comment: nil)
     setup_request_mail(request, actor: actor, recipient: request.student.user, comment: comment)
+    @actor_role_label = actor_role_label(request, actor)
     mail(to: @recipient.email, subject: "Your SCATS request was returned for revision")
   end
 
   def approved_notification(request, actor:, recipient:)
     setup_request_mail(request, actor: actor, recipient: recipient)
+    role_name = request.approving_review_role_name
+    @approving_role_clause = role_name.present? ? " by the #{role_name}" : ""
     mail(to: @recipient.email, subject: "SCATS request approved")
   end
 
@@ -81,6 +86,13 @@ class RequestMailer < ApplicationMailer
     @version = request.current_version
     @comment = comment
     @timeline_url = timeline_url_for(recipient, request)
+  end
+
+  # Sentence-opening label for the acting reviewer, e.g. "The Associate Dean",
+  # falling back to role-free wording when their role cannot be determined.
+  def actor_role_label(request, actor)
+    role_name = request.review_role_name_for(actor)
+    role_name.present? ? "The #{role_name}" : "A reviewer"
   end
 
   def timeline_url_for(recipient, request)

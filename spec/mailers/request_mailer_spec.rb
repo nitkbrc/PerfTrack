@@ -71,25 +71,72 @@ RSpec.describe RequestMailer, type: :mailer do
       expect(mail.to).to eq([ dean.email ])
       expect(mail.subject).to include("re-forwarded")
       expect(decoded_body(mail)).to include("re-forwarded")
+      expect(decoded_body(mail)).to include("The Supervisor clarified this request")
     end
   end
 
   describe "#reverted_to_supervisor" do
-    it "includes the dean comment" do
+    it "names the reverting review role and includes the comment" do
       mail = described_class.reverted_to_supervisor(request_record, actor: dean, comment: "Need dates")
 
       expect(mail.to).to eq([ supervisor.email ])
       expect(decoded_body(mail)).to include("Need dates")
+      expect(decoded_body(mail)).to include("The Dean asked for clarification on this request")
+    end
+
+    it "names a non-Dean reviewer that holds the later division step" do
+      associate_dean_role = ReviewRole.find_or_create_by!(name: ReviewRole::ASSOCIATE_DEAN) do |role|
+        role.scope = "division"
+        role.system_role = false
+      end
+      hierarchy = Hierarchy.create!(name: "Dean then Associate Dean", scope: "division", is_default: false)
+      hierarchy.hierarchy_roles.create!(review_role: ReviewRole.dean, position: 1, can_raise_on_behalf: false)
+      hierarchy.hierarchy_roles.create!(review_role: associate_dean_role, position: 2, can_raise_on_behalf: false)
+      division.update!(hierarchy: hierarchy)
+      associate_dean = create(:user, :faculty, name: "Assoc Dean Person")
+      RoleAssignment.create!(user: associate_dean, review_role: associate_dean_role, division: division)
+
+      request_at_associate_dean = create(:achievement_request, student: student, category: category,
+                                                               title: "Robotics championship",
+                                                               at_step: associate_dean_role)
+      request_at_associate_dean.revert!(actor: associate_dean, comment: "Need dates")
+
+      mail = described_class.reverted_to_supervisor(request_at_associate_dean, actor: associate_dean,
+                                                    recipient: dean, comment: "Need dates")
+
+      expect(decoded_body(mail)).to include("The Associate Dean asked for clarification on this request")
+      expect(decoded_body(mail)).not_to include("The dean asked")
+    end
+
+    it "falls back to role-free wording when the reverting role cannot be determined" do
+      record = request_record
+      division.role_assignments.destroy_all
+
+      mail = described_class.reverted_to_supervisor(record, actor: dean, recipient: supervisor,
+                                                    comment: "Need dates")
+
+      expect(decoded_body(mail)).to include("A reviewer asked for clarification on this request")
+      expect(decoded_body(mail)).not_to include("The  asked")
     end
   end
 
   describe "#reverted_to_student" do
-    it "emails the student" do
+    it "emails the student and names the returning review role" do
       mail = described_class.reverted_to_student(request_record, actor: supervisor, comment: "Add proof")
 
       expect(mail.to).to eq([ student.user.email ])
       expect(decoded_body(mail)).to include(student_achievement_request_url(request_record))
       expect(decoded_body(mail)).to include("Add proof")
+      expect(decoded_body(mail)).to include("The Supervisor returned this request for revision")
+    end
+
+    it "falls back to role-free wording when the returning role cannot be determined" do
+      record = request_record
+      sub_division.role_assignments.destroy_all
+
+      mail = described_class.reverted_to_student(record, actor: supervisor, comment: "Add proof")
+
+      expect(decoded_body(mail)).to include("A reviewer returned this request for revision")
     end
   end
 
@@ -99,6 +146,15 @@ RSpec.describe RequestMailer, type: :mailer do
 
       expect(mail.to).to eq([ student.user.email ])
       expect(mail.subject).to include("approved")
+    end
+
+    it "names the review role that granted final approval" do
+      request_record.advance!(actor: supervisor)
+      request_record.advance!(actor: dean)
+
+      mail = described_class.approved_notification(request_record, actor: dean, recipient: student.user)
+
+      expect(decoded_body(mail)).to include("approved by the Dean")
     end
   end
 

@@ -10,14 +10,6 @@ class HierarchyRole < ApplicationRecord
 
   scope :ordered, -> { order(:position) }
 
-  def supervisor_anchor?
-    review_role&.supervisor?
-  end
-
-  def dean_anchor?
-    review_role&.dean?
-  end
-
   private
 
   def scope_matches_hierarchy

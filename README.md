@@ -2,74 +2,214 @@
 
 **Student Character and Achievement Tracking System**
 
-A structured platform where students submit achievements (or have them submitted on their behalf by a supervisor) with proof, a two-stage review process verifies them, and verified achievements contribute signed points to a student's character record — positive for genuine achievements, negative for conduct issues — visible separately to the student and to staff. Beyond point-tracking, SCATS gives faculty a reliable, persistent record of student character so neither excellence nor conduct issues are lost to memory or staff turnover.
+SCATS is a Rails application for institutes to record verified student achievements and conduct outcomes as a durable character ledger. Students (or authorised faculty on their behalf) submit requests with proof; configurable review chains verify them; approved outcomes contribute signed points to each student’s record — positive for achievements, negative for conduct — visible to the student and to faculty.
 
-> This project is under active development. APIs, schema, and UI may change.
+> Active development. Schema, permissions, and UI may still evolve.
+
+---
+
+## Features
+
+- **Path A** — student submits a request with proof  
+- **Path B** — eligible faculty raise a request on a student’s behalf  
+- **Configurable review chains** — shared hierarchy templates (division / sub-division) with ordered review roles; staffing via role assignments  
+- **Multi-step advance / revert / reject** — live chain resolution; unstaffed roles are skipped  
+- **Hierarchy change safety** — in-flight requests are remapped onto the new staffed chain when templates change or owners are reattached (with history + notifications)  
+- **Points & score scale** — points snapshotted on final approval; admin-tunable score curve  
+- **Admin console** — users (CSV import), departments, divisions / sub-divisions / categories (archive), review roles, role assignments, hierarchy templates, reason templates, settings  
+- **Role permissions** — profile self-edit toggles; per review-role permission to create/import students  
+- **Faculty student create / CSV import** — gated by review-role flags and live assignments  
+- **Notifications & email** — in-app student notifications; Action Mailer for review events  
+- **Unsaved-changes guard** — leave confirm (Stay / Discard / Save & exit) on save surfaces  
 
 ---
 
 ## Tech stack
 
 | Layer | Choice |
-|---|---|
-| Framework | Ruby on Rails 8.1 |
-| Language | Ruby 3.4.8 |
+| --- | --- |
+| Framework | Ruby on Rails ~> 8.1 |
+| Language | Ruby 3.4.8 (see `.ruby-version`) |
 | Database | PostgreSQL 16 |
-| Auth | Devise |
+| Auth | Devise (no self-registration; admin-provisioned accounts) |
 | Authorization | Pundit |
-| Frontend | Hotwire (Turbo + Stimulus), Tailwind CSS |
-| File uploads | Active Storage |
+| Frontend | Hotwire (Turbo + Stimulus), Tailwind CSS, Importmap |
+| Jobs / cache | Solid Queue, Solid Cache (primary DB) |
+| Uploads | Active Storage |
+| Deploy | Docker + Render blueprint (`render.yaml`) |
 | Tests | RSpec, Capybara |
 
 ---
 
-## Run locally
+## Roles and review model
 
-**Prerequisites:** Ruby 3.4.8, Docker Desktop, Bundler.
+`User.role` is one of **`admin`**, **`faculty`**, or **`student`**.
+
+**Dean**, **Supervisor**, and other titles are **`ReviewRole`s**, not separate user roles. Faculty hold them through **`RoleAssignment`s** on a division or sub-division. Chains are defined by **hierarchy templates** attached to those owners.
+
+| Actor | Capabilities |
+| --- | --- |
+| **Admin** | Org structure, users/imports, review roles, hierarchies, assignments, reason templates, score scale, role permissions. Does not browse student character scores. |
+| **Faculty** | Student directory and score breakdowns; review queues when assigned; optional student create/import when their review role allows it. |
+| **Student** | Submit / resubmit requests; view own score, timeline, and notifications. |
+
+Default seeded Technical / Coding demo chain:
+
+`Supervisor → Coordinator → Division Reviewer → Dean`
+
+Final points are recorded only when the last staffed step approves.
+
+---
+
+## Prerequisites
+
+- Ruby **3.4.8** (rbenv or equivalent)  
+- Bundler  
+- Docker Desktop (Postgres 16 via Compose)  
+- Node is **not** required for day-to-day JS (Importmap); Tailwind is built via `tailwindcss-rails`  
+
+On Windows, development is typically done in **WSL2** with Docker Desktop integration.
+
+---
+
+## Local setup
 
 ```bash
-# 1. Install gems
+git clone <your-fork-or-remote> scats
+cd scats
+
 bundle install
 
-# 2. Start Postgres
+# Start PostgreSQL (user/password/db: scats / scats / scats_development)
 docker compose up -d
 
-# 3. Set up the database
-bin/rails db:create db:migrate db:seed
+bin/rails db:prepare   # create + migrate
+bin/rails db:seed      # idempotent demo data
 
-# 4. Start the server
 bin/rails server
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-`db:seed` loads demo departments, divisions, users, and sample requests. Seeded logins are printed at the end of the seed run (default passwords: `password123`, admin: `admin123`).
+### Demo logins (from seeds)
 
-After CSS changes, rebuild styles if needed:
+Printed again at the end of `db:seed`. Defaults:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@scats.edu` | `admin123` |
+| Faculty / others | e.g. `meera.nair@scats.edu`, `kavya.shetty@scats.edu`, `asha.kumar@scats.edu` | `password123` |
+
+`db:seed` is safe to re-run; it does not duplicate structure or re-create requests for students who already have them.
+
+### Tailwind
+
+After changing Tailwind sources:
 
 ```bash
 bin/rails tailwindcss:build
 ```
 
-Stop Postgres when done: `docker compose stop`.
+### Stop local Postgres
+
+```bash
+docker compose stop
+```
 
 ---
 
-## Roles
+## Configuration
 
-`Users.role` is one of **Admin**, **Faculty**, or **Student**.
+### Environment
 
-**Dean** and **Supervisor** are not separate roles — they are capacities a Faculty member holds by assignment:
+Copy [`.env.example`](.env.example) to `.env` for optional local mail (never commit `.env`):
 
-- **Dean** — assigned to exactly one Division; cannot also be a Supervisor.
-- **Supervisor** — assigned to one or more Sub-divisions; cannot also be a Dean.
+```bash
+cp .env.example .env
+```
 
-| Role / capacity | What they do |
-|---|---|
-| **Admin** | Manage users, departments, divisions, sub-divisions, categories, and reason templates. Cannot view student achievement data. |
-| **Faculty** | Browse all students' overall scores; open a student for positive/negative breakdown and contributing requests. |
-| **Dean** *(Faculty)* | Final review: approve (award points), revert to supervisor, or reject. |
-| **Supervisor** *(Faculty)* | First review: approve & forward, revert to student, or reject. Can also raise requests on a student's behalf. |
-| **Student** | Submit requests with proof; see own score, history, and approval notifications. |
+| Variable | Purpose |
+| --- | --- |
+| `GMAIL_USERNAME` / `GMAIL_APP_PASSWORD` | SMTP for review emails in environments that send mail |
+| `DATABASE_URL` | Production / Render Postgres URL |
+| `RAILS_MASTER_KEY` | Decrypt `config/credentials` (required in production / Docker) |
+| `RAILS_ENV` | `development` locally; `production` on Render |
+| `SOLID_QUEUE_IN_PUMA` | Run Solid Queue inside Puma (set on Render) |
 
-Review flow: **Student / Supervisor → Supervisor → Dean**. Points are snapshotted only on dean approval.
+Development uses Compose Postgres (`config/database.yml`). Production uses a single `DATABASE_URL` for app, queue, and cache tables.
+
+### Credentials
+
+Production needs `RAILS_MASTER_KEY` matching `config/master.key` (or the credentials key used to build the image). Do not commit secrets.
+
+---
+
+## Tests
+
+```bash
+bundle exec rspec
+```
+
+Focused examples:
+
+```bash
+bundle exec rspec spec/services/hierarchy_bulk_save_spec.rb
+bundle exec rspec spec/services/in_flight_request_remapper_spec.rb
+bundle exec rspec spec/requests/faculty/student_create_spec.rb
+```
+
+---
+
+## Deployment (Render)
+
+Blueprint: [`render.yaml`](render.yaml) — Docker web service + Postgres (`scats` / `scats-db`), typically from the `nitkbrc/PerfTrack` remote.
+
+1. Connect the GitHub repo in Render (Blueprint or existing service).  
+2. Set **`RAILS_MASTER_KEY`**.  
+3. Deploy; run migrations against production if the release process does not already:
+
+   ```bash
+   RAILS_ENV=production DATABASE_URL='postgresql://…?sslmode=require' bin/rails db:migrate
+   ```
+
+4. Optional: `bin/rails db:seed` only for demo environments (avoid on real production data).
+
+**Note:** Free Render web and Postgres sleep when idle and are region-limited; first requests and cross-region latency can feel slow. That is hosting capacity, not missing app bootstrapping.
+
+Health check: `GET /up`.
+
+---
+
+## Repository layout (high level)
+
+```text
+app/
+  controllers/     # admin, students, supervisors, deans, faculties, …
+  models/          # User, AchievementRequest, Hierarchy, ReviewRole, …
+  services/        # HierarchyBulkSave, InFlightRequestRemapper, CSV helpers, …
+  javascript/      # Stimulus controllers (hierarchies, leave-guard, …)
+  views/
+config/
+db/migrate/ db/seeds.rb
+spec/
+render.yaml        # Render blueprint
+docker-compose.yml # Local Postgres 16
+Dockerfile         # Production image
+```
+
+---
+
+## Remotes
+
+This codebase is often pushed to both:
+
+- Application fork / working remote (e.g. `origin`)  
+- Institute remote (e.g. `brcSir` → `nitkbrc/PerfTrack`)
+
+Keep `main` in sync on both when releasing.
+
+---
+
+## License / ownership
+
+Internal institute project unless otherwise stated by the maintainers. Ask before redistributing.

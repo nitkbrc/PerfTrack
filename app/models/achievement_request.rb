@@ -327,6 +327,30 @@ class AchievementRequest < ApplicationRecord
     resolved&.can_raise_on_behalf?
   end
 
+  # Final approver's role name for student-facing copy. current_review_role is
+  # cleared on approval, so read it back from the approving actor's assignment on
+  # this request's owners rather than the chain, which may have changed since.
+  # nil when it cannot be determined — callers must degrade to role-free wording.
+  def approving_review_role_name
+    approval = req_histories.select { |history| history.to_status == "approved" }.max_by(&:created_at)
+    return nil if approval.nil?
+
+    review_role_name_for(approval.actor)
+  end
+
+  # Review role the actor holds over this request's owners, preferring the
+  # division-scoped assignment. nil when they hold none — callers must degrade
+  # to role-free wording.
+  def review_role_name_for(actor)
+    return nil if actor.nil?
+
+    sub_division = category.sub_division
+    assignments = RoleAssignment.includes(:review_role).where(user_id: actor.id)
+    assignment = assignments.find_by(division_id: sub_division.division_id) ||
+                 assignments.find_by(sub_division_id: sub_division.id)
+    assignment&.review_role&.name
+  end
+
   private
 
   def finalize_approve!(actor:)

@@ -76,7 +76,7 @@ class Hierarchy < ApplicationRecord
     usage_count.positive?
   end
 
-  # Insert a role after Supervisor (sub) or before Dean (div).
+  # Append a role to the end of the review order (final approver).
   def insert_role!(review_role, can_raise_on_behalf: false)
     raise ArgumentError, "scope mismatch" unless review_role.scope == scope
 
@@ -99,16 +99,7 @@ class Hierarchy < ApplicationRecord
     roles = hierarchy_roles.includes(:review_role).to_a
     return if roles.empty?
 
-    ordered =
-      if scope_sub_division?
-        supervisor = roles.find { |r| r.review_role.supervisor? }
-        others = (roles - [ supervisor ].compact).sort_by(&:position)
-        [ supervisor ].compact + others
-      else
-        dean = roles.find { |r| r.review_role.dean? }
-        others = (roles - [ dean ].compact).sort_by(&:position)
-        others + [ dean ].compact
-      end
+    ordered = roles.sort_by(&:position)
 
     # Park in a free positive range first so unique (hierarchy_id, position)
     # never clashes and position validations never see negatives.

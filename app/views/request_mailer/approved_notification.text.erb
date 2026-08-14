@@ -2,9 +2,9 @@ Request approved
 ================
 
 <% if @recipient.id == @student.user_id %>
-Your SCATS request has been approved by the dean<%= @request.points_awarded.present? ? " (#{@request.points_awarded} points awarded)" : "" %>.
+Your SCATS request has been approved<%= @approving_role_clause %><%= @request.points_awarded.present? ? " (#{@request.points_awarded} points awarded)" : "" %>.
 <% else %>
-A SCATS request you forwarded on behalf of <%= @student.user.name.presence || @student.usn %> has been approved by the dean<%= @request.points_awarded.present? ? " (#{@request.points_awarded} points awarded)" : "" %>.
+A SCATS request you forwarded on behalf of <%= @student.user.name.presence || @student.usn %> has been approved<%= @approving_role_clause %><%= @request.points_awarded.present? ? " (#{@request.points_awarded} points awarded)" : "" %>.
 <% end %>
 
 <%= render "details" %>

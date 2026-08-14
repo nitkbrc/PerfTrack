@@ -134,16 +134,7 @@ class HierarchyBulkSave
     roles = hierarchy.hierarchy_roles.includes(:review_role).to_a.reject { |hr| pending.include?(hr.id) }
     return if roles.empty?
 
-    ordered =
-      if hierarchy.scope_sub_division?
-        supervisor = roles.find { |r| r.review_role.supervisor? }
-        others = (roles - [ supervisor ].compact).sort_by(&:position)
-        [ supervisor ].compact + others
-      else
-        dean = roles.find { |r| r.review_role.dean? }
-        others = (roles - [ dean ].compact).sort_by(&:position)
-        others + [ dean ].compact
-      end
+    ordered = roles.sort_by(&:position)
 
     ordered.each_with_index { |hr, i| hr.update_columns(position: 30_000 + i, updated_at: Time.current) }
     ordered.each_with_index { |hr, i| hr.update_columns(position: i + 1, updated_at: Time.current) }
