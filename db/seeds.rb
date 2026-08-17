@@ -430,7 +430,7 @@ seed_requests_for(tara) do
 end
 
 puts "Ensuring notifications for approved requests..."
-AchievementRequest.approved.pluck(:id).each { |id| DeanApprovalNotificationJob.perform_now(id) }
+AchievementRequest.approved.pluck(:id).each { |id| FinalApprovalNotificationJob.perform_now(id) }
 
 puts <<~DONE
 

@@ -17,13 +17,13 @@ module StudentHelper
     "approve" => "Approved — points awarded",
     "revert" => "Sent back for revision",
     "reject" => "Rejected",
-    "supervisor_approve" => "Approved & forwarded to dean by supervisor",
-    "supervisor_reforward" => "Clarified & re-forwarded to dean by supervisor",
-    "supervisor_revert" => "Reverted to student by supervisor",
-    "supervisor_reject" => "Rejected by supervisor",
-    "dean_approve" => "Approved by dean — points awarded",
-    "dean_revert" => "Sent back to supervisor by dean",
-    "dean_reject" => "Rejected by dean",
+    "supervisor_approve" => "Approved & forwarded to the next reviewer",
+    "supervisor_reforward" => "Clarified & re-forwarded to the next reviewer",
+    "supervisor_revert" => "Reverted to student",
+    "supervisor_reject" => "Rejected",
+    "dean_approve" => "Approved — points awarded",
+    "dean_revert" => "Sent back for revision",
+    "dean_reject" => "Rejected",
     "hierarchy_reassigned" => "Review path updated after hierarchy change",
     "auto_reject_archived" => "Automatically rejected — category archived"
   }.freeze
@@ -108,9 +108,8 @@ module StudentHelper
 
   def history_actor_with_role(action, actor_name)
     role = case action.to_s
-    when /\Adean_/, "approve" then "Reviewer"
-    when /\Asupervisor_/ then "Supervisor"
-    when "advance", "revert", "reject" then "Reviewer"
+    when "supervisor_initiate", "supervisor_revise" then "Supervisor"
+    when /\Adean_/, /\Asupervisor_/, "approve", "advance", "revert", "reject" then "Reviewer"
     when "submit", "resubmit" then "Student"
     end
     role ? "#{actor_name} (#{role})" : actor_name

@@ -1,6 +1,6 @@
 class RequestMailer < ApplicationMailer
-  # Student submit / resubmit → current reviewer (typically supervisor)
-  def submitted_to_supervisor(request, actor:, recipient: nil)
+  # Student submit / resubmit → current reviewer (typically first staffed role)
+  def submitted_to_reviewer(request, actor:, recipient: nil)
     setup_request_mail(request, actor: actor, recipient: recipient || request.current_reviewer)
     fresh = request.current_version&.version_number.to_i <= 1
     subject = if fresh
@@ -8,8 +8,9 @@ class RequestMailer < ApplicationMailer
     else
       "Resubmitted SCATS request awaiting your review"
     end
-    mail(to: @recipient.email, subject: subject)
+    mail(to: @recipient.email, subject: subject, template_name: "submitted_to_reviewer")
   end
+  alias_method :submitted_to_supervisor, :submitted_to_reviewer
 
   # Path B supervisor raise → next reviewer (typically dean)
   def raised_on_behalf(request, actor:, recipient: nil)
@@ -24,7 +25,7 @@ class RequestMailer < ApplicationMailer
   end
 
   # Advance → next reviewer
-  def forwarded_to_dean(request, actor:, is_reforward: false, recipient: nil)
+  def forwarded_to_reviewer(request, actor:, is_reforward: false, recipient: nil)
     @is_reforward = is_reforward
     setup_request_mail(request, actor: actor, recipient: recipient || request.current_reviewer)
     @actor_role_label = actor_role_label(request, actor)
@@ -33,16 +34,19 @@ class RequestMailer < ApplicationMailer
     else
       "SCATS request forwarded for your review"
     end
-    mail(to: @recipient.email, subject: subject)
+    mail(to: @recipient.email, subject: subject, template_name: "forwarded_to_reviewer")
   end
+  alias_method :forwarded_to_dean, :forwarded_to_reviewer
 
-  def reverted_to_supervisor(request, actor:, comment: nil, recipient: nil)
+  def reverted_to_reviewer(request, actor:, comment: nil, recipient: nil)
     setup_request_mail(request, actor: actor,
                        recipient: recipient || request.current_reviewer,
                        comment: comment)
     @actor_role_label = actor_role_label(request, actor)
-    mail(to: @recipient.email, subject: "Clarification requested on a SCATS request")
+    mail(to: @recipient.email, subject: "Clarification requested on a SCATS request",
+         template_name: "reverted_to_reviewer")
   end
+  alias_method :reverted_to_supervisor, :reverted_to_reviewer
 
   def reverted_to_student(request, actor:, comment: nil)
     setup_request_mail(request, actor: actor, recipient: request.student.user, comment: comment)

@@ -30,9 +30,9 @@ RSpec.describe RequestMailer, type: :mailer do
     expect(body).to include("1")
   end
 
-  describe "#submitted_to_supervisor" do
+  describe "#submitted_to_reviewer" do
     it "emails the supervisor with shared context" do
-      mail = described_class.submitted_to_supervisor(request_record, actor: actor)
+      mail = described_class.submitted_to_reviewer(request_record, actor: actor)
 
       expect(mail.to).to eq([ supervisor.email ])
       expect(mail.subject).to match(/New SCATS request|Resubmitted SCATS request/)
@@ -63,10 +63,10 @@ RSpec.describe RequestMailer, type: :mailer do
     end
   end
 
-  describe "#forwarded_to_dean" do
+  describe "#forwarded_to_reviewer" do
     it "uses reforward framing when is_reforward is true" do
-      mail = described_class.forwarded_to_dean(request_record, actor: supervisor, is_reforward: true,
-                                              recipient: dean)
+      mail = described_class.forwarded_to_reviewer(request_record, actor: supervisor, is_reforward: true,
+                                                   recipient: dean)
 
       expect(mail.to).to eq([ dean.email ])
       expect(mail.subject).to include("re-forwarded")
@@ -75,9 +75,9 @@ RSpec.describe RequestMailer, type: :mailer do
     end
   end
 
-  describe "#reverted_to_supervisor" do
+  describe "#reverted_to_reviewer" do
     it "names the reverting review role and includes the comment" do
-      mail = described_class.reverted_to_supervisor(request_record, actor: dean, comment: "Need dates")
+      mail = described_class.reverted_to_reviewer(request_record, actor: dean, comment: "Need dates")
 
       expect(mail.to).to eq([ supervisor.email ])
       expect(decoded_body(mail)).to include("Need dates")
@@ -101,8 +101,8 @@ RSpec.describe RequestMailer, type: :mailer do
                                                                at_step: associate_dean_role)
       request_at_associate_dean.revert!(actor: associate_dean, comment: "Need dates")
 
-      mail = described_class.reverted_to_supervisor(request_at_associate_dean, actor: associate_dean,
-                                                    recipient: dean, comment: "Need dates")
+      mail = described_class.reverted_to_reviewer(request_at_associate_dean, actor: associate_dean,
+                                                  recipient: dean, comment: "Need dates")
 
       expect(decoded_body(mail)).to include("The Associate Dean asked for clarification on this request")
       expect(decoded_body(mail)).not_to include("The dean asked")
@@ -112,8 +112,8 @@ RSpec.describe RequestMailer, type: :mailer do
       record = request_record
       division.role_assignments.destroy_all
 
-      mail = described_class.reverted_to_supervisor(record, actor: dean, recipient: supervisor,
-                                                    comment: "Need dates")
+      mail = described_class.reverted_to_reviewer(record, actor: dean, recipient: supervisor,
+                                                  comment: "Need dates")
 
       expect(decoded_body(mail)).to include("A reviewer asked for clarification on this request")
       expect(decoded_body(mail)).not_to include("The  asked")
@@ -166,6 +166,14 @@ RSpec.describe RequestMailer, type: :mailer do
 
       expect(mail.to).to eq([ student.user.email ])
       expect(decoded_body(mail)).to include("Not eligible")
+    end
+  end
+
+  describe "deprecated method aliases" do
+    it "keeps the old mailer action names for in-flight jobs" do
+      expect(described_class.instance_methods).to include(
+        :submitted_to_supervisor, :forwarded_to_dean, :reverted_to_supervisor
+      )
     end
   end
 end

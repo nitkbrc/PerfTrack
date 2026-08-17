@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe DeanApprovalNotificationJob, type: :job do
+RSpec.describe FinalApprovalNotificationJob, type: :job do
   let(:dean)         { create(:user, :faculty) }
   let(:supervisor)   { create(:user, :faculty, name: "Prof. Supervisor") }
   let(:division)     { create(:division, dean: dean, div_type: "positive") }
@@ -126,5 +126,9 @@ RSpec.describe DeanApprovalNotificationJob, type: :job do
 
   it "does nothing when the request no longer exists" do
     expect { described_class.perform_now(-1) }.not_to change(Notification, :count)
+  end
+
+  it "keeps DeanApprovalNotificationJob as a deserialize alias" do
+    expect(DeanApprovalNotificationJob).to be < FinalApprovalNotificationJob
   end
 end

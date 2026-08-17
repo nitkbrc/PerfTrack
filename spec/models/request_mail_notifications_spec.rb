@@ -34,7 +34,7 @@ RSpec.describe "Request email notification triggers", type: :model do
   it "emails the supervisor on student submit" do
     expect {
       path_a_request
-    }.to have_enqueued_mail(RequestMailer, :submitted_to_supervisor).once
+    }.to have_enqueued_mail(RequestMailer, :submitted_to_reviewer).once
   end
 
   it "emails the dean and student on supervisor initiate" do
@@ -52,7 +52,7 @@ RSpec.describe "Request email notification triggers", type: :model do
     expect {
       request.resubmit!(actor: student.user,
                         attrs: { title: "Path A revised", description: "Fixed" })
-    }.to have_enqueued_mail(RequestMailer, :submitted_to_supervisor).once
+    }.to have_enqueued_mail(RequestMailer, :submitted_to_reviewer).once
   end
 
   it "emails the next reviewer on supervisor advance" do
@@ -61,7 +61,7 @@ RSpec.describe "Request email notification triggers", type: :model do
 
     expect {
       request.advance!(actor: supervisor)
-    }.to have_enqueued_mail(RequestMailer, :forwarded_to_dean).once
+    }.to have_enqueued_mail(RequestMailer, :forwarded_to_reviewer).once
   end
 
   it "emails the next reviewer when Path B request is re-advanced after revert" do
@@ -71,7 +71,7 @@ RSpec.describe "Request email notification triggers", type: :model do
 
     expect {
       request.advance!(actor: supervisor)
-    }.to have_enqueued_mail(RequestMailer, :forwarded_to_dean).once
+    }.to have_enqueued_mail(RequestMailer, :forwarded_to_reviewer).once
   end
 
   it "emails the previous reviewer on dean revert" do
@@ -81,7 +81,7 @@ RSpec.describe "Request email notification triggers", type: :model do
 
     expect {
       request.revert!(actor: dean, comment: "Need dates")
-    }.to have_enqueued_mail(RequestMailer, :reverted_to_supervisor).once
+    }.to have_enqueued_mail(RequestMailer, :reverted_to_reviewer).once
   end
 
   it "emails the student on supervisor revert to floor" do
