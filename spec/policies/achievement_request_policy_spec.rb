@@ -88,6 +88,21 @@ RSpec.describe AchievementRequestPolicy do
     end
   end
 
+  describe "#revert?" do
+    it "permits the current reviewer when the raising role remains" do
+      at_dean!(request)
+      expect(described_class.new(dean, request).revert?).to be true
+    end
+
+    it "denies the current reviewer when the raising role was removed" do
+      at_dean!(request)
+      allow(request).to receive(:raiser_role_removed?).and_return(true)
+
+      expect(described_class.new(dean, request).review?).to be true
+      expect(described_class.new(dean, request).revert?).to be false
+    end
+  end
+
   describe "student submission actions" do
     let(:profile)      { create(:student) }
     let(:owner)        { profile.user }

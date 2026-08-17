@@ -52,7 +52,7 @@ RSpec.describe "Dean decision flow", type: :request do
 
     it "enqueues the notification job for the student" do
       expect { patch approve_dean_achievement_request_path(request_record) }
-        .to have_enqueued_job(DeanApprovalNotificationJob).with(request_record.id)
+        .to have_enqueued_job(FinalApprovalNotificationJob).with(request_record.id)
     end
 
     it "snapshots negative points for a negative division" do
@@ -111,6 +111,48 @@ RSpec.describe "Dean decision flow", type: :request do
       expect(flash[:alert]).to eq("Choose a reason.")
       expect(request_record.reload.status).to eq("in_review")
     end
+
+    it "blocks Path B revert when the raising role is gone from the template" do
+      supervisor = sub_division.supervisor
+      coordinator_role = ReviewRole.find_or_create_by!(name: "Dean Spec Coordinator") do |role|
+        role.scope = "sub_division"
+        role.raiseable_on_behalf_eligible = true
+        role.system_role = false
+      end
+      sub_hierarchy = Hierarchy.create!(name: "Dean Spec Sub #{SecureRandom.hex(4)}", scope: "sub_division")
+      sub_hierarchy.hierarchy_roles.create!(review_role: ReviewRole.supervisor, position: 1,
+                                            can_raise_on_behalf: true)
+      sub_hierarchy.hierarchy_roles.create!(review_role: coordinator_role, position: 2,
+                                            can_raise_on_behalf: true)
+      sub_division.update!(hierarchy: sub_hierarchy)
+      RoleAssignment.create!(user: create(:user, :faculty), review_role: coordinator_role,
+                             sub_division: sub_division)
+
+      path_b = AchievementRequest.supervisor_initiate!(
+        student: create(:student), actor: supervisor,
+        attrs: {
+          category: category,
+          title: "Raised on behalf",
+          description: "Path B",
+          proofs: [ Rack::Test::UploadedFile.new(Rails.root.join("spec/fixtures/files/proof.png"), "image/png") ]
+        }
+      )
+      path_b.advance!(actor: path_b.current_reviewer)
+      sub_hierarchy.hierarchy_roles.find_by!(review_role: ReviewRole.supervisor).destroy!
+
+      get dean_achievement_request_path(path_b)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(">Revert<")
+      expect(response.body).to include("raising role is no longer on the chain")
+
+      patch revert_dean_achievement_request_path(path_b),
+            params: { comment: "Need proof", reason_template_id: "other" }
+
+      expect(response).to redirect_to(dean_achievement_request_path(path_b))
+      expect(flash[:alert]).to eq(AchievementRequest::RAISER_ROLE_REMOVED_MESSAGE)
+      expect(path_b.reload).to be_in_review
+      expect(path_b.current_review_role.name).to eq(ReviewRole::DEAN)
+    end
   end
 
   describe "PATCH reject" do
@@ -134,6 +176,7 @@ RSpec.describe "Dean decision flow", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(request_record.title)
+      expect(response.body).to include(">Revert<")
     end
   end
 end

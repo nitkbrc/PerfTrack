@@ -32,6 +32,9 @@ RSpec.describe "Admin hierarchies", type: :request do
     expect(response.body).to include("Delete template")
     expect(response.body).to include('data-hierarchy-name-input')
     expect(response.body).to include(make_default_admin_hierarchy_path(custom))
+    expect(response.body).not_to include("Not on a template")
+    expect(response.body).not_to include("data-owner-tray")
+    expect(response.body).to include("Every unit stays on a template")
   end
 
   it "promotes a hierarchy to default without moving existing owners" do

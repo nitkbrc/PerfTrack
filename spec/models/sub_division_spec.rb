@@ -9,4 +9,12 @@ RSpec.describe SubDivision, type: :model do
     expect(sub_division.supervisor).to be_present
     expect(sub_division).to be_hierarchy_staffed
   end
+
+  it "rejects clearing the hierarchy" do
+    sub_division = create(:sub_division)
+    sub_division.hierarchy = nil
+
+    expect(sub_division).not_to be_valid
+    expect(sub_division.errors[:hierarchy]).to be_present
+  end
 end

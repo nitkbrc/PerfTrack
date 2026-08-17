@@ -65,6 +65,8 @@ RSpec.describe AchievementRequest, type: :model do
 
       expect(request).to be_in_review
       expect(request.current_review_role.name).to eq(ReviewRole::DEAN)
+      expect(request.originating_review_role).to eq(ReviewRole.supervisor)
+      expect(request).not_to be_raiser_role_removed
       expect(request.req_histories.sole.action).to eq("supervisor_initiate")
     end
   end
@@ -157,6 +159,121 @@ RSpec.describe AchievementRequest, type: :model do
       }.not_to change { request.request_versions.count }
 
       expect(request).to be_reverted
+    end
+  end
+
+  describe "#raiser_role_removed? / Path B revert lock" do
+    def custom_raiseable_role(name)
+      ReviewRole.find_or_create_by!(name: name) do |role|
+        role.scope = "sub_division"
+        role.raiseable_on_behalf_eligible = true
+        role.system_role = false
+      end
+    end
+
+    def path_b_world
+      ReviewRole.ensure_system_roles!
+      Hierarchy.ensure_defaults!
+
+      supervisor = create(:user, :faculty)
+      coordinator_user = create(:user, :faculty)
+      dean_user = create(:user, :faculty)
+      coordinator_role = custom_raiseable_role("Lock Spec Coordinator #{SecureRandom.hex(3)}")
+
+      sub_hierarchy = Hierarchy.create!(name: "Lock Spec Sub #{SecureRandom.hex(4)}", scope: "sub_division")
+      sub_hierarchy.hierarchy_roles.create!(review_role: ReviewRole.supervisor, position: 1,
+                                            can_raise_on_behalf: true)
+      sub_hierarchy.hierarchy_roles.create!(review_role: coordinator_role, position: 2,
+                                            can_raise_on_behalf: true)
+
+      division = create(:division, dean: dean_user)
+      sub_division = create(:sub_division, division: division, supervisor: supervisor)
+      sub_division.update!(hierarchy: sub_hierarchy)
+      RoleAssignment.create!(user: coordinator_user, review_role: coordinator_role,
+                             sub_division: sub_division)
+
+      category = create(:category, sub_division: sub_division)
+      request = described_class.supervisor_initiate!(
+        student: create(:student), actor: supervisor,
+        attrs: { category: category, title: "Path B lock", description: "x", proofs: [ proof_upload ] }
+      )
+
+      {
+        request: request,
+        supervisor: supervisor,
+        coordinator_user: coordinator_user,
+        coordinator_role: coordinator_role,
+        dean: dean_user,
+        sub_hierarchy: sub_hierarchy
+      }
+    end
+
+    def remove_supervisor_role!(hierarchy)
+      hierarchy.hierarchy_roles.find_by!(review_role: ReviewRole.supervisor).destroy!
+    end
+
+    it "blocks Path B revert when the raising role is gone, even if another raiseable role remains" do
+      world = path_b_world
+      request = world[:request]
+      expect(request.originating_review_role).to eq(ReviewRole.supervisor)
+      expect(request.current_reviewer).to eq(world[:coordinator_user])
+
+      request.advance!(actor: world[:coordinator_user])
+      remove_supervisor_role!(world[:sub_hierarchy])
+      request.reload
+
+      expect(request).to be_raiser_role_removed
+      expect {
+        request.revert!(actor: world[:dean], comment: "Need proof")
+      }.to raise_error(ActiveRecord::RecordInvalid) do |error|
+        expect(error.record.errors[:base]).to include(described_class::RAISER_ROLE_REMOVED_MESSAGE)
+      end
+      expect(request.reload).to be_in_review
+      expect(request.current_review_role.name).to eq(ReviewRole::DEAN)
+    end
+
+    it "still floors Path A to the student" do
+      student = create(:student)
+      category = create(:category)
+      supervisor = category.sub_division.supervisor
+      request = described_class.submit!(
+        student: student, actor: student.user,
+        attrs: { category: category, title: "Path A", description: "D", proofs: [ proof_upload ] }
+      )
+
+      request.revert!(actor: supervisor, comment: "Need clearer proof")
+      expect(request).to be_reverted
+    end
+
+    it "does not lock legacy Path B rows with no originating role" do
+      world = path_b_world
+      request = world[:request]
+      request.update_columns(originating_review_role_id: nil)
+      remove_supervisor_role!(world[:sub_hierarchy])
+
+      expect(request.reload).not_to be_raiser_role_removed
+      request.revert!(actor: world[:coordinator_user], comment: "legacy")
+      expect(request.reload).to be_reverted
+    end
+
+    it "unlocks revert when the raising role is restored to the template" do
+      world = path_b_world
+      request = world[:request]
+      request.advance!(actor: world[:coordinator_user])
+      remove_supervisor_role!(world[:sub_hierarchy])
+      expect(request.reload).to be_raiser_role_removed
+
+      world[:sub_hierarchy].hierarchy_roles.create!(
+        review_role: ReviewRole.supervisor,
+        position: 3,
+        can_raise_on_behalf: true
+      )
+      world[:sub_hierarchy].normalize_positions!
+
+      expect(request.reload).not_to be_raiser_role_removed
+      request.revert!(actor: world[:dean], comment: "Need proof")
+      expect(request.reload).to be_in_review
+      expect(request.current_review_role).to be_present
     end
   end
 

@@ -1,7 +1,7 @@
 class Division < ApplicationRecord
   include Archivable
 
-  belongs_to :hierarchy, optional: true
+  belongs_to :hierarchy
 
   has_many :sub_divisions
   has_many :role_assignments, dependent: :destroy

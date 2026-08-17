@@ -16,7 +16,7 @@
         <p class="mt-2.5 text-sm leading-relaxed text-slate-500">
           Build a review chain once, then attach the divisions and sub-divisions that follow it.
           Reorder roles with the arrows (final approver at the top, first reviewer at the bottom).
-          Move units between templates from the ⋮ menu, or use Assign.
+          Move units between templates from the ⋮ menu, or use Assign. Every unit stays on a template.
         </p>
       </div>
 
@@ -37,12 +37,11 @@
   </header>
 
   <%# ── Overview ───────────────────────────────────────────────── %>
-  <div class="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 lg:grid-cols-4">
+  <div class="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 lg:grid-cols-3">
     <% [
          { label: "Templates", value: @stats[:templates], hint: "across both scopes" },
          { label: "Attached units", value: @stats[:attached], hint: "divisions and sub-divisions" },
-         { label: "Unstaffed", value: @stats[:unstaffed], hint: "cannot accept new requests", tone: :danger },
-         { label: "Not on a template", value: @stats[:unattached], hint: "waiting to be assigned", tone: :warning }
+         { label: "Unstaffed", value: @stats[:unstaffed], hint: "cannot accept new requests", tone: :danger }
        ].each do |stat| %>
       <div class="bg-white px-6 py-5">
         <p class="text-xs font-medium uppercase tracking-[0.1em] text-slate-400"><%= stat[:label] %></p>
@@ -73,8 +72,7 @@
                icon: "layers",
                scope: "division",
                hierarchies: @division_hierarchies,
-               available_roles: @division_roles,
-               unassigned_owners: @unassigned_divisions %>
+               available_roles: @division_roles %>
 
     <%= render "admin/hierarchies/scope_section",
                title: "Sub-division hierarchies",
@@ -82,8 +80,7 @@
                icon: "folder",
                scope: "sub_division",
                hierarchies: @sub_division_hierarchies,
-               available_roles: @sub_division_roles,
-               unassigned_owners: @unassigned_sub_divisions %>
+               available_roles: @sub_division_roles %>
   </div>
 
   <%# ── Unsaved changes bar (revealed once something is edited) ──── %>

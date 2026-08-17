@@ -15,6 +15,10 @@ class ReviewRole < ApplicationRecord
   has_many :raiseable_overrides, class_name: "SubDivisionRaiseableOverride", dependent: :restrict_with_exception
   has_many :current_requests, class_name: "AchievementRequest", foreign_key: :current_review_role_id,
                               dependent: :nullify, inverse_of: :current_review_role
+  has_many :originated_requests, class_name: "AchievementRequest",
+                                 foreign_key: :originating_review_role_id,
+                                 dependent: :restrict_with_exception,
+                                 inverse_of: :originating_review_role
 
   enum :scope, { division: "division", sub_division: "sub_division" }, prefix: true
 

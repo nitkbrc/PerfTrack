@@ -2,7 +2,7 @@ class SubDivision < ApplicationRecord
   include Archivable
 
   belongs_to :division
-  belongs_to :hierarchy, optional: true
+  belongs_to :hierarchy
 
   has_many :categories
   has_many :active_categories, -> { active }, class_name: "Category"

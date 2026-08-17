@@ -29,10 +29,16 @@
 
   <% if @achievement_request.in_review? && @achievement_request.current_reviewer&.id == current_user.id %>
     <% can_floor = @achievement_request.previous_step.nil? %>
+    <% can_revert = policy(@achievement_request).revert? %>
     <div class="clay-card mt-6 p-6 sm:p-8"
          data-controller="panel-switch"
          data-panel-switch-mode-value="approve">
       <h2 class="mb-4 text-lg font-semibold text-slate-900">Your decision</h2>
+      <% unless can_revert %>
+        <p class="mb-4 text-sm text-slate-500">
+          This request can only be advanced or rejected because the raising role is no longer on the chain.
+        </p>
+      <% end %>
 
       <div class="mb-6">
         <div class="scats-switch w-full"
@@ -45,9 +51,11 @@
           <button type="button" role="tab" data-segmented-switch-target="option" data-value="approve"
                   data-action="segmented-switch#select keydown->segmented-switch#keydown"
                   class="scats-switch__option">Advance</button>
-          <button type="button" role="tab" data-segmented-switch-target="option" data-value="revert"
-                  data-action="segmented-switch#select keydown->segmented-switch#keydown"
-                  class="scats-switch__option">Revert</button>
+          <% if can_revert %>
+            <button type="button" role="tab" data-segmented-switch-target="option" data-value="revert"
+                    data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                    class="scats-switch__option">Revert</button>
+          <% end %>
           <button type="button" role="tab" data-segmented-switch-target="option" data-value="reject"
                   data-action="segmented-switch#select keydown->segmented-switch#keydown"
                   class="scats-switch__option">Reject</button>
@@ -63,17 +71,19 @@
               class: "cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-500" %>
       </div>
 
-      <div data-panel-switch-target="panel" data-mode="revert" role="tabpanel" class="hidden" aria-hidden="true">
-        <p class="mb-3 text-sm text-slate-500">
-          <%= can_floor ? "Send this back to the creator with a message (required)." : "Send this back to the previous reviewer (required)." %>
-        </p>
-        <%= render "shared/decision_form",
-              url: revert_supervisor_achievement_request_path(@achievement_request),
-              button_label: can_floor ? "Revert to creator" : "Revert to previous step",
-              button_classes: "bg-orange-500 hover:bg-orange-400",
-              reason_templates: @revert_reason_templates,
-              comment_label: "Message" %>
-      </div>
+      <% if can_revert %>
+        <div data-panel-switch-target="panel" data-mode="revert" role="tabpanel" class="hidden" aria-hidden="true">
+          <p class="mb-3 text-sm text-slate-500">
+            <%= can_floor ? "Send this back to the creator with a message (required)." : "Send this back to the previous reviewer (required)." %>
+          </p>
+          <%= render "shared/decision_form",
+                url: revert_supervisor_achievement_request_path(@achievement_request),
+                button_label: can_floor ? "Revert to creator" : "Revert to previous step",
+                button_classes: "bg-orange-500 hover:bg-orange-400",
+                reason_templates: @revert_reason_templates,
+                comment_label: "Message" %>
+        </div>
+      <% end %>
 
       <div data-panel-switch-target="panel" data-mode="reject" role="tabpanel" class="hidden" aria-hidden="true">
         <p class="mb-3 text-sm text-slate-500">Rejecting is final — the student cannot resubmit.</p>

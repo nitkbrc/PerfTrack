@@ -8,4 +8,12 @@ RSpec.describe Division, type: :model do
     expect(division.dean).to be_present
     expect(division).to be_hierarchy_staffed
   end
+
+  it "rejects clearing the hierarchy" do
+    division = create(:division)
+    division.hierarchy = nil
+
+    expect(division).not_to be_valid
+    expect(division.errors[:hierarchy]).to be_present
+  end
 end

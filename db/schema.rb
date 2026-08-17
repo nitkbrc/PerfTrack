@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_09_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_100010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -19,6 +19,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_190000) do
     t.datetime "created_at", null: false
     t.bigint "current_review_role_id"
     t.text "description"
+    t.bigint "originating_review_role_id"
     t.integer "points_awarded"
     t.string "status", default: "in_review", null: false
     t.bigint "student_id", null: false
@@ -26,6 +27,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_190000) do
     t.datetime "updated_at", null: false
     t.index ["category_id"], name: "index_achievement_requests_on_category_id"
     t.index ["current_review_role_id"], name: "index_achievement_requests_on_current_review_role_id"
+    t.index ["originating_review_role_id"], name: "index_achievement_requests_on_originating_review_role_id"
     t.index ["student_id"], name: "index_achievement_requests_on_student_id"
   end
 
@@ -78,7 +80,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_190000) do
     t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.string "div_type", null: false
-    t.bigint "hierarchy_id"
+    t.bigint "hierarchy_id", null: false
     t.string "name"
     t.datetime "updated_at", null: false
     t.index ["archived_at"], name: "index_divisions_on_archived_at"
@@ -381,7 +383,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_190000) do
     t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.bigint "division_id", null: false
-    t.bigint "hierarchy_id"
+    t.bigint "hierarchy_id", null: false
     t.string "name"
     t.datetime "updated_at", null: false
     t.index ["archived_at"], name: "index_sub_divisions_on_archived_at"
@@ -409,6 +411,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_190000) do
 
   add_foreign_key "achievement_requests", "categories"
   add_foreign_key "achievement_requests", "review_roles", column: "current_review_role_id"
+  add_foreign_key "achievement_requests", "review_roles", column: "originating_review_role_id"
   add_foreign_key "achievement_requests", "students"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"

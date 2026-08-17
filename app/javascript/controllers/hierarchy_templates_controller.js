@@ -241,29 +241,20 @@ export default class extends Controller {
     const sourceList = owner.closest("[data-owner-list]")
     let targetList = null
 
-    if (destination === "tray") {
-      targetList = section.querySelector("[data-owner-list][data-owner-tray]")
-      if (!targetList) {
-        alert("There is no unassigned tray in this section. Leave the unit on a template, or create one.")
-        return
-      }
-    } else {
-      const card = section.querySelector(`[data-hierarchy-card][data-hierarchy-id="${destination}"]`)
-      targetList = card?.querySelector("[data-owner-list]")
-      const expectedType = card?.dataset.hierarchyScope === "division" ? "Division" : "SubDivision"
-      if (!targetList || owner.dataset.ownerType !== expectedType) {
-        alert("That destination is not available for this unit.")
-        return
-      }
+    const card = section.querySelector(`[data-hierarchy-card][data-hierarchy-id="${destination}"]`)
+    targetList = card?.querySelector("[data-owner-list]")
+    const expectedType = card?.dataset.hierarchyScope === "division" ? "Division" : "SubDivision"
+    if (!targetList || owner.dataset.ownerType !== expectedType) {
+      alert("That destination is not available for this unit.")
+      return
     }
 
     if (!targetList || targetList.contains(owner)) return
 
     this.clearListPlaceholders(targetList)
     targetList.appendChild(owner)
-    this.styleOwnerForList(owner, targetList)
+    this.styleOwnerForList(owner)
     this.ensureEmptyOwnersPlaceholder(sourceList)
-    this.ensureEmptyTrayPlaceholder(sourceList)
     this.refreshOwnerCount(sourceList?.closest("[data-hierarchy-card]"))
     this.refreshOwnerCount(targetList.closest("[data-hierarchy-card]"))
     this.refreshMoveButtons(sourceList)
@@ -358,10 +349,9 @@ export default class extends Controller {
     const sourceList = owner.closest("[data-owner-list]")
     this.clearListPlaceholders(list)
     list.appendChild(owner)
-    this.styleOwnerForList(owner, list)
+    this.styleOwnerForList(owner)
 
     this.ensureEmptyOwnersPlaceholder(sourceList)
-    this.ensureEmptyTrayPlaceholder(sourceList)
     this.refreshOwnerCount(sourceList?.closest("[data-hierarchy-card]"))
     this.refreshOwnerCount(card)
     this.refreshMoveButtons(sourceList)
@@ -390,34 +380,24 @@ export default class extends Controller {
     `
   }
 
-  styleOwnerForList(owner, list) {
+  styleOwnerForList(owner) {
     const unstaffed = Boolean(owner.querySelector("[data-owner-unstaffed-icon]"))
-    const onTray = list.hasAttribute("data-owner-tray")
     const labelHtml = owner.querySelector("[data-owner-label]")?.innerHTML
       || this.escapeHtml(this.ownerLabel(owner))
     const name = this.ownerLabel(owner)
 
-    if (onTray) {
-      owner.className = "flex max-w-full items-center gap-1 rounded-xl border border-amber-200 bg-white py-1.5 pl-3 pr-1 text-sm font-medium text-slate-700 shadow-sm"
-      owner.innerHTML = `
-        <span class="min-w-0 flex-1 truncate" data-owner-label>${labelHtml}</span>
-        ${this.ownerMoveMenuHtml(name)}
-      `
-    } else {
-      owner.className = `flex items-center gap-2 rounded-xl border px-2.5 py-2 text-sm transition sm:gap-3 sm:px-3 sm:py-2.5 ${
-        unstaffed
-          ? "border-red-200 bg-red-50/50 text-red-700"
-          : "border-slate-200 bg-white text-slate-800 hover:border-slate-300"
-      }`
-      owner.innerHTML = `
-        <span class="min-w-0 flex-1 truncate font-medium" data-owner-label>${labelHtml}</span>
-        ${unstaffed
-          ? '<span class="material-symbols-outlined shrink-0 text-lg text-red-500" data-owner-unstaffed-icon aria-hidden="true" title="Roles still need people">warning</span>'
-          : ""}
-        ${this.ownerMoveMenuHtml(name)}
-      `
-    }
-
+    owner.className = `flex items-center gap-2 rounded-xl border px-2.5 py-2 text-sm transition sm:gap-3 sm:px-3 sm:py-2.5 ${
+      unstaffed
+        ? "border-red-200 bg-red-50/50 text-red-700"
+        : "border-slate-200 bg-white text-slate-800 hover:border-slate-300"
+    }`
+    owner.innerHTML = `
+      <span class="min-w-0 flex-1 truncate font-medium" data-owner-label>${labelHtml}</span>
+      ${unstaffed
+        ? '<span class="material-symbols-outlined shrink-0 text-lg text-red-500" data-owner-unstaffed-icon aria-hidden="true" title="Roles still need people">warning</span>'
+        : ""}
+      ${this.ownerMoveMenuHtml(name)}
+    `
     this.refreshOwnerMoveMenu(owner)
   }
 
@@ -554,12 +534,11 @@ export default class extends Controller {
 
   clearListPlaceholders(list) {
     if (!list) return
-    list.querySelectorAll("[data-empty-owners], [data-empty-tray]").forEach((el) => el.remove())
+    list.querySelectorAll("[data-empty-owners]").forEach((el) => el.remove())
   }
 
   ensureEmptyOwnersPlaceholder(list) {
     if (!list) return
-    if (list.hasAttribute("data-owner-tray")) return
     if (list.querySelector("[data-owner-id]")) return
     if (list.querySelector("[data-empty-owners]")) return
 
@@ -569,20 +548,6 @@ export default class extends Controller {
     li.className = "rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-xs leading-relaxed text-slate-400"
     li.dataset.emptyOwners = "true"
     li.textContent = `Nothing attached yet. Use Assign below to add a ${noun}.`
-    list.appendChild(li)
-  }
-
-  ensureEmptyTrayPlaceholder(list) {
-    if (!list?.hasAttribute("data-owner-tray")) return
-    if (list.querySelector("[data-owner-id]")) return
-    if (list.querySelector("[data-empty-tray]")) return
-
-    const section = list.closest("[data-scope-section]")
-    const noun = section?.dataset.hierarchyScope === "division" ? "division" : "sub-division"
-    const li = document.createElement("li")
-    li.className = "rounded-lg border border-dashed border-amber-200/80 px-3 py-2 text-xs text-amber-800/60"
-    li.dataset.emptyTray = "true"
-    li.textContent = `All ${noun}s are on a template.`
     list.appendChild(li)
   }
 
@@ -641,9 +606,7 @@ export default class extends Controller {
 
     const section = owner.closest("[data-scope-section]")
     const currentList = owner.closest("[data-owner-list]")
-    const currentId = currentList?.hasAttribute("data-owner-tray")
-      ? "tray"
-      : currentList?.dataset.hierarchyId
+    const currentId = currentList?.dataset.hierarchyId
 
     const items = []
     section?.querySelectorAll("[data-hierarchy-card]").forEach((card) => {
@@ -660,18 +623,6 @@ export default class extends Controller {
         </button>
       `)
     })
-
-    if (currentId !== "tray") {
-      items.push(`
-        <button type="button"
-                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                data-action="hierarchy-templates#moveOwnerTo"
-                data-destination="tray">
-          <span class="material-symbols-outlined text-lg text-amber-500" aria-hidden="true">inventory_2</span>
-          <span class="min-w-0 truncate">Not on a template</span>
-        </button>
-      `)
-    }
 
     destinations.innerHTML = items.length > 0
       ? items.join("")

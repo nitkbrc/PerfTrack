@@ -116,8 +116,6 @@ module Admin
                                            .sort_by { |h| [ h.is_default? ? 1 : 0, h.name ] }
       @division_roles = ReviewRole.scope_division.order(:name)
       @sub_division_roles = ReviewRole.scope_sub_division.order(:name)
-      @unassigned_divisions = Division.active.where(hierarchy_id: nil).includes(:role_assignments).order(:name)
-      @unassigned_sub_divisions = SubDivision.active.where(hierarchy_id: nil).includes(:role_assignments, :division).order(:name)
       @stats = index_stats
     end
 
@@ -127,8 +125,7 @@ module Admin
       {
         templates: @division_hierarchies.size + @sub_division_hierarchies.size,
         attached: attached.size,
-        unstaffed: attached.count { |owner| !owner.hierarchy_staffed? },
-        unattached: @unassigned_divisions.size + @unassigned_sub_divisions.size
+        unstaffed: attached.count { |owner| !owner.hierarchy_staffed? }
       }
     end
 

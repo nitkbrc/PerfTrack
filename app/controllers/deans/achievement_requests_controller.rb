@@ -50,6 +50,12 @@ module Deans
     end
 
     def decide_revert(notice:)
+      if @achievement_request.raiser_role_removed?
+        redirect_to dean_achievement_request_path(@achievement_request),
+                    alert: AchievementRequest::RAISER_ROLE_REMOVED_MESSAGE
+        return
+      end
+
       resolved = resolve_decision_reason!(action: "revert")
       unless resolved[:ok]
         redirect_to dean_achievement_request_path(@achievement_request), alert: resolved[:alert]

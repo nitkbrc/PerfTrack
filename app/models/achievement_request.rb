@@ -2,6 +2,10 @@ class AchievementRequest < ApplicationRecord
   belongs_to :student
   belongs_to :category
   belongs_to :current_review_role, class_name: "ReviewRole", optional: true
+  belongs_to :originating_review_role, class_name: "ReviewRole", optional: true
+
+  RAISER_ROLE_REMOVED_MESSAGE =
+    "This request can only be approved or rejected because the raising role is no longer on the review chain.".freeze
 
   # Histories must go before versions: versions restrict destroy while histories remain.
   has_many :req_histories, dependent: :destroy
@@ -100,10 +104,15 @@ class AchievementRequest < ApplicationRecord
     attrs, proofs = split_proofs(attrs)
     request = transaction do
       created = create!(attrs.merge(student: student, status: :in_review))
-      entry = created.review_chain_resolver.entry_step_for_raise_on_behalf(actor: actor)
+      resolver = created.review_chain_resolver
+      initiator = resolver.raise_on_behalf_initiator(actor: actor)
+      entry = resolver.entry_step_for_raise_on_behalf(actor: actor)
       raise ActiveRecord::RecordInvalid, created unless entry
 
-      created.update!(current_review_role: entry.review_role)
+      created.update!(
+        current_review_role: entry.review_role,
+        originating_review_role: initiator&.review_role
+      )
       version = created.create_version!(version_number: 1, proofs: proofs)
       created.req_histories.create!(actor: actor, action: "supervisor_initiate",
                                     to_status: "in_review",
@@ -196,6 +205,10 @@ class AchievementRequest < ApplicationRecord
   # Move to the previous assigned step, or floor to the creator with status reverted.
   def revert!(actor:, comment:, reason_template: nil)
     raise ArgumentError, "request is not in review" unless in_review?
+    if raiser_role_removed?
+      errors.add(:base, RAISER_ROLE_REMOVED_MESSAGE)
+      raise ActiveRecord::RecordInvalid, self
+    end
 
     prev = previous_step
     floored = prev.nil?
@@ -319,6 +332,17 @@ class AchievementRequest < ApplicationRecord
     [ attrs, proofs, remove_ids ]
   end
 
+  # Path B lock: the role that raised this request is no longer on the unit's template.
+  # Nil originating role (legacy Path B) is not locked.
+  def raiser_role_removed?
+    return false if student_initiated? || originating_review_role_id.blank?
+
+    roles = category.sub_division.hierarchy&.hierarchy_roles
+    return true if roles.nil?
+
+    !roles.exists?(review_role_id: originating_review_role_id)
+  end
+
   # True when the request sits at a raiseable-on-behalf step (Path B edit window).
   def awaiting_raiseable_revision?
     return false unless in_review? && current_review_role_id.present? && !student_initiated?
@@ -362,7 +386,7 @@ class AchievementRequest < ApplicationRecord
                             from_status: from, to_status: "approved",
                             request_version: current_version)
     end
-    DeanApprovalNotificationJob.perform_later(id)
+    FinalApprovalNotificationJob.perform_later(id)
     enqueue_final_decision_mails!(:approved_notification, actor: actor)
   end
 
@@ -372,15 +396,15 @@ class AchievementRequest < ApplicationRecord
 
     case kind
     when :submitted
-      RequestMailer.submitted_to_supervisor(request, actor: actor, recipient: reviewer).deliver_later
+      RequestMailer.submitted_to_reviewer(request, actor: actor, recipient: reviewer).deliver_later
     when :raised_on_behalf
       RequestMailer.raised_on_behalf(request, actor: actor, recipient: reviewer).deliver_later
     when :advanced
-      RequestMailer.forwarded_to_dean(request, actor: actor, recipient: reviewer,
-                                      is_reforward: false).deliver_later
+      RequestMailer.forwarded_to_reviewer(request, actor: actor, recipient: reviewer,
+                                          is_reforward: false).deliver_later
     when :reverted
-      RequestMailer.reverted_to_supervisor(request, actor: actor, recipient: reviewer,
-                                           comment: comment).deliver_later
+      RequestMailer.reverted_to_reviewer(request, actor: actor, recipient: reviewer,
+                                         comment: comment).deliver_later
     end
   end
 
@@ -391,8 +415,8 @@ class AchievementRequest < ApplicationRecord
       supervisor = originating_supervisor
       return unless supervisor
 
-      RequestMailer.reverted_to_supervisor(self, actor: actor, recipient: supervisor,
-                                           comment: comment).deliver_later
+      RequestMailer.reverted_to_reviewer(self, actor: actor, recipient: supervisor,
+                                         comment: comment).deliver_later
     end
   end
 

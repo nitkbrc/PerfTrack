@@ -86,17 +86,21 @@ class ReviewChainResolver
     first_step
   end
 
+  def raise_on_behalf_initiator(actor:)
+    chain = review_chain
+    chain.find { |resolved| resolved.can_raise_on_behalf? && resolved.user.id == actor.id } ||
+      chain.find(&:can_raise_on_behalf?)
+  end
+
   def entry_step_for_raise_on_behalf(actor:)
     chain = review_chain
-    initiator_index = chain.index do |resolved|
-      resolved.can_raise_on_behalf? && resolved.user.id == actor.id
-    end
-    return chain[initiator_index + 1] if initiator_index && chain[initiator_index + 1]
+    initiator = raise_on_behalf_initiator(actor: actor)
+    return nil unless initiator
 
-    raiseable_index = chain.index(&:can_raise_on_behalf?)
-    return chain[raiseable_index + 1] if raiseable_index && chain[raiseable_index + 1]
+    idx = chain.index { |resolved| resolved.review_role_id == initiator.review_role_id }
+    return nil if idx.nil?
 
-    nil
+    chain[idx + 1]
   end
 
   private

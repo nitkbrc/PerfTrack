@@ -41,6 +41,10 @@ class AchievementRequestPolicy < ApplicationPolicy
     user.faculty? && record.in_review? && record.current_reviewer&.id == user.id
   end
 
+  def revert?
+    review? && !record.raiser_role_removed?
+  end
+
   def dean_decide?
     review?
   end

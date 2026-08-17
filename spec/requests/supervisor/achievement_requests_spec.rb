@@ -122,6 +122,47 @@ RSpec.describe "Supervisor review actions", type: :request do
       expect(flash[:alert]).to eq("Choose a reason.")
       expect(request_record.reload.status).to eq("in_review")
     end
+
+    it "blocks Path B revert when the raising role is gone from the template" do
+      coordinator_user = create(:user, :faculty)
+      coordinator_role = ReviewRole.find_or_create_by!(name: "Supervisor Spec Coordinator") do |role|
+        role.scope = "sub_division"
+        role.raiseable_on_behalf_eligible = true
+        role.system_role = false
+      end
+      sub_hierarchy = Hierarchy.create!(name: "Supervisor Spec Sub #{SecureRandom.hex(4)}",
+                                        scope: "sub_division")
+      sub_hierarchy.hierarchy_roles.create!(review_role: ReviewRole.supervisor, position: 1,
+                                            can_raise_on_behalf: true)
+      sub_hierarchy.hierarchy_roles.create!(review_role: coordinator_role, position: 2,
+                                            can_raise_on_behalf: true)
+      sub_division.update!(hierarchy: sub_hierarchy)
+      RoleAssignment.create!(user: coordinator_user, review_role: coordinator_role,
+                             sub_division: sub_division)
+
+      path_b = AchievementRequest.supervisor_initiate!(
+        student: create(:student), actor: supervisor,
+        attrs: {
+          category: category,
+          title: "Raised on behalf",
+          description: "Path B",
+          proofs: [ fixture_file_upload("proof.png", "image/png") ]
+        }
+      )
+      sub_hierarchy.hierarchy_roles.find_by!(review_role: ReviewRole.supervisor).destroy!
+
+      sign_in coordinator_user
+      get supervisor_achievement_request_path(path_b)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(">Revert<")
+
+      patch revert_supervisor_achievement_request_path(path_b),
+            params: { comment: "Need proof", reason_template_id: "other" }
+
+      expect(response).to redirect_to(supervisor_achievement_request_path(path_b))
+      expect(flash[:alert]).to eq(AchievementRequest::RAISER_ROLE_REMOVED_MESSAGE)
+      expect(path_b.reload).to be_in_review
+    end
   end
 
   describe "PATCH reject" do
@@ -160,6 +201,7 @@ RSpec.describe "Supervisor review actions", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(request_record.title)
+      expect(response.body).to include(">Revert<")
     end
 
     it "denies other supervisors" do
