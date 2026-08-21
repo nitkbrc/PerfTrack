@@ -23,55 +23,57 @@
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
     <%# ── Left: Ethos Score card (spans 2 cols) ── %>
-    <div class="relative overflow-hidden rounded-3xl p-8 shadow-xl lg:col-span-2"
+    <div class="relative overflow-hidden rounded-3xl p-5 shadow-xl sm:p-8 lg:col-span-2"
          style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%); min-height: 200px;">
 
       <%# Soft radial glow top-right %>
       <div class="pointer-events-none absolute right-0 top-0 h-64 w-64 opacity-20 rounded-full"
            style="background: radial-gradient(circle at top right, #93c5fd, transparent 65%)"></div>
 
-      <div class="relative flex h-full items-center justify-between gap-6">
+      <div class="relative flex h-full flex-col items-stretch gap-6 sm:flex-row sm:items-center sm:justify-between">
 
         <%# ── Left text block ── %>
-        <div class="flex-1 min-w-0">
+        <div class="min-w-0 flex-1">
           <p class="text-base font-bold text-white">Institutional Ethos Score</p>
-          <p class="mt-1.5 text-sm leading-relaxed text-white/70 max-w-[260px]">
+          <p class="mt-1.5 max-w-md text-sm leading-relaxed text-white/70 sm:max-w-[260px]">
             Your overall rating based on academic integrity, campus conduct, and professional development activity.
           </p>
 
-          <%# Big score number — inline font-size: arbitrary text-[5.5rem] is not emitted by Tailwind build %>
-          <div class="mt-6 flex items-baseline gap-2">
-            <span class="font-extrabold leading-none text-white tracking-tight" style="font-size: 5.5rem;"><%= @score %></span>
-            <span class="font-semibold text-white/60" style="font-size: 2rem;">/ 10</span>
+          <%# Big score — smaller on mobile so the hero does not crowd %>
+          <div class="mt-5 flex items-baseline gap-2 sm:mt-6">
+            <span class="font-extrabold leading-none tracking-tight text-white"
+                  style="font-size: clamp(3.5rem, 14vw, 5.5rem);"><%= @score %></span>
+            <span class="font-semibold text-white/60"
+                  style="font-size: clamp(1.25rem, 4vw, 2rem);">/ 10</span>
           </div>
 
           <%# Tier pill — ghost style %>
           <div class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5
                       text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-            <span class="h-2 w-2 rounded-full flex-shrink-0" style="background:<%= tier_stroke %>"></span>
+            <span class="h-2 w-2 flex-shrink-0 rounded-full" style="background:<%= tier_stroke %>"></span>
             Tier: <%= tier[:name] %>
           </div>
 
           <div class="mt-4 flex flex-wrap gap-2">
             <div class="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1
-                        text-[11px] font-semibold text-white backdrop-blur-sm tracking-wide">
+                        text-[11px] font-semibold tracking-wide text-white backdrop-blur-sm">
               <%= current_student.usn %>
             </div>
             <div class="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1
-                        text-[11px] font-semibold text-white backdrop-blur-sm tracking-wide">
+                        text-[11px] font-semibold tracking-wide text-white backdrop-blur-sm">
               <%= current_student.department.name %>
             </div>
             <div class="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1
-                        text-[11px] font-semibold text-white backdrop-blur-sm tracking-wide">
+                        text-[11px] font-semibold tracking-wide text-white backdrop-blur-sm">
               Sem <%= current_student.sem || "—" %>
             </div>
           </div>
         </div>
 
-        <%# ── Right: score ring ── %>
-        <div class="flex flex-shrink-0 flex-col items-center gap-3">
+        <%# ── Right: score ring — centered under text on mobile ── %>
+        <div class="flex flex-shrink-0 flex-col items-center gap-3 self-center sm:self-auto">
           <div class="relative">
-            <svg width="138" height="138" viewBox="0 0 130 130" style="transform: rotate(-90deg)">
+            <svg class="h-[110px] w-[110px] sm:h-[138px] sm:w-[138px]" viewBox="0 0 130 130" style="transform: rotate(-90deg)">
               <circle cx="65" cy="65" r="54" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="9"/>
               <circle cx="65" cy="65" r="54" fill="none"
                       stroke="white"
@@ -81,14 +83,14 @@
                       stroke-dashoffset="<%= score_offset %>"/>
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center">
-              <span class="material-symbols-outlined text-3xl" style="color:<%= tier_stroke %>; font-variation-settings:'FILL' 1">grade</span>
-              <span class="mt-0.5 text-[11px] font-bold uppercase tracking-widest" style="color:<%= tier_stroke %>">Tier: <%= tier[:name] %></span>
+              <span class="material-symbols-outlined text-2xl sm:text-3xl" style="color:<%= tier_stroke %>; font-variation-settings:'FILL' 1">grade</span>
+              <span class="mt-0.5 hidden text-[11px] font-bold uppercase tracking-widest sm:inline" style="color:<%= tier_stroke %>">Tier: <%= tier[:name] %></span>
             </div>
           </div>
 
           <%= link_to new_student_achievement_request_path,
-                class: "inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/10
-                        px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition" do %>
+                class: "inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/30 bg-white/10
+                        px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20 sm:w-auto" do %>
             <span class="material-symbols-outlined text-base leading-none">add_circle</span>
             Raise a Request
           <% end %>
