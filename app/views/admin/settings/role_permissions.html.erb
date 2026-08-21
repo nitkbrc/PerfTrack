@@ -1,6 +1,6 @@
-<div class="mx-auto w-full max-w-5xl space-y-8 pb-10">
-  <%= form_with url: admin_settings_path, method: :put, class: "space-y-8",
-        data: { controller: "unsaved-changes" } do %>
+<div class="mx-auto w-full max-w-5xl space-y-8 pb-28"
+     data-controller="unsaved-changes">
+  <%= form_with url: admin_settings_path, method: :put, class: "space-y-8" do %>
     <%= hidden_field_tag :form, "role_permissions" %>
 
     <header class="space-y-4">
@@ -9,31 +9,15 @@
         Settings
       <% end %>
 
-      <div class="flex flex-wrap items-end justify-between gap-4">
-        <div class="min-w-0 max-w-2xl">
-          <div class="flex items-center gap-3">
-            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <span class="material-symbols-outlined text-[22px]" aria-hidden="true">manage_accounts</span>
-            </span>
-            <div>
-              <h1 class="text-[26px] font-semibold leading-tight tracking-tight text-slate-900">Role permissions</h1>
-              <p class="mt-1 text-sm text-slate-500">Profile self-edit fields and which review roles may add students</p>
-            </div>
+      <div class="min-w-0 max-w-2xl">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <span class="material-symbols-outlined text-[22px]" aria-hidden="true">manage_accounts</span>
+          </span>
+          <div>
+            <h1 class="text-[26px] font-semibold leading-tight tracking-tight text-slate-900">Role permissions</h1>
+            <p class="mt-1 text-sm text-slate-500">Profile self-edit fields and which review roles may add students</p>
           </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <div class="flex min-w-0 items-center gap-3">
-            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-              <span class="material-symbols-outlined text-lg" aria-hidden="true">save</span>
-            </span>
-            <div class="min-w-0">
-              <p class="text-sm font-semibold text-slate-900">Ready to apply</p>
-              <p class="mt-0.5 text-xs leading-relaxed text-slate-500">Changes apply after you save.</p>
-            </div>
-          </div>
-          <%= submit_tag "Save permissions",
-                class: "#{admin_primary_button_classes} inline-flex shrink-0 items-center gap-1.5" %>
         </div>
       </div>
     </header>
@@ -168,4 +152,10 @@
       <% end %>
     </section>
   <% end %>
+
+  <%= render "shared/unsaved_changes_bar",
+        hint: "Permission changes apply after you save.",
+        discard_path: role_permissions_admin_settings_path,
+        save_action: "click->unsaved-changes#save",
+        save_label: "Save permissions" %>
 </div>

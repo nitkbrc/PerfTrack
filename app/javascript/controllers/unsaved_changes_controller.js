@@ -112,6 +112,13 @@ export default class extends Controller {
     this.markClean({ acceptCurrentAsInitial: true })
   }
 
+  // Bar / leave-guard Save button. Form strategy submits the form; custom
+  // strategy dispatches unsaved-changes:save for a sibling controller.
+  save(event) {
+    event?.preventDefault?.()
+    this.onSaveRequest({ detail: {} })
+  }
+
   refreshFromForm({ seedInitial = false } = {}) {
     const form = this.element.matches("form") ? this.element : this.element.querySelector("form")
     if (!form) return

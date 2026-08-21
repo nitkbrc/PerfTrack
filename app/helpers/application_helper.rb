@@ -239,21 +239,62 @@ module ApplicationHelper
     tag.span name.to_s, class: classes, "aria-hidden": true
   end
 
-  # Top-bar / chrome role chip. Faculty with assignments show Dean or
-  # Supervisor (Dean wins if both); plain faculty stay Faculty.
+  # Ordered identity labels for profile / admin lists:
+  # Admin → Dean → Supervisor → other ReviewRoles → Faculty (if no assignment) → Student.
+  def identity_role_labels(user)
+    labels = []
+    labels << "Admin" if user.admin?
+
+    if user.faculty?
+      assignments = user.role_assignments.includes(:review_role).to_a
+      role_names = assignments.filter_map { |a| a.review_role&.name }.uniq
+      dean_name = ReviewRole::DEAN
+      supervisor_name = ReviewRole::SUPERVISOR
+
+      labels << dean_name if role_names.include?(dean_name)
+      labels << supervisor_name if role_names.include?(supervisor_name)
+      others = role_names.reject { |n| n == dean_name || n == supervisor_name }.sort
+      labels.concat(others)
+      labels << "Faculty" if role_names.empty?
+    end
+
+    labels << "Student" if user.student?
+    labels
+  end
+
+  # Top-bar / chrome: single compact chip — first identity label.
   # Separate from status_badge (frozen for dashboard).
   def role_badge(user)
     label = chrome_role_label(user)
     tag.span label.upcase, class: chrome_role_badge_classes(label)
   end
 
+  def role_badges(user)
+    identity_role_labels(user).map do |label|
+      tag.span label.upcase, class: chrome_role_badge_classes(label)
+    end.join("\n").html_safe
+  end
+
   def chrome_role_label(user)
-    return user.role.to_s.titleize unless user.faculty?
+    identity_role_labels(user).first || user.role.to_s.titleize
+  end
 
-    return "Dean" if user.assigned_divisions.exists?
-    return "Supervisor" if user.assigned_sub_divisions.exists?
+  # Role assignments grouped by review role name for profile responsibility chips.
+  # Returns [[role_name, [assignment, ...]], ...] in Dean → Supervisor → other order.
+  def responsibility_groups(user)
+    return [] unless user.faculty?
 
-    "Faculty"
+    assignments = user.role_assignments.includes(:review_role, :division, { sub_division: :division }).to_a
+    by_name = assignments.group_by { |a| a.review_role&.name }
+    by_name.delete(nil)
+    return [] if by_name.empty?
+
+    ordered_names = []
+    ordered_names << ReviewRole::DEAN if by_name.key?(ReviewRole::DEAN)
+    ordered_names << ReviewRole::SUPERVISOR if by_name.key?(ReviewRole::SUPERVISOR)
+    ordered_names.concat((by_name.keys - ordered_names).sort)
+
+    ordered_names.map { |name| [ name, by_name[name] ] }
   end
 
   def chrome_role_badge_classes(label)

@@ -21,6 +21,7 @@ RSpec.describe "Profile", type: :request do
 
     get profile_path
 
+    expect(response.body).to include(">DEAN<")
     expect(response.body).to include("Dean of division")
     expect(response.body).to include("Cultural &amp; Sports")
   end
@@ -33,9 +34,55 @@ RSpec.describe "Profile", type: :request do
 
     get profile_path
 
+    expect(response.body).to include(">SUPERVISOR<")
     expect(response.body).to include("Supervisor of sub-division")
     expect(response.body).to include("Coding Club")
     expect(response.body).to include("Technical")
+  end
+
+  it "shows Faculty for unassigned faculty" do
+    user = create(:user, :faculty, name: "Prof. Plain")
+    sign_in user
+
+    get profile_path
+
+    expect(response.body).to include(">FACULTY<")
+    expect(response.body).not_to include(">DEAN<")
+    expect(response.body).not_to include(">SUPERVISOR<")
+  end
+
+  it "shows Student for student accounts" do
+    student_user = create(:student).user
+    sign_in student_user
+
+    get profile_path
+
+    expect(response.body).to include(">STUDENT<")
+  end
+
+  it "shows a custom review role name instead of Supervisor" do
+    ReviewRole.ensure_system_roles!
+    Hierarchy.ensure_defaults!
+    coordinator = ReviewRole.find_or_create_by!(name: "Coordinator") do |role|
+      role.scope = "sub_division"
+      role.raiseable_on_behalf_eligible = true
+      role.system_role = false
+    end
+    faculty = create(:user, :faculty, name: "Coord User")
+    sub = create(:sub_division)
+    hierarchy = Hierarchy.create!(name: "Coord Spec Sub #{SecureRandom.hex(4)}", scope: "sub_division")
+    hierarchy.hierarchy_roles.create!(review_role: coordinator, position: 1, can_raise_on_behalf: true)
+    sub.update!(hierarchy: hierarchy)
+    RoleAssignment.where(sub_division: sub).delete_all
+    RoleAssignment.create!(user: faculty, review_role: coordinator, sub_division: sub)
+    sign_in faculty
+
+    get profile_path
+
+    expect(response.body).to include(">COORDINATOR<")
+    expect(response.body).to include("Coordinator of sub-division")
+    expect(response.body).not_to include(">SUPERVISOR<")
+    expect(response.body).not_to include(">FACULTY<")
   end
 
   it "notes system-wide responsibility for admins" do
@@ -44,6 +91,7 @@ RSpec.describe "Profile", type: :request do
 
     get profile_path
 
+    expect(response.body).to include(">ADMIN<")
     expect(response.body).to include("System-wide administration")
   end
 

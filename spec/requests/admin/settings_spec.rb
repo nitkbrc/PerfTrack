@@ -67,6 +67,8 @@ RSpec.describe "Admin settings", type: :request do
     expect(response.body).to include(ReviewRole.supervisor.name)
     expect(response.body).to match(/Editable|Locked/)
     expect(response.body).to include("Save permissions")
+    expect(response.body).to include("Unsaved changes")
+    expect(response.body).not_to include("Ready to apply")
   end
 
   it "redirects the old profile_permissions URL to role_permissions" do

@@ -6,7 +6,7 @@ class ProfilesController < ApplicationController
   }.freeze
 
   def show
-    @user = authorize User.includes(role_assignments: [ :division, { sub_division: :division } ])
+    @user = authorize User.includes(role_assignments: [ :review_role, :division, { sub_division: :division } ])
                            .find(current_user.id)
     @editable = editable_fields_for(@user)
   end

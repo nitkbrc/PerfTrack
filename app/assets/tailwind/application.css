@@ -289,6 +289,23 @@ html.sidebar-open .scats-sidebar-scrim {
   @apply flex items-center gap-3 rounded-md pl-3 transition hover:bg-background;
 }
 
+/* Fixed bottom unsaved-changes bar — content column only (offset past sidebar). */
+.scats-unsaved-bar {
+  @apply fixed bottom-0 right-0 z-30 px-4;
+  left: 0;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .scats-unsaved-bar {
+    left: 16rem; /* match .scats-shell md:ml-64 */
+  }
+}
+
+.scats-unsaved-bar__card {
+  @apply mx-auto flex w-full max-w-3xl flex-col gap-4 rounded-2xl border border-slate-200 bg-white/95 px-5 py-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between;
+}
+
 /* Main content: offset by sidebar on desktop */
 .scats-shell {
   @apply flex min-h-screen flex-col bg-background;
