@@ -42,10 +42,10 @@ RSpec.describe ApplicationHelper, type: :helper do
   describe "#integrity_index" do
     let(:student) { instance_double(Student) }
 
-    it "returns 100 on a clean slate (no approved points)" do
+    it "returns 0 on a clean slate (no approved points)" do
       allow(student).to receive(:positive_total).and_return(0)
       allow(student).to receive(:negative_total).and_return(0)
-      expect(helper.integrity_index(student)).to eq(100)
+      expect(helper.integrity_index(student)).to eq(0)
     end
 
     it "returns 0 when only negative points exist" do
@@ -67,7 +67,21 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#integrity_slices" do
+    let(:student) { instance_double(Student) }
+
+    it "returns 0 / 0 on a clean slate" do
+      allow(student).to receive(:positive_total).and_return(0)
+      allow(student).to receive(:negative_total).and_return(0)
+      expect(helper.integrity_slices(student)).to eq(achievement: 0, conduct: 0, empty: true)
+    end
+  end
+
   describe "#integrity_risk" do
+    it "returns No data when the record is empty" do
+      expect(helper.integrity_risk(0, empty: true)[:label]).to eq("No data")
+    end
+
     it "returns Minimal Risk for index >= 85" do
       expect(helper.integrity_risk(85)[:label]).to eq("Minimal Risk")
       expect(helper.integrity_risk(100)[:label]).to eq("Minimal Risk")

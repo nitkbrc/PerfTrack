@@ -1,9 +1,18 @@
 <%
   tier          = ethos_tier(@score)
-  integrity     = integrity_index(current_student)
-  risk          = integrity_risk(integrity)
-  gauge_color   = integrity >= 85 ? "#10b981" : integrity >= 60 ? "#f59e0b" : "#ef4444"
-  conduct_pct   = 100 - integrity
+  slices        = integrity_slices(current_student)
+  integrity     = slices[:achievement]
+  conduct_pct   = slices[:conduct]
+  risk          = integrity_risk(integrity, empty: slices[:empty])
+  gauge_color   = if slices[:empty]
+                    "#94a3b8"
+                  elsif integrity >= 85
+                    "#10b981"
+                  elsif integrity >= 60
+                    "#f59e0b"
+                  else
+                    "#ef4444"
+                  end
 
   # Score ring (r=54, cx=cy=65)
   score_circ    = (2 * Math::PI * 54).round(2)   # 339.29

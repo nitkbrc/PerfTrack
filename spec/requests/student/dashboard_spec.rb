@@ -14,8 +14,11 @@ RSpec.describe "Student dashboard", type: :request do
     expect(response.body).to include("5.0")
     # Tier is Bronze at 5.0
     expect(response.body).to include("Bronze")
-    # Integrity index label present
+    # Integrity index label present — empty record is 0 / 0, not a fake 100%.
     expect(response.body).to include("Integrity Index")
+    expect(response.body).to include("Achievement — 0%")
+    expect(response.body).to include("Conduct — 0%")
+    expect(response.body).to include("No data")
     expect(response.body).to include("Achievement Points")
     expect(response.body).to include("My own request")
     expect(response.body).not_to include("Someone else&#39;s request")

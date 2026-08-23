@@ -26,6 +26,19 @@ export default class extends Controller {
     const achieveColor = this.achieveColorValue
     const conductColor = this.conductColorValue
 
+    // Empty record: no approved achievement or conduct points.
+    if (achievePct <= 0 && conductPct <= 0) {
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+      circle.setAttribute("cx", cx); circle.setAttribute("cy", cy)
+      circle.setAttribute("r", r);   circle.setAttribute("fill", "#e2e8f0")
+      circle.style.cursor = "pointer"
+      circle.addEventListener("mouseenter", (e) => this.showTip(e, "No approved points"))
+      circle.addEventListener("mousemove",  (e) => this.moveTip(e))
+      circle.addEventListener("mouseleave", ()  => this.hideTip())
+      svg.appendChild(circle)
+      return
+    }
+
     // Edge case: full circle (no conduct or no achievement)
     if (achievePct <= 0 || conductPct <= 0) {
       const color = achievePct > 0 ? achieveColor : conductColor

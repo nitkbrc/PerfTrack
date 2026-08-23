@@ -46,18 +46,27 @@ module ApplicationHelper
 
   # ---------------------------------------------------------------------------
   # Integrity Index: ratio of positive to total approved points (0–100).
-  # 100 on a clean slate (no approved requests yet).
+  # Clean slate (no approved points) is 0 / 0, not a fake 100%.
   # ---------------------------------------------------------------------------
-  def integrity_index(student)
+  def integrity_slices(student)
     pos = student.positive_total
     neg = student.negative_total.abs
-    return 100 if pos == 0 && neg == 0
-
-    ((100.0 * pos) / (pos + neg)).round
+    if pos.zero? && neg.zero?
+      { achievement: 0, conduct: 0, empty: true }
+    else
+      achievement = ((100.0 * pos) / (pos + neg)).round
+      { achievement: achievement, conduct: 100 - achievement, empty: false }
+    end
   end
 
-  def integrity_risk(index)
-    if index >= 85
+  def integrity_index(student)
+    integrity_slices(student)[:achievement]
+  end
+
+  def integrity_risk(index, empty: false)
+    if empty
+      { label: "No data", classes: "bg-slate-100 text-slate-600" }
+    elsif index >= 85
       { label: "Minimal Risk", classes: "bg-emerald-100 text-emerald-700" }
     elsif index >= 60
       { label: "Moderate Risk", classes: "bg-yellow-100 text-yellow-700" }
