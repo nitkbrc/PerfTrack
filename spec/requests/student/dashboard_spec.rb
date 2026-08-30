@@ -12,9 +12,9 @@ RSpec.describe "Student dashboard", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("5.0")
+    expect(response.body).to include("SCATS Score")
     # Tier is Bronze at 5.0
     expect(response.body).to include("Bronze")
-    # Integrity index label present — empty record is 0 / 0, not a fake 100%.
     expect(response.body).to include("Integrity Index")
     expect(response.body).to include("Achievement — 0%")
     expect(response.body).to include("Conduct — 0%")
