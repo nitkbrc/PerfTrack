@@ -2,7 +2,7 @@
 
 **Student Character and Achievement Tracking System**
 
-SCATS is a Rails application for institutes to record verified student achievements and conduct outcomes as a durable character ledger. Students (or authorised faculty on their behalf) submit requests with proof; configurable review chains verify them; approved outcomes contribute signed points to each student’s record — positive for achievements, negative for conduct — visible to the student and to faculty.
+SCATS is a Rails application for institutes to record verified student achievements and conduct outcomes as a durable character ledger. Students (or authorised faculty on their behalf) submit requests with proof; configurable review chains verify them; approved outcomes contribute signed points to each student’s record — positive for achievements, negative for conduct. The student and faculty UIs show this as a 0–10 **SCATS Score**.
 
 > Active development. Schema, permissions, and UI may still evolve.
 
@@ -15,11 +15,12 @@ SCATS is a Rails application for institutes to record verified student achieveme
 - **Configurable review chains** — shared hierarchy templates (division / sub-division) with ordered review roles; staffing via role assignments  
 - **Multi-step advance / revert / reject** — live chain resolution; unstaffed roles are skipped  
 - **Hierarchy change safety** — in-flight requests are remapped onto the new staffed chain when templates change or owners are reattached (with history + notifications)  
-- **Points & score scale** — points snapshotted on final approval; admin-tunable score curve  
+- **SCATS Score** — 0–10 sigmoid of net approved points (`k` is admin-tunable); points are snapshotted at final approval  
+- **Integrity Index** — student dashboard donut of achievement vs conduct points; 0/0 and “No data” when nothing is approved yet  
 - **Admin console** — users (CSV import), departments, divisions / sub-divisions / categories (archive), review roles, role assignments, hierarchy templates, reason templates, settings  
 - **Role permissions** — profile self-edit toggles; per review-role permission to create/import students  
 - **Faculty student create / CSV import** — gated by review-role flags and live assignments  
-- **Notifications & email** — in-app student notifications; Action Mailer for review events  
+- **Notifications & email** — in-app student notifications on approval; Action Mailer for review events (works in development with `.env`; production SMTP is not wired yet)  
 - **Unsaved-changes guard** — leave confirm (Stay / Discard / Save & exit) on save surfaces  
 
 ---
@@ -50,8 +51,8 @@ SCATS is a Rails application for institutes to record verified student achieveme
 | Actor | Capabilities |
 | --- | --- |
 | **Admin** | Org structure, users/imports, review roles, hierarchies, assignments, reason templates, score scale, role permissions. Does not browse student character scores. |
-| **Faculty** | Student directory and score breakdowns; review queues when assigned; optional student create/import when their review role allows it. |
-| **Student** | Submit / resubmit requests; view own score, timeline, and notifications. |
+| **Faculty** | Student directory and SCATS Score breakdowns; review queues when assigned; optional student create/import when their review role allows it. |
+| **Student** | Submit / resubmit requests; view own SCATS Score, Integrity Index, timeline, and notifications. |
 
 Default seeded Technical / Coding demo chain:
 
@@ -130,7 +131,7 @@ cp .env.example .env
 
 | Variable | Purpose |
 | --- | --- |
-| `GMAIL_USERNAME` / `GMAIL_APP_PASSWORD` | SMTP for review emails in environments that send mail |
+| `GMAIL_USERNAME` / `GMAIL_APP_PASSWORD` | Development SMTP only (`config/environments/development.rb`). Production mail is not configured. |
 | `DATABASE_URL` | Production / Render Postgres URL |
 | `RAILS_MASTER_KEY` | Decrypt `config/credentials` (required in production / Docker) |
 | `RAILS_ENV` | `development` locally; `production` on Render |
@@ -174,7 +175,11 @@ Blueprint: [`render.yaml`](render.yaml) — Docker web service + Postgres (`scat
 
 4. Optional: `bin/rails db:seed` only for demo environments (avoid on real production data).
 
-**Note:** Free Render web and Postgres sleep when idle and are region-limited; first requests and cross-region latency can feel slow. That is hosting capacity, not missing app bootstrapping.
+**Notes that matter in practice**
+
+- Free Render web and Postgres sleep when idle and are region-limited; first requests and cross-region latency can feel slow. That is hosting capacity, not missing app bootstrapping.
+- Uploads use Active Storage **disk** (`config.active_storage.service = :local`). Redeploys can drop profile photos and proof files even though the database rows remain. Object storage (S3) is not configured.
+- Review emails will **not** leave Render until production SMTP and the matching env vars are added. In-app notifications still work.
 
 Health check: `GET /up`.
 
@@ -186,7 +191,7 @@ Health check: `GET /up`.
 app/
   controllers/     # admin, students, supervisors, deans, faculties, …
   models/          # User, AchievementRequest, Hierarchy, ReviewRole, …
-  services/        # HierarchyBulkSave, InFlightRequestRemapper, CSV helpers, …
+  services/        # ReviewChainResolver, HierarchyBulkSave, InFlightRequestRemapper, …
   javascript/      # Stimulus controllers (hierarchies, leave-guard, …)
   views/
 config/
