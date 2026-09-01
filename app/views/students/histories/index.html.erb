@@ -1,0 +1,48 @@
+<% content_for(:page_title, "History") %>
+
+<div class="mx-auto w-full max-w-4xl px-4 py-6 space-y-8">
+
+  <div>
+    <h1 class="text-2xl font-bold text-text-main">Request history</h1>
+    <p class="mt-1 text-sm text-text-muted">
+      Accepted and rejected requests, including those raised on your behalf by faculty.
+    </p>
+  </div>
+
+  <section>
+    <h2 class="mb-4 text-lg font-semibold text-text-main">Accepted</h2>
+    <div class="space-y-6 pl-2 sm:pl-4">
+      <div>
+        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-700">Positive</h3>
+        <%= render "request_list",
+              requests: @accepted_positive,
+              empty_message: "No accepted achievement requests yet." %>
+      </div>
+      <div>
+        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-red-700">Negative</h3>
+        <%= render "request_list",
+              requests: @accepted_negative,
+              empty_message: "No accepted conduct records yet." %>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="mb-4 text-lg font-semibold text-text-main">Rejected</h2>
+    <div class="space-y-6 pl-2 sm:pl-4">
+      <div>
+        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-700">Positive</h3>
+        <%= render "request_list",
+              requests: @rejected_positive,
+              empty_message: "No rejected achievement requests." %>
+      </div>
+      <div>
+        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-red-700">Negative</h3>
+        <%= render "request_list",
+              requests: @rejected_negative,
+              empty_message: "No rejected conduct requests." %>
+      </div>
+    </div>
+  </section>
+
+</div>

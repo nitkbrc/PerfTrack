@@ -35,6 +35,7 @@ Rails.application.routes.draw do
         get :submitted
       end
     end
+    get "history", to: "histories#index", as: :history
   end
 
   # Same module-vs-model collision avoidance as the student namespace.
