@@ -44,7 +44,7 @@
                   <%= render "shared/hierarchy_tree_leaf",
                         label: category.name,
                         icon: "label",
-                        meta: "#{category.points} pts",
+                        meta: category_points_label(category),
                         tone: :emerald %>
                 <% end %>
               <% end %>

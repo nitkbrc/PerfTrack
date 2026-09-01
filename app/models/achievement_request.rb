@@ -239,7 +239,7 @@ class AchievementRequest < ApplicationRecord
   def reject!(actor:, comment:, reason_template: nil, action: "reject")
     transaction do
       from = status
-      update!(status: :rejected, current_review_role: nil)
+      update!(status: :rejected, current_review_role: nil, **catalog_snapshot_attributes)
       req_histories.create!(actor: actor, action: action, comment: comment,
                             reason_template: reason_template,
                             from_status: from, to_status: "rejected",
@@ -375,19 +375,74 @@ class AchievementRequest < ApplicationRecord
     assignment&.review_role&.name
   end
 
+  def decided?
+    approved? || rejected?
+  end
+
+  def catalog_snapshot_present?
+    snapshot_category_name.present?
+  end
+
+  def use_catalog_snapshot?
+    decided? && catalog_snapshot_present?
+  end
+
+  def display_category_name
+    use_catalog_snapshot? ? snapshot_category_name : category.name
+  end
+
+  def display_sub_division_name
+    use_catalog_snapshot? ? snapshot_sub_division_name : category.sub_division.name
+  end
+
+  def display_division_name
+    use_catalog_snapshot? ? snapshot_division_name : category.sub_division.division.name
+  end
+
+  def display_div_type
+    use_catalog_snapshot? ? snapshot_div_type : category.sub_division.division.div_type
+  end
+
+  def display_polarity_positive?
+    display_div_type == "positive"
+  end
+
+  def display_catalog_path
+    "#{display_division_name} / #{display_sub_division_name} / #{display_category_name}"
+  end
+
+  def raised_on_behalf?
+    !student_initiated?
+  end
+
   private
 
   def finalize_approve!(actor:)
     transaction do
       sign = category.sub_division.division.positive? ? 1 : -1
       from = status
-      update!(status: :approved, current_review_role: nil, points_awarded: category.points * sign)
+      update!(status: :approved, current_review_role: nil,
+              points_awarded: category.points * sign,
+              **catalog_snapshot_attributes)
       req_histories.create!(actor: actor, action: "approve",
                             from_status: from, to_status: "approved",
                             request_version: current_version)
     end
     FinalApprovalNotificationJob.perform_later(id)
     enqueue_final_decision_mails!(:approved_notification, actor: actor)
+  end
+
+  def catalog_snapshot_attributes
+    cat = category
+    sub = cat.sub_division
+    div = sub.division
+    {
+      snapshot_category_name: cat.name,
+      snapshot_category_points: cat.points,
+      snapshot_sub_division_name: sub.name,
+      snapshot_division_name: div.name,
+      snapshot_div_type: div.div_type
+    }
   end
 
   def self.notify_current_reviewer!(request, actor:, kind:, comment: nil)

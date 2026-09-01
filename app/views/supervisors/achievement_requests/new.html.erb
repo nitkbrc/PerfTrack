@@ -27,7 +27,11 @@
         <%= f.label :category_id, "Category", class: "block text-sm font-medium text-slate-700" %>
         <%= f.grouped_collection_select :category_id,
               supervised_sub_divisions.active.includes(:active_categories, :division).order(:name), :active_categories, :name,
-              :id, ->(c) { "#{c.name} (#{c.points} pts)" },
+              :id, ->(c) {
+                div = c.sub_division.division
+                sign = div.positive? ? "+" : "-"
+                "#{c.name} (#{sign}#{c.points} pts)"
+              },
               { prompt: "Select a category", selected: params.dig(:achievement_request, :category_id) },
               class: admin_input_classes %>
         <p class="mt-1 text-xs text-slate-500">Only categories under your sub-divisions are listed.</p>

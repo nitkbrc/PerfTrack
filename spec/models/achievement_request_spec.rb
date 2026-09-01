@@ -326,4 +326,69 @@ RSpec.describe AchievementRequest, type: :model do
       expect(history.to_status).to eq("approved")
     end
   end
+
+  describe "catalog snapshot on decided requests" do
+    def approved_request(div_type:, points:)
+      division = create(:division, div_type: div_type, name: "Original Division")
+      sub_division = create(:sub_division, division: division, name: "Original Sub")
+      category = create(:category, sub_division: sub_division, name: "Original Category", points: points)
+      student = create(:student)
+      request = described_class.submit!(
+        student: student, actor: student.user,
+        attrs: { category: category, title: "T", description: "D", proofs: [ proof_upload ] }
+      )
+      request.advance!(actor: sub_division.supervisor)
+      request.advance!(actor: division.dean)
+      request
+    end
+
+    it "freezes catalog labels on approval and survives later renames" do
+      request = approved_request(div_type: "positive", points: 20)
+
+      expect(request.snapshot_category_name).to eq("Original Category")
+      expect(request.snapshot_division_name).to eq("Original Division")
+
+      request.category.update!(name: "Renamed Category", points: 99)
+      request.category.sub_division.update!(name: "Renamed Sub")
+      request.category.sub_division.division.update!(name: "Renamed Division", div_type: "negative")
+
+      expect(request.reload.display_category_name).to eq("Original Category")
+      expect(request.display_sub_division_name).to eq("Original Sub")
+      expect(request.display_division_name).to eq("Original Division")
+      expect(request.display_div_type).to eq("positive")
+      expect(request.points_awarded).to eq(20)
+    end
+
+    it "freezes catalog labels on reject" do
+      division = create(:division, name: "Conduct Div")
+      sub_division = create(:sub_division, division: division, name: "Conduct Sub")
+      category = create(:category, sub_division: sub_division, name: "Incident", points: 10)
+      student = create(:student)
+      request = described_class.submit!(
+        student: student, actor: student.user,
+        attrs: { category: category, title: "T", description: "D", proofs: [ proof_upload ] }
+      )
+      request.advance!(actor: sub_division.supervisor)
+      request.reject!(actor: division.dean, comment: "Not enough proof")
+
+      expect(request.reload.snapshot_category_name).to eq("Incident")
+      category.update!(name: "Renamed")
+      expect(request.display_category_name).to eq("Incident")
+      expect(request.points_awarded).to be_nil
+    end
+
+    it "keeps live catalog labels for open requests after rename" do
+      division = create(:division, name: "Live Div")
+      sub_division = create(:sub_division, division: division, name: "Live Sub")
+      category = create(:category, sub_division: sub_division, name: "Live Cat", points: 10)
+      student = create(:student)
+      request = described_class.submit!(
+        student: student, actor: student.user,
+        attrs: { category: category, title: "T", description: "D", proofs: [ proof_upload ] }
+      )
+
+      category.update!(name: "Renamed Cat")
+      expect(request.reload.display_category_name).to eq("Renamed Cat")
+    end
+  end
 end

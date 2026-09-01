@@ -249,7 +249,7 @@
                     <% end %>
                   </span>
                   <div class="pointer-events-none relative z-10 mt-1 space-y-0.5 md:hidden">
-                    <p class="truncate text-xs text-slate-500"><%= request.category.name %></p>
+                    <p class="truncate text-xs text-slate-500"><%= request.display_category_name %></p>
                     <p class="text-xs text-slate-400">
                       <%= request.points_awarded.present? ? "#{request.points_awarded} pts" : "—" %>
                       <span class="text-slate-300">&middot;</span>
@@ -258,7 +258,7 @@
                   </div>
                 </td>
                 <td class="pointer-events-none relative z-10 hidden min-w-0 truncate px-4 py-3.5 text-slate-500 md:table-cell">
-                  <%= request.category.name %>
+                  <%= request.display_category_name %>
                 </td>
                 <td class="relative z-10 min-w-0 px-4 py-3.5">
                   <div class="flex flex-col items-start gap-1.5 sm:flex-row sm:flex-wrap sm:items-center">

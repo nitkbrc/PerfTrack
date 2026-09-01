@@ -26,7 +26,7 @@
                   <p class="truncate text-xs text-text-muted">
                     <%= request.category.name %>
                     <span class="text-border-subtle">&middot;</span>
-                    <%= request.category.points %> pts
+                    <%= category_points_label(request.category) %>
                   </p>
                 </div>
               </td>
@@ -35,7 +35,7 @@
                 <span class="scats-badge scats-badge-neutral mt-1"><%= request.category.name %></span>
               </td>
               <td class="hidden whitespace-nowrap px-4 py-3 font-semibold text-text-main md:table-cell">
-                <%= request.category.points %>
+                <%= category_points_label(request.category) %>
               </td>
               <td class="whitespace-nowrap px-3 py-3 text-right sm:px-4">
                 <%= link_to "Decide", dean_achievement_request_path(request),

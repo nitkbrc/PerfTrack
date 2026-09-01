@@ -22,7 +22,8 @@
                   <span class="font-semibold"><%= version.title %></span>
                 </p>
                 <p class="mt-0.5 text-xs text-text-muted">
-                  <%= version.category.sub_division.name %> · <%= version.category.name %>
+                  <% req = history.achievement_request %>
+                  <%= req.display_sub_division_name %> · <%= req.display_category_name %>
                 </p>
                 <p class="mt-0.5 text-xs text-text-muted"><%= history.created_at.strftime("%d %b %Y") %></p>
                 <p class="mt-0.5 text-xs text-text-muted">Student <%= history.achievement_request.student.usn %></p>

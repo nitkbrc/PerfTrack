@@ -128,6 +128,26 @@ RSpec.describe "Student achievement requests", type: :request do
       expect(response.body).to include("pickerCards")
       expect(response.body).to include('data-raise-wizard-step-value="1"')
     end
+
+    it "includes negative-division categories in the tree with divType negative (signed in JS)" do
+      division = create(:division, :negative, name: "Conduct")
+      sub_division = create(:sub_division, division: division, name: "Incidents")
+      create(:category, sub_division: sub_division, name: "QA Conduct Incident", points: 15)
+
+      get new_student_achievement_request_path
+
+      expect(response).to have_http_status(:ok)
+      doc = Nokogiri::HTML(response.body)
+      tree_json = doc.at_css('[data-raise-wizard-tree-value]')&.[]("data-raise-wizard-tree-value")
+      expect(tree_json).to be_present
+
+      tree = JSON.parse(tree_json)
+      conduct = tree.find { |d| d["name"] == "Conduct" }
+      expect(conduct).to include("divType" => "negative")
+      category = conduct.dig("subDivisions", 0, "categories", 0)
+      expect(category).to include("name" => "QA Conduct Incident", "points" => 15)
+      expect(tree_json).not_to include("+15")
+    end
   end
 
   describe "GET /student/achievement_requests/submitted" do

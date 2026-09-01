@@ -44,6 +44,13 @@ module ApplicationHelper
              title: "#{tier[:name]} tier"
   end
 
+  # Catalog points label — sign comes from division type, not stored points magnitude.
+  def category_points_label(category)
+    division = category.sub_division.division
+    sign = division.positive? ? "+" : "-"
+    "#{sign}#{category.points} pts"
+  end
+
   # ---------------------------------------------------------------------------
   # Integrity Index: ratio of positive to total approved points (0–100).
   # Clean slate (no approved points) is 0 / 0, not a fake 100%.
@@ -111,6 +118,7 @@ module ApplicationHelper
   # Fixed order for every student surface (dashboard, profile, etc.).
   def student_navigation_items
     [ [ "Dashboard", student_root_path, "home" ],
+      [ "History", student_history_path, "history" ],
       [ "Raise a req", new_student_achievement_request_path, "plus" ] ]
   end
 
@@ -197,6 +205,10 @@ module ApplicationHelper
     # Dashboard: exact /student only — not /student/achievement_requests...
     if path == student_root_path
       return request.path == student_root_path
+    end
+
+    if path == student_history_path
+      return request.path == student_history_path
     end
 
     # Raise a req: new form and related achievement request paths.

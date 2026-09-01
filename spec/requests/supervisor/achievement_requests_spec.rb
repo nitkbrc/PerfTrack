@@ -305,5 +305,18 @@ RSpec.describe "Supervisor review actions", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Select a student")
     end
+
+    it "shows signed points on negative-division categories in the picker" do
+      negative_division = create(:division, :negative)
+      negative_sub = create(:sub_division, division: negative_division, supervisor: supervisor)
+      create(:category, sub_division: negative_sub, name: "Unauthorized absence", points: 15)
+
+      get new_supervisor_achievement_request_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Unauthorized absence (-15 pts)")
+      expect(response.body).not_to include("Unauthorized absence (15 pts)")
+      expect(response.body).not_to include("Unauthorized absence (+15 pts)")
+    end
   end
 end

@@ -276,8 +276,8 @@ export default class extends Controller {
   // pill share a header row and the title gets the full card width underneath.
   categoryCardHtml(category) {
     const pts = category.points
-    const isPositive = pts >= 0
-    const ptsLabel = isPositive ? `+${pts} pts` : `${pts} pts`
+    const isPositive = this.selectedDivision?.divType === "positive"
+    const ptsLabel = this.signedPointsLabel(pts, isPositive)
     const icon = isPositive ? "trending_up" : "trending_down"
 
     return `
@@ -289,7 +289,7 @@ export default class extends Controller {
           <span class="${this.cardIconClass("bg-[#e0e0ff]")}">
             <span class="material-symbols-outlined text-[20px] text-[#000666]" aria-hidden="true">${icon}</span>
           </span>
-          <span class="${this.badgePillClass(this.pointsBadgeTone(pts))}"
+          <span class="${this.badgePillClass(this.pointsBadgeTone(isPositive))}"
                 style="font-variant-numeric: tabular-nums;">${ptsLabel}</span>
         </span>
         <span class="block text-base font-bold leading-tight text-[#000666]">${this.escapeHtml(category.name)}</span>
@@ -302,10 +302,14 @@ export default class extends Controller {
       : { label: "Conduct", tone: "border-amber-300 bg-amber-50 text-amber-800" }
   }
 
-  pointsBadgeTone(points) {
-    return points >= 0
+  pointsBadgeTone(isPositive) {
+    return isPositive
       ? "border-green-200 bg-green-50 text-green-700"
       : "border-red-200 bg-red-50 text-red-700"
+  }
+
+  signedPointsLabel(points, isPositive) {
+    return isPositive ? `+${points} pts` : `-${points} pts`
   }
 
   badgePillClass(tone) {
@@ -329,14 +333,15 @@ export default class extends Controller {
     this.summaryDivisionTarget.textContent = division.name
     this.summarySubDivisionTarget.textContent = subDivision.name
     this.summaryCategoryTarget.textContent = category.name
-    this.summaryPointsTarget.textContent = `${category.points >= 0 ? "+" : ""}${category.points} pts`
 
     const isPositive = division.divType === "positive"
+    this.summaryPointsTarget.textContent = this.signedPointsLabel(category.points, isPositive)
+
     const badge = this.divisionTypeBadge(isPositive)
     this.summaryBadgeTarget.textContent = badge.label
     this.summaryBadgeTarget.className = this.badgePillClass(badge.tone)
 
-    const ptsTone = this.pointsBadgeTone(category.points)
+    const ptsTone = this.pointsBadgeTone(isPositive)
     this.summaryPointsTarget.className = this.badgePillClass(ptsTone)
 
     this.categorySummaryTarget.classList.remove("hidden")

@@ -170,11 +170,12 @@
               <% else %>
                 <span data-raise-wizard-target="summaryBadge" class="hidden"></span>
               <% end %>
-              <% if selected_category %>
+              <% if selected_category && selected_division %>
                 <% pts = selected_category.points %>
+                <% badge_positive = selected_division.positive? %>
                 <span data-raise-wizard-target="summaryPoints"
-                      class="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset whitespace-nowrap tabular-nums <%= pts >= 0 ? "bg-emerald-50 text-emerald-700 ring-emerald-200/70" : "bg-red-50 text-red-700 ring-red-200/70" %>">
-                  <%= pts >= 0 ? "+#{pts}" : pts.to_s %> pts
+                      class="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset whitespace-nowrap tabular-nums <%= badge_positive ? "bg-emerald-50 text-emerald-700 ring-emerald-200/70" : "bg-red-50 text-red-700 ring-red-200/70" %>">
+                  <%= badge_positive ? "+#{pts}" : "-#{pts}" %> pts
                 </span>
               <% else %>
                 <span data-raise-wizard-target="summaryPoints" class="hidden"></span>

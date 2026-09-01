@@ -2,9 +2,9 @@
   <div>
     <h1 class="text-2xl font-bold text-slate-900"><%= achievement_request.title %></h1>
     <p class="mt-1 text-sm text-slate-500">
-      <%= achievement_request.category.sub_division.division.name %> /
-      <%= achievement_request.category.sub_division.name %> /
-      <%= achievement_request.category.name %>
+      <%= achievement_request.display_division_name %> /
+      <%= achievement_request.display_sub_division_name %> /
+      <%= achievement_request.display_category_name %>
     </p>
     <p class="mt-1 text-sm text-slate-500">
       Student: <span class="font-medium text-slate-700"><%= achievement_request.student.usn %></span>

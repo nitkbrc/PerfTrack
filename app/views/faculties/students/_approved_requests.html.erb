@@ -6,9 +6,9 @@
           <div class="min-w-0">
             <p class="font-medium text-text-main"><%= request.title %></p>
             <p class="mt-1 text-xs text-text-muted">
-              <%= request.category.sub_division.name %>
+              <%= request.display_sub_division_name %>
             </p>
-            <span class="scats-badge scats-badge-neutral mt-1.5"><%= request.category.name %></span>
+            <span class="scats-badge scats-badge-neutral mt-1.5"><%= request.display_category_name %></span>
           </div>
           <% if request.points_awarded.positive? %>
             <span class="scats-badge scats-badge-success shrink-0">+<%= request.points_awarded %> pts</span>

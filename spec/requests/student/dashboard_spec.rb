@@ -70,4 +70,15 @@ RSpec.describe "Student dashboard", type: :request do
     expect(response.body).to include("Advanced to the next reviewer")
     expect(response.body).to include("15 Mar 2026, 10:30")
   end
+
+  it "lists only open requests in the activity log, not decided ones" do
+    open_request = create(:achievement_request, student: profile, title: "Still in review")
+    create(:achievement_request, :approved, student: profile, title: "Already accepted")
+
+    sign_in profile.user
+    get student_root_path
+
+    expect(response.body).to include("Still in review")
+    expect(response.body).not_to include("Already accepted")
+  end
 end

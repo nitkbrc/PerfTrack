@@ -1,11 +1,12 @@
 <%# Locals: version, student (optional), to_status (optional), points_awarded (optional) %>
+<% request_record = version.achievement_request %>
 <div class="mb-4 flex items-start justify-between gap-4">
   <div>
     <h1 class="text-2xl font-bold text-slate-900"><%= version.title %></h1>
     <p class="mt-1 text-sm text-slate-500">
-      <%= version.category.sub_division.division.name %> /
-      <%= version.category.sub_division.name %> /
-      <%= version.category.name %>
+      <%= request_record.display_division_name %> /
+      <%= request_record.display_sub_division_name %> /
+      <%= request_record.display_category_name %>
     </p>
     <% if local_assigns[:student] %>
       <p class="mt-1 text-sm text-slate-500">
