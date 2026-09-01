@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_100010) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_01_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -21,6 +21,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_100010) do
     t.text "description"
     t.bigint "originating_review_role_id"
     t.integer "points_awarded"
+    t.string "snapshot_category_name"
+    t.integer "snapshot_category_points"
+    t.string "snapshot_div_type"
+    t.string "snapshot_division_name"
+    t.string "snapshot_sub_division_name"
     t.string "status", default: "in_review", null: false
     t.bigint "student_id", null: false
     t.string "title"

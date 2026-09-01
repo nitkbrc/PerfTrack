@@ -1,6 +1,9 @@
 <% content_for(:page_title, "History") %>
 
-<div class="mx-auto w-full max-w-4xl px-4 py-6 space-y-8">
+<div class="mx-auto w-full max-w-4xl px-4 py-6 space-y-6"
+     data-controller="history-filter"
+     data-history-filter-polarity-value="positive"
+     data-history-filter-status-value="accepted">
 
   <div>
     <h1 class="text-2xl font-bold text-text-main">Request history</h1>
@@ -9,40 +12,81 @@
     </p>
   </div>
 
-  <section>
-    <h2 class="mb-4 text-lg font-semibold text-text-main">Accepted</h2>
-    <div class="space-y-6 pl-2 sm:pl-4">
-      <div>
-        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-700">Positive</h3>
-        <%= render "request_list",
-              requests: @accepted_positive,
-              empty_message: "No accepted achievement requests yet." %>
+  <div class="clay-card p-3 sm:p-4">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div class="scats-switch w-full sm:flex-1"
+           role="tablist"
+           aria-label="Request type"
+           data-controller="segmented-switch"
+           data-segmented-switch-selected-value="positive"
+           data-action="segmented-switch:change->history-filter#setPolarity">
+        <span class="scats-switch__pill" data-segmented-switch-target="pill" aria-hidden="true"></span>
+        <button type="button"
+                role="tab"
+                data-segmented-switch-target="option"
+                data-value="positive"
+                data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                class="scats-switch__option">
+          Positive
+        </button>
+        <button type="button"
+                role="tab"
+                data-segmented-switch-target="option"
+                data-value="negative"
+                data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                class="scats-switch__option">
+          Negative
+        </button>
       </div>
-      <div>
-        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-red-700">Negative</h3>
-        <%= render "request_list",
-              requests: @accepted_negative,
-              empty_message: "No accepted conduct records yet." %>
+
+      <div class="scats-switch w-full sm:flex-1"
+           role="tablist"
+           aria-label="Decision"
+           data-controller="segmented-switch"
+           data-segmented-switch-selected-value="accepted"
+           data-action="segmented-switch:change->history-filter#setStatus">
+        <span class="scats-switch__pill" data-segmented-switch-target="pill" aria-hidden="true"></span>
+        <button type="button"
+                role="tab"
+                data-segmented-switch-target="option"
+                data-value="accepted"
+                data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                class="scats-switch__option">
+          Accepted
+        </button>
+        <button type="button"
+                role="tab"
+                data-segmented-switch-target="option"
+                data-value="rejected"
+                data-action="segmented-switch#select keydown->segmented-switch#keydown"
+                class="scats-switch__option">
+          Rejected
+        </button>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section>
-    <h2 class="mb-4 text-lg font-semibold text-text-main">Rejected</h2>
-    <div class="space-y-6 pl-2 sm:pl-4">
-      <div>
-        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-emerald-700">Positive</h3>
-        <%= render "request_list",
-              requests: @rejected_positive,
-              empty_message: "No rejected achievement requests." %>
-      </div>
-      <div>
-        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-red-700">Negative</h3>
-        <%= render "request_list",
-              requests: @rejected_negative,
-              empty_message: "No rejected conduct requests." %>
-      </div>
-    </div>
-  </section>
+  <div data-history-filter-target="panel" data-filter="positive-accepted">
+    <%= render "request_list",
+          requests: @accepted_positive,
+          empty_message: "No accepted achievement requests yet." %>
+  </div>
 
+  <div data-history-filter-target="panel" data-filter="negative-accepted" class="hidden" aria-hidden="true">
+    <%= render "request_list",
+          requests: @accepted_negative,
+          empty_message: "No accepted conduct records yet." %>
+  </div>
+
+  <div data-history-filter-target="panel" data-filter="positive-rejected" class="hidden" aria-hidden="true">
+    <%= render "request_list",
+          requests: @rejected_positive,
+          empty_message: "No rejected achievement requests." %>
+  </div>
+
+  <div data-history-filter-target="panel" data-filter="negative-rejected" class="hidden" aria-hidden="true">
+    <%= render "request_list",
+          requests: @rejected_negative,
+          empty_message: "No rejected conduct requests." %>
+  </div>
 </div>

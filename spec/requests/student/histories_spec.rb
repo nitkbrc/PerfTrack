@@ -86,15 +86,18 @@ RSpec.describe "Student history", type: :request do
       expect(response.body).to include("+25 pts")
       expect(response.body).to include("-10 pts")
       expect(response.body).not_to include("Someone else's win")
+      expect(response.body).to include('data-controller="history-filter"')
+      expect(response.body).to include('data-controller="segmented-switch"')
+      expect(response.body).to include('data-value="positive"')
+      expect(response.body).to include('data-value="negative"')
+      expect(response.body).to include('data-value="accepted"')
+      expect(response.body).to include('data-value="rejected"')
 
-      accepted_positive = response.body.split("Accepted").second.split("Rejected").first
-      accepted_negative = accepted_positive.split("Negative").last
-      rejected_section = response.body.split("Rejected").last
-
-      expect(accepted_positive).to include("Path A win")
-      expect(accepted_positive).not_to include("Path B conduct")
-      expect(accepted_negative).to include("Path B conduct")
-      expect(rejected_section).to include("Rejected attempt")
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css('[data-filter="positive-accepted"]').text).to include("Path A win")
+      expect(doc.at_css('[data-filter="positive-accepted"]').text).not_to include("Path B conduct")
+      expect(doc.at_css('[data-filter="negative-accepted"]').text).to include("Path B conduct")
+      expect(doc.at_css('[data-filter="positive-rejected"]').text).to include("Rejected attempt")
     end
 
     it "includes History in student navigation" do
