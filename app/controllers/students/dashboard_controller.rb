@@ -8,7 +8,7 @@ module Students
                                   request_versions: { req_histories: :actor })
                         .order(created_at: :desc)
 
-      @requests = all_requests.select { |r| r.in_review? || r.reverted? }
+      @requests = all_requests
       @score               = current_student.overall_score
       @achievement_count   = all_requests.count { |r| r.approved? && r.points_awarded.to_i > 0 }
       @achievement_points  = current_student.positive_total
